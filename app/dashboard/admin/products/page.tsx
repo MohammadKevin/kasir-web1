@@ -577,7 +577,6 @@ export default function ProductPage() {
                   <FInput label="Barcode" icon={Barcode} value={formData.barcode} onChange={(v: string) => setFormData({ ...formData, barcode: v })} placeholder="Otomatis jika kosong" />
                 </div>
 
-                {/* Prices */}
                 <div>
                   <p className="section-label">Harga</p>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>

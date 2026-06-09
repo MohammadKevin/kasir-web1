@@ -155,9 +155,6 @@ export default function BarcodePage() {
               {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </div>
-          <button onClick={handleGenerateAll} disabled={isProcessing} className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-sm">
-            {isProcessing ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />} Auto-Generate
-          </button>
         </div>
       </div>
 

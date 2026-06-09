@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { 
-  Search, 
-  Package, 
-  Printer, 
+import {
+  Search,
+  Package,
+  Printer,
   Boxes,
   ArrowLeft
 } from 'lucide-react'
@@ -50,7 +50,7 @@ export default function ProductsPage() {
     setLoading(true)
     const token = localStorage.getItem('token')
     const headers = { Authorization: `Bearer ${token}` }
-    
+
     try {
       const [productsRes, categoriesRes] = await Promise.all([
         api.get(`/products/store/${id}`, { headers }),
@@ -58,7 +58,7 @@ export default function ProductsPage() {
       ])
 
       setProducts(productsRes.data || [])
-      
+
       if (categoriesRes.data) {
         setCategories([
           { id: 'ALL', name: 'Semua produk' },
@@ -101,53 +101,75 @@ export default function ProductsPage() {
   }
 
   function handlePrintAllBarcodes() {
-    const productsWithBarcode = filtered.filter(p => p.barcode)
-    if (productsWithBarcode.length === 0) return alert('Tidak ada produk yang memiliki kode barcode untuk dicetak.')
+    const productsWithBarcode = filtered.filter(p => p.barcode);
+    if (productsWithBarcode.length === 0) return alert('Tidak ada produk yang memiliki kode barcode.');
 
-    const printWindow = window.open('', '_blank')
-    if (!printWindow) return
-
-    const itemsHtml = productsWithBarcode.map(p => `
-      <div class="barcode-card">
-        <div class="label">${p.name}</div>
-        <svg class="barcode-svg" data-value="${p.barcode}"></svg>
-      </div>
-    `).join('')
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    if (!printWindow) return;
 
     printWindow.document.write(`
-      <html>
-        <head>
-          <title>Cetak Massal Barcode</title>
-          <style>
-            body { font-family: sans-serif; margin: 0; padding: 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-            .barcode-card { border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; page-break-inside: avoid; }
-            .label { text-align: center; font-size: 10px; font-weight: bold; margin-bottom: 4px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-          </style>
-        </head>
-        <body>
-          ${itemsHtml}
-          <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-          <script>
-            document.querySelectorAll('.barcode-svg').forEach(svg => {
-              const val = svg.getAttribute('data-value');
-              JsBarcode(svg, val, { format: "CODE128", width: 1.3, height: 35, displayValue: true, fontSize: 10 });
+    <html>
+      <head>
+        <style>
+          @page { size: auto; margin: 5mm; }
+          body { font-family: 'Courier New', monospace; padding: 10px; }
+          .label { 
+            width: 300px; 
+            border: 1px solid #000; 
+            padding: 10px; 
+            margin-bottom: 10px;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center;
+            box-sizing: border-box;
+            page-break-inside: avoid;
+          }
+          .name { font-size: 14px; font-weight: bold; margin-bottom: 8px; text-transform: uppercase; text-align: center; }
+          .barcode-container { width: 100%; display: flex; justify-content: center; }
+        </style>
+      </head>
+      <body>
+        ${productsWithBarcode.map(i => `
+          <div class="label">
+            <div class="name">${i.name}</div>
+            <div class="barcode-container">
+              <svg class="barcode" data-barcode="${i.barcode}"></svg>
+            </div>
+            <div style="font-size: 10px; margin-top: 5px;">${i.barcode}</div>
+          </div>
+        `).join('')}
+        
+        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+        <script>
+          document.querySelectorAll('.barcode').forEach(svg => {
+            JsBarcode(svg, svg.getAttribute('data-barcode'), { 
+              format: "CODE128", 
+              width: 2, 
+              height: 40, 
+              displayValue: false, 
+              margin: 0 
             });
-            window.onload = function() { window.print(); window.close(); }
-          </script>
-        </body>
-      </html>
-    `)
-    printWindow.document.close()
+          });
+          
+          window.onload = () => {
+            window.print();
+            window.close();
+          };
+        </script>
+      </body>
+    </html>
+  `);
+    printWindow.document.close();
   }
 
   const filtered = useMemo(() => {
     return products.filter((x) => {
       const matchesSearch = x.name.toLowerCase().includes(search.toLowerCase()) ||
-                            x.sku.toLowerCase().includes(search.toLowerCase()) ||
-                            (x.barcode && x.barcode.includes(search))
-      
+        x.sku.toLowerCase().includes(search.toLowerCase()) ||
+        (x.barcode && x.barcode.includes(search))
+
       const matchesCategory = selectedCategoryId === 'ALL' || x.categoryId === selectedCategoryId
-      
+
       return matchesSearch && matchesCategory
     })
   }, [products, search, selectedCategoryId])
@@ -156,7 +178,7 @@ export default function ProductsPage() {
 
   return (
     <div className="space-y-5">
-      
+
       {/* HEADER SECTION */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
         <div className="flex items-center gap-3">
@@ -205,11 +227,10 @@ export default function ProductsPage() {
           <button
             key={cat.id}
             onClick={() => setSelectedCategoryId(cat.id)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-              selectedCategoryId === cat.id
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${selectedCategoryId === cat.id
                 ? 'bg-blue-600 text-white border-blue-600 font-semibold shadow-3xs'
                 : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-            }`}
+              }`}
           >
             {cat.name}
           </button>
@@ -250,7 +271,7 @@ export default function ProductsPage() {
                   const isLowStock = product.stock <= product.minimumStock
                   return (
                     <tr key={product.id} className="hover:bg-slate-50/40 transition-colors">
-                      
+
                       <td className="px-6 py-3.5">
                         <div className="flex items-center gap-3">
                           <div className="h-9 w-9 rounded-lg border border-slate-100 bg-slate-50 overflow-hidden flex items-center justify-center shrink-0 text-slate-300">
