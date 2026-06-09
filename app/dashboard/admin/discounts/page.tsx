@@ -295,7 +295,7 @@ export default function DiscountPage() {
 
         <button
           onClick={handleOpenCreate}
-          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 transition-all self-start sm:self-auto"
+          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700 shadow-sm shadow-blue-500/10 transition-all self-start sm:self-auto cursor-pointer"
         >
           <Plus className="w-3.5 h-3.5" />
           Tambah Program Diskon
@@ -319,7 +319,10 @@ export default function DiscountPage() {
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Toko:</span>
           <select
             value={selectedStoreId}
-            onChange={(e) => setSelectedStoreId(e.target.value)}
+            onChange={(e) => {
+              setSelectedStoreId(e.target.value)
+              localStorage.setItem('storeId', e.target.value)
+            }}
             className="bg-transparent text-xs font-semibold text-slate-800 outline-none pr-1 cursor-pointer border-none p-0 focus:ring-0"
           >
             {stores.map((store) => (
@@ -496,7 +499,7 @@ export default function DiscountPage() {
 
               <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-3 mt-4">
                 <button type="button" disabled={isSubmitting} onClick={() => setIsOpenModal(false)} className="rounded-lg border px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50">Batal</button>
-                <button type="submit" disabled={isSubmitting} className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800">
+                <button type="submit" disabled={isSubmitting} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700 shadow-md shadow-blue-500/10 cursor-pointer">
                   {isSubmitting ? 'Menyimpan...' : 'Simpan'}
                 </button>
               </div>
@@ -551,7 +554,7 @@ export default function DiscountPage() {
               >
                 {products.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>)}
               </select>
-              <button type="submit" className="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 whitespace-nowrap">
+              <button type="submit" className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-blue-700 shadow-sm shadow-blue-500/10 whitespace-nowrap cursor-pointer">
                 <PlusCircle className="w-3.5 h-3.5" /> Ikat
               </button>
             </form>

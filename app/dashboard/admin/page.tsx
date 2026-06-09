@@ -364,7 +364,7 @@ export default function AdminDashboard() {
                     key={p}
                     onClick={() => setPeriod(p)}
                     className={`px-2.5 py-1 rounded-md text-[10px] uppercase font-bold transition-all ${
-                      period === p ? 'bg-white text-slate-900 shadow-2xs border border-slate-200/50' : 'text-slate-400 hover:text-slate-700'
+                      period === p ? 'bg-blue-600 text-white shadow-2xs border border-blue-600' : 'text-slate-400 hover:text-slate-700'
                     }`}
                   >
                     {p}

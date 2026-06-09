@@ -142,7 +142,7 @@ export default function CashierPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cari nama personil kasir outlet..."
-          className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-4 py-2 text-xs outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 shadow-3xs"
+          className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-4 py-2 text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-3xs"
         />
       </div>
 
@@ -209,7 +209,7 @@ export default function CashierPage() {
               value={pin}
               maxLength={6}
               onChange={(e) => setPin(e.target.value)}
-              className="w-full border border-slate-200 bg-slate-50/40 rounded-lg pl-9 pr-4 py-2 text-xs outline-none focus:bg-white focus:border-slate-400 font-mono tracking-widest text-slate-900 placeholder:text-slate-300 placeholder:font-sans"
+              className="w-full border border-slate-200 bg-slate-50/40 rounded-lg pl-9 pr-4 py-2 text-xs outline-none focus:bg-white focus:border-blue-500 font-mono tracking-widest text-slate-900 placeholder:text-slate-300 placeholder:font-sans"
               placeholder="Masukkan 6 digit PIN"
             />
           </div>
@@ -217,7 +217,7 @@ export default function CashierPage() {
           <button
             onClick={activate}
             disabled={submitting || !pin}
-            className="w-full rounded-lg bg-slate-900 text-white py-2.5 text-xs font-semibold flex justify-center items-center gap-1.5 hover:bg-slate-800 disabled:opacity-40 transition-all shadow-3xs"
+            className="w-full rounded-lg bg-blue-600 text-white py-2.5 text-xs font-semibold flex justify-center items-center gap-1.5 hover:bg-blue-700 disabled:opacity-40 transition-all shadow-3xs"
           >
             {submitting ? (
               <Loader2 className="animate-spin" size={14} />

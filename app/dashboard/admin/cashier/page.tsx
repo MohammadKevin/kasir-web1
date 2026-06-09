@@ -29,7 +29,7 @@ function FloatingInput({
         transform: active ? 'none' : 'translateY(-50%)',
         fontSize: active ? '10px' : '14px',
         fontWeight: active ? '600' : '400',
-        color: focused ? '#2d3544' : active ? '#8B87A8' : '#9CA3AF',
+        color: focused ? '#2563EB' : active ? '#8B87A8' : '#9CA3AF',
         transition: 'all 0.18s ease',
         pointerEvents: 'none',
         letterSpacing: active ? '0.05em' : '0',
@@ -41,7 +41,7 @@ function FloatingInput({
       {Icon && (
         <div style={{
           position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)',
-          color: focused ? '#6C63FF' : '#B0AECB', transition: 'color 0.18s', pointerEvents: 'none', zIndex: 1,
+          color: focused ? '#2563EB' : '#B0AECB', transition: 'color 0.18s', pointerEvents: 'none', zIndex: 1,
         }}>
           <Icon size={16} />
         </div>
@@ -58,14 +58,14 @@ function FloatingInput({
         style={{
           width: '100%',
           padding: active ? `22px ${Icon ? '14px' : '14px'} 8px ${Icon ? '44px' : '14px'}` : `14px 14px 14px ${Icon ? '44px' : '14px'}`,
-          border: `1.5px solid ${focused ? '#6C63FF' : '#E5E3EF'}`,
+          border: `1.5px solid ${focused ? '#2563EB' : '#E5E3EF'}`,
           borderRadius: '12px',
           fontSize: '14px',
           color: '#1A1A2E',
           background: focused ? '#FDFCFF' : '#F9F8FC',
           outline: 'none',
           transition: 'all 0.18s ease',
-          boxShadow: focused ? '0 0 0 3px rgba(108,99,255,0.08)' : 'none',
+          boxShadow: focused ? '0 0 0 3px rgba(37,99,235,0.08)' : 'none',
           fontFamily: 'Inter, sans-serif',
         }}
       />
@@ -92,7 +92,12 @@ export default function CashierPage() {
     const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` }
     const { data } = await api.get('/stores', { headers })
     setStores(data)
-    if (data.length > 0) setSelectedStoreId(data[0].id)
+    
+    const cachedStoreId = localStorage.getItem('storeId')
+    const initialStoreId = data.find((s: StoreType) => s.id === cachedStoreId)?.id || data[0]?.id || ''
+    if (initialStoreId) {
+      setSelectedStoreId(initialStoreId)
+    }
   }
 
   useEffect(() => { if (selectedStoreId) loadCashiers() }, [selectedStoreId])
@@ -170,7 +175,7 @@ export default function CashierPage() {
           background: transparent;
           color: #9C99B8;
         }
-        .btn-icon:hover { background: #F3F2FA; color: #2d3544; }
+        .btn-icon:hover { background: #F3F2FA; color: #2563EB; }
         .btn-icon.danger:hover { background: #FFF0F0; color: #E53E3E; }
 
         .store-select-wrapper {
@@ -192,8 +197,8 @@ export default function CashierPage() {
           font-family: 'Inter', sans-serif;
         }
         .store-select:focus {
-          border-color: #2d3544;
-          box-shadow: 0 0 0 3px rgba(45, 53, 68, 0.08);
+          border-color: #2563EB;
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
         }
 
         .search-wrap { position: relative; }
@@ -205,8 +210,8 @@ export default function CashierPage() {
           font-family: 'Inter', sans-serif;
         }
         .search-wrap input:focus {
-          border-color: #2d3544;
-          box-shadow: 0 0 0 3px rgba(45, 53, 68, 0.08);
+          border-color: #2563EB;
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
         }
         .search-wrap input::placeholder { color: #B0AECB; }
 
@@ -239,24 +244,24 @@ export default function CashierPage() {
         }
         .btn-close:hover { background: #EEEDF5; }
         .btn-save {
-          width: 100%; padding: 14px; background: #1A1A2E;
+          width: 100%; padding: 14px; background: #2563EB;
           color: #fff; border: none; border-radius: 12px;
           font-size: 14px; font-weight: 600; cursor: pointer;
           display: flex; align-items: center; justify-content: center; gap: 8px;
           transition: background 0.18s, transform 0.1s; margin-top: 4px;
           font-family: 'Inter', sans-serif;
         }
-        .btn-save:hover:not(:disabled) { background: #2D2D52; }
+        .btn-save:hover:not(:disabled) { background: #1D4ED8; }
         .btn-save:active:not(:disabled) { transform: scale(0.99); }
         .btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
         .add-btn {
-          background: #1A1A2E; color: #fff; border: none; border-radius: 12px;
+          background: #2563EB; color: #fff; border: none; border-radius: 12px;
           padding: 11px 20px; font-size: 14px; font-weight: 600;
           display: flex; align-items: center; gap: 8px;
           cursor: pointer; transition: background 0.18s, transform 0.1s;
           white-space: nowrap; font-family: 'Inter', sans-serif;
         }
-        .add-btn:hover { background: #2D2D52; }
+        .add-btn:hover { background: #1D4ED8; }
         .add-btn:active { transform: scale(0.98); }
 
         .skeleton {
@@ -277,13 +282,13 @@ export default function CashierPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '32px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-              <div style={{ width: '32px', height: '32px', background: '#F3F2FA', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Users size={16} color="#2d3544" />
+              <div style={{ width: '32px', height: '32px', background: '#E0F2FE', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Users size={16} color="#0284C7" />
               </div>
               <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#1A1A2E', margin: 0 }}>
                 Staf Kasir
                 {!loading && (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', background: '#F3F2FA', color: '#2d3544', fontSize: '12px', fontWeight: '600', padding: '2px 10px', borderRadius: '20px', marginLeft: '8px', verticalAlign: 'middle' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', background: '#E0F2FE', color: '#0284C7', fontSize: '12px', fontWeight: '600', padding: '2px 10px', borderRadius: '20px', marginLeft: '8px', verticalAlign: 'middle' }}>
                     {cashiers.length}
                   </span>
                 )}
@@ -314,7 +319,14 @@ export default function CashierPage() {
           </div>
 
           <div className="store-select-wrapper">
-            <select className="store-select" value={selectedStoreId} onChange={e => setSelectedStoreId(e.target.value)}>
+            <select 
+              className="store-select" 
+              value={selectedStoreId} 
+              onChange={e => {
+                setSelectedStoreId(e.target.value)
+                localStorage.setItem('storeId', e.target.value)
+              }}
+            >
               {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
             <ChevronDown size={14} color="#9C99B8" style={{ position: 'absolute', right: '14px', pointerEvents: 'none' }} />
@@ -380,7 +392,7 @@ export default function CashierPage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <div style={{
                           width: '32px', height: '32px', borderRadius: '50%',
-                          background: c.isActive ? 'linear-gradient(135deg, #1A1A2E, #2D2D52)' : '#F3F2FA',
+                          background: c.isActive ? 'linear-gradient(135deg, #2563EB, #1D4ED8)' : '#F3F2FA',
                           display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                         }}>
                           <User size={14} color={c.isActive ? '#fff' : '#C5C3DC'} />
@@ -413,7 +425,7 @@ export default function CashierPage() {
                           title="Edit"
                           onClick={() => { setEditingId(c.id); setFormData({ name: c.name, phone: c.phone, pin: '' }); setIsOpenModal(true) }}
                         >
-                          <Edit3 size={14} />
+                          <Edit3 size={14} color="#2563EB" />
                         </button>
                         <button
                           className={`btn-icon ${c.isActive ? '' : ''}`}

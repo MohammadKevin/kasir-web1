@@ -105,7 +105,7 @@ export default function AdminLayout({
                 href="/dashboard/admin"
                 className={`flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                   pathname === '/dashboard/admin'
-                    ? 'bg-slate-900 text-white shadow-sm'
+                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                 }`}
               >

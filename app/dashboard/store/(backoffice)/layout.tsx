@@ -118,7 +118,7 @@ export default function StoreLayout({
                     href={m.path}
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                       isActive
-                        ? 'bg-slate-900 text-white shadow-3xs'
+                        ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
                         : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                     }`}
                   >

@@ -78,6 +78,8 @@ export default function PosLayout({
           `Shift Berhasil Ditutup!\n\n` +
           `Modal Awal: Rp ${summary.openingCash.toLocaleString('id-ID')}\n` +
           `Penjualan Tunai: Rp ${summary.cashSales.toLocaleString('id-ID')}\n` +
+          `Penjualan QRIS: Rp ${(summary.qrisSales || 0).toLocaleString('id-ID')}\n` +
+          `Penjualan Debit: Rp ${(summary.debitSales || 0).toLocaleString('id-ID')}\n` +
           `Ekspektasi Laci: Rp ${summary.expectedCash.toLocaleString('id-ID')}\n` +
           `Uang Fisik Aktual: Rp ${summary.closingCash.toLocaleString('id-ID')}\n` +
           `Selisih Laci: Rp ${summary.difference.toLocaleString('id-ID')}`
@@ -101,33 +103,33 @@ export default function PosLayout({
   return (
     <div className="flex flex-col h-screen bg-slate-50 text-slate-800 antialiased overflow-hidden select-none">
       
-      <header className="h-14 bg-slate-900 text-white px-4 flex items-center justify-between flex-shrink-0 shadow-md">
+      <header className="h-14 bg-white border-b border-slate-200 px-4 flex items-center justify-between flex-shrink-0 shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-lg text-xs font-semibold text-blue-400">
+          <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg text-xs font-bold text-blue-600">
             <Monitor size={14} />
             <span>TERMINAL POS</span>
           </div>
-          <div className="flex items-center gap-1 text-xs font-medium text-slate-300">
+          <div className="flex items-center gap-1 text-xs font-semibold text-slate-600">
             <Store size={13} className="text-slate-400" />
             <span>{storeName || 'Memuat Outlet...'}</span>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 border-r border-slate-700 pr-4">
-            <div className="h-7 w-7 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300">
+          <div className="flex items-center gap-2 border-r border-slate-200 pr-4">
+            <div className="h-7 w-7 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500">
               <User size={14} />
             </div>
             <div className="text-left">
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-none">Petugas Shift</p>
-              <p className="text-xs font-semibold text-slate-100 mt-0.5 leading-none">{cashier?.name || 'Loading...'}</p>
+              <p className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider leading-none">Petugas Shift</p>
+              <p className="text-xs font-bold text-slate-850 mt-0.5 leading-none">{cashier?.name || 'Loading...'}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => { setClosingCashInput(''); setIsOpenCloseShiftModal(true); }}
-              className="flex items-center gap-1.5 rounded-lg bg-red-600 hover:bg-red-700 px-3 py-1.5 text-xs font-bold text-white transition-all shadow-sm"
+              className="flex items-center gap-1.5 rounded-lg bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 text-xs font-bold text-red-600 transition-all cursor-pointer"
               title="Tutup laci kasir dan simpan rekap log penjualan harian"
             >
               <KeyRound size={13} />
@@ -136,7 +138,7 @@ export default function PosLayout({
 
             <button
               onClick={handleExitPos}
-              className="flex items-center gap-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-200 transition-all"
+              className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 px-3 py-1.5 text-xs font-bold text-white transition-all shadow-sm shadow-blue-500/10 cursor-pointer"
             >
               <LogOut size={13} />
               <span>Dashboard</span>
@@ -155,7 +157,7 @@ export default function PosLayout({
           <div className="w-full max-w-xs overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-xl space-y-4 animate-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
               <h3 className="text-sm font-bold text-slate-900">Rekonsiliasi Kas Selesai</h3>
-              <button type="button" onClick={() => setIsOpenCloseShiftModal(false)} className="rounded p-0.5 text-slate-400 hover:bg-slate-50"><X size={16} /></button>
+              <button type="button" onClick={() => setIsOpenCloseShiftModal(false)} className="rounded p-0.5 text-slate-400 hover:bg-slate-50 cursor-pointer"><X size={16} /></button>
             </div>
             
             <form onSubmit={handleCloseShiftSubmit} className="space-y-4">
@@ -181,14 +183,14 @@ export default function PosLayout({
                   type="button"
                   disabled={isLoggingOut}
                   onClick={() => setIsOpenCloseShiftModal(false)}
-                  className="rounded-lg border border-slate-200 bg-white py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                  className="rounded-lg border border-slate-200 bg-white py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isLoggingOut || closingCashInput === ''}
-                  className="rounded-lg bg-red-600 text-white py-1.5 text-xs font-bold hover:bg-red-700 shadow-3xs flex items-center justify-center gap-1"
+                  className="rounded-lg bg-red-600 text-white py-1.5 text-xs font-bold hover:bg-red-700 shadow-3xs flex items-center justify-center gap-1 cursor-pointer"
                 >
                   {isLoggingOut ? (
                     <Loader2 className="animate-spin" size={13} />

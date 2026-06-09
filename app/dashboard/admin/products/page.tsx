@@ -278,11 +278,11 @@ export default function ProductPage() {
         .modal-scroll::-webkit-scrollbar-thumb { background: #E5E3EF; border-radius: 4px; }
         .divider { height: 1px; background: #F0EFF7; margin: 16px 28px 0; flex-shrink: 0; }
         .section-label { font-size: 11px; font-weight: 700; color: #C5C3DC; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 0 2px; }
-        .add-btn { background: #1A1A2E; color: #fff; border: none; border-radius: 12px; padding: 11px 20px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: background 0.18s, transform 0.1s; white-space: nowrap; font-family: 'Inter', sans-serif; }
-        .add-btn:hover { background: #2D2D52; }
+        .add-btn { background: #2563EB; color: #fff; border: none; border-radius: 12px; padding: 11px 20px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: background 0.18s, transform 0.1s; white-space: nowrap; font-family: 'Inter', sans-serif; box-shadow: 0 4px 12px rgba(37,99,235,0.15); }
+        .add-btn:hover { background: #1D4ED8; }
         .add-btn:active { transform: scale(0.98); }
-        .btn-save { width: 100%; padding: 14px; background: #1A1A2E; color: #fff; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.18s; font-family: 'Inter', sans-serif; }
-        .btn-save:hover:not(:disabled) { background: #2D2D52; }
+        .btn-save { width: 100%; padding: 14px; background: #2563EB; color: #fff; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.18s; font-family: 'Inter', sans-serif; box-shadow: 0 4px 12px rgba(37,99,235,0.15); }
+        .btn-save:hover:not(:disabled) { background: #1D4ED8; }
         .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-cancel { padding: 13px 20px; background: #F3F2FA; color: #5A5880; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s; font-family: 'Inter', sans-serif; }
         .btn-cancel:hover { background: #EEEDF5; }
@@ -338,7 +338,15 @@ export default function ProductPage() {
           </div>
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <Store size={14} color="#B0AECB" style={{ position: 'absolute', left: '12px', pointerEvents: 'none' }} />
-            <select className="store-sel" style={{ paddingLeft: '34px' }} value={selectedStoreId} onChange={e => setSelectedStoreId(e.target.value)}>
+            <select 
+              className="store-sel" 
+              style={{ paddingLeft: '34px' }} 
+              value={selectedStoreId} 
+              onChange={e => {
+                setSelectedStoreId(e.target.value)
+                localStorage.setItem('storeId', e.target.value)
+              }}
+            >
               {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
             <ChevronDown size={13} color="#C5C3DC" style={{ position: 'absolute', right: '12px', pointerEvents: 'none' }} />

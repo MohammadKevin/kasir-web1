@@ -106,7 +106,7 @@ export default function ShiftPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cari nama personel kasir..."
-          className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-4 py-2 text-xs outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 shadow-3xs"
+          className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-4 py-2 text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-3xs"
         />
       </div>
 

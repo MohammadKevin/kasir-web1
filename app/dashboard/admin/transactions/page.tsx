@@ -26,6 +26,8 @@ type TransactionItem = {
   }
   quantity: number
   originalPrice: number
+  masterDiscount?: number
+  cashierDiscount?: number
   finalPrice: number
   subtotal: number
 }
@@ -198,7 +200,10 @@ export default function TransactionAdminPage() {
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Toko:</span>
           <select
             value={selectedStoreId}
-            onChange={(e) => setSelectedStoreId(e.target.value)}
+            onChange={(e) => {
+              setSelectedStoreId(e.target.value)
+              localStorage.setItem('storeId', e.target.value)
+            }}
             className="bg-transparent text-sm font-semibold text-slate-800 outline-none pr-2 cursor-pointer"
           >
             {stores.map((store) => (
@@ -216,7 +221,7 @@ export default function TransactionAdminPage() {
             placeholder="Cari nomor invoice nota atau nama kasir..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 py-3 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-50 shadow-sm"
+            className="w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 py-3 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 shadow-sm"
           />
         </div>
 
@@ -227,7 +232,7 @@ export default function TransactionAdminPage() {
               onClick={() => setStatusFilter(status)}
               className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
                 statusFilter === status 
-                  ? 'bg-white text-slate-950 shadow-xs border border-slate-100' 
+                  ? 'bg-blue-600 text-white shadow-xs border border-blue-600' 
                   : 'text-slate-500 hover:text-slate-900'
               }`}
             >
@@ -256,7 +261,7 @@ export default function TransactionAdminPage() {
               {loading ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center">
-                    <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-800" />
+                    <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
                   </td>
                 </tr>
               ) : filteredTransactions.length === 0 ? (
@@ -344,16 +349,22 @@ export default function TransactionAdminPage() {
                 <p><span className="font-semibold text-slate-700">Member:</span> {selectedTransaction.customer?.name || 'Non-Member'}</p>
               </div>
 
-              <div className="border-t border-b border-dashed border-slate-200 py-2 space-y-2">
-                {selectedTransaction.items?.map((item) => (
-                  <div key={item.id} className="flex justify-between items-start gap-4">
-                    <div>
-                      <p className="font-bold text-slate-900">{item.product?.name}</p>
-                      <p className="text-[10px] text-slate-400">{item.quantity} x Rp {item.finalPrice.toLocaleString('id-ID')}</p>
+              <div className="border-t border-b border-dashed border-slate-200 py-2.5 space-y-2.5 max-h-[200px] overflow-y-auto pr-1">
+                {selectedTransaction.items?.map((item) => {
+                  const itemDiscount = ((item.masterDiscount || 0) + (item.cashierDiscount || 0)) * item.quantity
+                  return (
+                    <div key={item.id} className="space-y-0.5">
+                      <div className="flex justify-between items-start gap-4">
+                        <span className="font-bold text-slate-850 dark:text-slate-200 text-[11px]">{item.product?.name}</span>
+                        <span className="font-bold text-slate-850 dark:text-slate-200 shrink-0">Rp {(item.originalPrice * item.quantity).toLocaleString('id-ID')}</span>
+                      </div>
+                      <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500 pl-3">
+                        <span>{item.quantity} x Rp {item.originalPrice.toLocaleString('id-ID')}</span>
+                        {itemDiscount > 0 && <span className="text-red-500 font-medium">- Rp {itemDiscount.toLocaleString('id-ID')}</span>}
+                      </div>
                     </div>
-                    <p className="font-bold text-slate-900">Rp {item.subtotal.toLocaleString('id-ID')}</p>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
 
               <div className="space-y-1.5 text-slate-600">

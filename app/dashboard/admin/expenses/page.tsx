@@ -188,7 +188,7 @@ export default function ExpensePage() {
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Pengeluaran Toko</h1>
           <p className="text-sm text-slate-500 mt-1">Pencatatan biaya operasional dan cashflow keluar.</p>
         </div>
-        <button onClick={handleOpenCreate} className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition-all">
+        <button onClick={handleOpenCreate} className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm shadow-blue-500/10 transition-all cursor-pointer">
           <Plus className="w-4 h-4" /> Catat Pengeluaran
         </button>
       </div>
@@ -234,7 +234,14 @@ export default function ExpensePage() {
 
           <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm">
             <Store className="w-4 h-4 text-slate-400" />
-            <select value={selectedStoreId} onChange={(e) => setSelectedStoreId(e.target.value)} className="bg-transparent text-sm font-semibold text-slate-800 outline-none pr-2 cursor-pointer border-none p-0">
+            <select
+              value={selectedStoreId}
+              onChange={(e) => {
+                setSelectedStoreId(e.target.value)
+                localStorage.setItem('storeId', e.target.value)
+              }}
+              className="bg-transparent text-sm font-semibold text-slate-800 outline-none pr-2 cursor-pointer border-none p-0 focus:ring-0"
+            >
               {stores.map((store) => (
                 <option key={store.id} value={store.id}>{store.name}</option>
               ))}
@@ -292,7 +299,7 @@ export default function ExpensePage() {
                 <option value="OTHER">Lainnya</option>
               </select>
               <input type="number" required placeholder="Nominal" value={formData.amount || ''} onChange={e => setFormData({...formData, amount: Number(e.target.value)})} className="w-full border rounded-xl p-2.5" />
-              <button type="submit" className="w-full bg-slate-950 text-white rounded-xl py-2.5 font-bold">Simpan</button>
+              <button type="submit" className="w-full bg-blue-600 text-white rounded-xl py-2.5 font-bold hover:bg-blue-700 shadow-md shadow-blue-500/15 transition-all cursor-pointer">Simpan</button>
             </form>
           </div>
         </div>

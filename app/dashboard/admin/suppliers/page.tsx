@@ -206,7 +206,7 @@ export default function SupplierPage() {
 
         <button
           onClick={handleOpenCreate}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 transition-all active:scale-98 self-start sm:self-auto"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 shadow-blue-500/10 transition-all active:scale-98 self-start sm:self-auto cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           Tambahkan Supplier
@@ -233,6 +233,7 @@ export default function SupplierPage() {
             onChange={(e) => {
               setSelectedStoreId(e.target.value)
               setFormData((prev) => ({ ...prev, storeId: e.target.value }))
+              localStorage.setItem('storeId', e.target.value)
             }}
             className="bg-transparent text-sm font-semibold text-slate-800 outline-none pr-2 cursor-pointer"
           >
@@ -281,7 +282,7 @@ export default function SupplierPage() {
                   <tr key={supplier.id} className="transition-colors hover:bg-slate-50/50 group">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 border border-slate-200/50 group-hover:bg-slate-950 group-hover:text-white transition-all">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-100/50 group-hover:bg-blue-600 group-hover:text-white transition-all">
                           <Building2 className="w-4 h-4" />
                         </div>
                         <span className="font-bold text-slate-900 text-base">{supplier.name}</span>
@@ -412,7 +413,7 @@ export default function SupplierPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition-all disabled:opacity-40"
+                  className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-blue-500/10 transition-all disabled:opacity-40 cursor-pointer"
                 >
                   {isSubmitting ? (
                     <div className="flex items-center gap-2">

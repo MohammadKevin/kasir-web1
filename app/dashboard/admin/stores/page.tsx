@@ -35,7 +35,7 @@ function FloatingInput({
           transform: active ? 'none' : 'translateY(-50%)',
           fontSize: active ? '10px' : '14px',
           fontWeight: active ? '600' : '400',
-          color: focused ? '#2d3544' : active ? '#8B87A8' : '#9CA3AF',
+          color: focused ? '#2563EB' : active ? '#8B87A8' : '#9CA3AF',
           transition: 'all 0.18s ease',
           pointerEvents: 'none',
           letterSpacing: active ? '0.05em' : '0',
@@ -56,14 +56,14 @@ function FloatingInput({
         style={{
           width: '100%',
           padding: active ? '22px 14px 8px' : '14px',
-          border: `1.5px solid ${focused ? '#2d3544' : '#E5E3EF'}`,
+          border: `1.5px solid ${focused ? '#2563EB' : '#E5E3EF'}`,
           borderRadius: '12px',
           fontSize: '14px',
           color: '#1A1A2E',
           background: focused ? '#FDFCFF' : '#F9F8FC',
           outline: 'none',
           transition: 'all 0.18s ease',
-          boxShadow: focused ? '0 0 0 3px rgba(108,99,255,0.08)' : 'none',
+          boxShadow: focused ? '0 0 0 3px rgba(37,99,235,0.08)' : 'none',
         }}
       />
     </div>
@@ -86,7 +86,7 @@ function FloatingTextarea({
           top: active ? '10px' : '14px',
           fontSize: active ? '10px' : '14px',
           fontWeight: active ? '600' : '400',
-          color: focused ? '#2d3544' : active ? '#8B87A8' : '#9CA3AF',
+          color: focused ? '#2563EB' : active ? '#8B87A8' : '#9CA3AF',
           transition: 'all 0.18s ease',
           pointerEvents: 'none',
           letterSpacing: active ? '0.05em' : '0',
@@ -105,7 +105,7 @@ function FloatingTextarea({
         style={{
           width: '100%',
           padding: active ? '26px 14px 10px' : '14px',
-          border: `1.5px solid ${focused ? '#2d3544' : '#E5E3EF'}`,
+          border: `1.5px solid ${focused ? '#2563EB' : '#E5E3EF'}`,
           borderRadius: '12px',
           fontSize: '14px',
           color: '#1A1A2E',
@@ -113,7 +113,7 @@ function FloatingTextarea({
           outline: 'none',
           resize: 'none',
           transition: 'all 0.18s ease',
-          boxShadow: focused ? '0 0 0 3px rgba(108,99,255,0.08)' : 'none',
+          boxShadow: focused ? '0 0 0 3px rgba(37,99,235,0.08)' : 'none',
         }}
       />
     </div>
@@ -188,15 +188,15 @@ export default function StorePage() {
           position: absolute;
           left: 0; top: 0; bottom: 0;
           width: 3px;
-          background: #2d3544;
+          background: #2563EB;
           transform: scaleY(0);
           transform-origin: bottom;
           transition: transform 0.25s ease;
           border-radius: 0 2px 2px 0;
         }
         .store-card:hover {
-          border-color: #D5D2F0;
-          box-shadow: 0 8px 32px rgba(108,99,255,0.08);
+          border-color: #93C5FD;
+          box-shadow: 0 8px 32px rgba(37,99,235,0.08);
           transform: translateY(-2px);
         }
         .store-card:hover::before { transform: scaleY(1); }
@@ -234,8 +234,8 @@ export default function StorePage() {
           transition: border-color 0.18s, box-shadow 0.18s;
         }
         .search-wrap input:focus {
-          border-color: #2d3544;
-          box-shadow: 0 0 0 3px rgba(45, 53, 68, 0.08);
+          border-color: #2563EB;
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
         }
         .search-wrap input::placeholder { color: #B0AECB; }
         .modal-overlay {
@@ -278,14 +278,14 @@ export default function StorePage() {
         .btn-close:hover { background: #EEEDF5; }
         .btn-save {
           width: 100%; padding: 14px;
-          background: #1A1A2E;
+          background: #2563EB;
           color: #fff; border: none; border-radius: 12px;
           font-size: 14px; font-weight: 600; cursor: pointer;
           display: flex; align-items: center; justify-content: center; gap: 8px;
           transition: background 0.18s, transform 0.1s;
           margin-top: 4px;
         }
-        .btn-save:hover:not(:disabled) { background: #2D2D52; }
+        .btn-save:hover:not(:disabled) { background: #1D4ED8; }
         .btn-save:active:not(:disabled) { transform: scale(0.99); }
         .btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
         .divider {
@@ -299,7 +299,7 @@ export default function StorePage() {
           border-radius: 20px;
         }
         .add-btn {
-          background: #1A1A2E; color: #fff;
+          background: #2563EB; color: #fff;
           border: none; border-radius: 12px;
           padding: 11px 20px;
           font-size: 14px; font-weight: 600;
@@ -307,7 +307,7 @@ export default function StorePage() {
           cursor: pointer; transition: background 0.18s, transform 0.1s;
           white-space: nowrap;
         }
-        .add-btn:hover { background: #2D2D52; }
+        .add-btn:hover { background: #1D4ED8; }
         .add-btn:active { transform: scale(0.98); }
         .empty-state {
           grid-column: 1 / -1;
@@ -316,7 +316,7 @@ export default function StorePage() {
         }
         .badge-count {
           display: inline-flex; align-items: center;
-          background: #F3F2FA; color: #2d3544;
+          background: #E0F2FE; color: #0284C7;
           font-size: 12px; font-weight: 600;
           padding: 2px 10px; border-radius: 20px;
           margin-left: 8px; vertical-align: middle;
@@ -331,8 +331,8 @@ export default function StorePage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '32px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-              <div style={{ width: '32px', height: '32px', background: '#F3F2FA', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Building2 size={16} color="#2D2D52" />
+              <div style={{ width: '32px', height: '32px', background: '#E0F2FE', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Building2 size={16} color="#0284C7" />
               </div>
               <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#1A1A2E', margin: 0 }}>
                 Manajemen Store
@@ -378,12 +378,12 @@ export default function StorePage() {
             filtered.map(s => (
               <div key={s.id} className="store-card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'linear-gradient(135deg, #1A1A2E 0%, #2D2D52 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Building2 size={20} color="#fff" />
                   </div>
                   <div className="card-actions">
                     <button className="btn-icon" title="Edit" onClick={() => { setEditingId(s.id); setForm({ ...s, password: '' }); setOpen(true) }}>
-                      <Edit3 size={14} color="#6C63FF" />
+                      <Edit3 size={14} color="#2563EB" />
                     </button>
                     <button className="btn-icon danger" title="Hapus" onClick={() => handleDelete(s.id)} disabled={deletingId === s.id}>
                       {deletingId === s.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
@@ -393,7 +393,7 @@ export default function StorePage() {
 
                 <div style={{ marginTop: '16px', marginBottom: '16px' }}>
                   <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1A1A2E', margin: '0 0 2px' }}>{s.name}</h3>
-                  <p style={{ fontSize: '12px', color: '#C5C3DC', margin: 0 }}>ID: {s.id.slice(0, 8)}…</p>
+                  <p style={{ fontSize: '12px', color: '#B0AECB', margin: 0 }}>ID: {s.id.slice(0, 8)}…</p>
                 </div>
 
                 <div style={{ height: '1px', background: '#F3F2FA', marginBottom: '14px' }} />
@@ -401,19 +401,19 @@ export default function StorePage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <div style={{ width: '28px', height: '28px', background: '#F3F2FA', borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Mail size={13} color="#0d0c18" />
+                      <Mail size={13} color="#2563EB" />
                     </div>
                     <span style={{ fontSize: '13px', color: '#5A5880', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.email}</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <div style={{ width: '28px', height: '28px', background: '#F3F2FA', borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Phone size={13} color="#0d0c18" />
+                      <Phone size={13} color="#2563EB" />
                     </div>
                     <span style={{ fontSize: '13px', color: s.phone ? '#5A5880' : '#C5C3DC' }}>{s.phone || 'Belum diisi'}</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
                     <div style={{ width: '28px', height: '28px', background: '#F3F2FA', borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
-                      <MapPin size={13} color="#0d0c18" />
+                      <MapPin size={13} color="#2563EB" />
                     </div>
                     <span style={{ fontSize: '13px', color: s.address ? '#5A5880' : '#C5C3DC', lineHeight: '1.4' }}>{s.address || 'Belum diisi'}</span>
                   </div>
