@@ -20,11 +20,13 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_KEY }}
           port: ${{ secrets.VPS_PORT }}
+          timeout: 60s
+          command_timeout: 20m
           script: |
             cd /var/www/kasir-frontend
             
             git pull origin main
             npm install
             NODE_OPTIONS="--max-old-space-size=1024" npm run build
-
+            
             PORT=3001 pm2 restart kasir-frontend --update-env
