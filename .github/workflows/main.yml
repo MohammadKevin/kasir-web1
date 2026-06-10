@@ -7,24 +7,16 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Deploy to VPS via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
-          key: ${{ secrets.VPS_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          script: |
-            cd /var/www/kasir-frontend
-            
-            git pull origin main
-            npm install
-            NODE_OPTIONS="--max-old-space-size=1024" npm run build
-
-            PORT=3001 pm2 restart kasir-frontend --update-env || PORT=3001 pm2 start npm --name "kasir-frontend" -- run start
+      - name: Build and Restart Next.js
+        run: |
+          cd /var/www/kasir-frontend
+          git pull origin main
+          npm install
+          NODE_OPTIONS="--max-old-space-size=1024" npm run build
+          PORT=3001 pm2 restart kasir-frontend --update-env || PORT=3001 pm2 start npm --name "kasir-frontend" -- run start
