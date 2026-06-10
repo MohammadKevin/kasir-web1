@@ -13,20 +13,17 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Deploy to VPS via SSH
+      - name: Deploy to VPS via Password
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
-          key: ${{ secrets.VPS_KEY }}
+          password: ${{ secrets.VPS_PASSWORD }}
           port: ${{ secrets.VPS_PORT }}
-          timeout: 60s
-          command_timeout: 20m
+          timeout: 30s
           script: |
             cd /var/www/kasir-frontend
-            
             git pull origin main
             npm install
             NODE_OPTIONS="--max-old-space-size=1024" npm run build
-            
             PORT=3001 pm2 restart kasir-frontend --update-env
