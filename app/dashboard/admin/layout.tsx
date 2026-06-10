@@ -87,7 +87,7 @@ export default function AdminLayout({
             <div className="flex items-center gap-2.5">
               <span className="h-5 w-5 rounded bg-blue-600 block flex-shrink-0 shadow-sm shadow-blue-500/20" />
               <h1 className="text-lg font-bold tracking-tight text-slate-900">
-                Store<span className="text-blue-600">Flow</span>
+                laila<span className="text-blue-600">collections</span>
               </h1>
             </div>
             <button 
