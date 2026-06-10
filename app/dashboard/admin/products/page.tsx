@@ -290,12 +290,28 @@ export default function ProductPage() {
         @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
         @keyframes slideUp { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
         @keyframes shimmer { 0% { background-position:200% 0 } 100% { background-position:-200% 0 } }
+
+        @media (max-width: 768px) {
+          .prod-root-container { padding: 16px 12px !important; }
+          .prod-header-row { flex-direction: column; align-items: stretch !important; gap: 16px !important; }
+          .prod-header-right { width: 100%; flex-direction: column; align-items: stretch !important; }
+          .prod-header-right > div, .prod-header-right > button { width: 100%; justify-content: center; }
+          .prod-filters { flex-direction: column; align-items: stretch !important; gap: 12px !important; }
+          .search-wrap { max-width: none !important; width: 100%; }
+          .store-sel-wrap { width: 100%; }
+          .store-sel { width: 100%; }
+          .row-act { opacity: 1 !important; transform: none !important; }
+        }
+
+        @media (max-width: 500px) {
+          .modal-grid-2col { grid-template-columns: 1fr !important; }
+        }
       `}</style>
 
-      <div className="prod-root" style={{ padding: '32px 24px', maxWidth: '1200px', margin: '0 auto' }}>
+      <div className="prod-root prod-root-container" style={{ padding: '32px 24px', maxWidth: '1200px', margin: '0 auto' }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '28px' }}>
+        <div className="prod-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '28px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
               <div style={{ width: '32px', height: '32px', background: '#F3F2FA', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -312,7 +328,7 @@ export default function ProductPage() {
             </div>
             <p style={{ fontSize: '13px', color: '#9C99B8', margin: 0 }}>Kelola inventori, harga jual, SKU, barcode, dan stok minimum</p>
           </div>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="prod-header-right" style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
             {lowStockCount > 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '10px', padding: '7px 12px' }}>
                 <AlertTriangle size={13} color="#D97706" />
@@ -326,7 +342,7 @@ export default function ProductPage() {
         </div>
 
         {/* Filters */}
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div className="prod-filters" style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
           <div className="search-wrap" style={{ flex: '1', minWidth: '200px', maxWidth: '380px' }}>
             <Search size={15} color="#B0AECB" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
             <input placeholder="Cari nama, SKU, atau barcode…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
@@ -336,7 +352,7 @@ export default function ProductPage() {
               </button>
             )}
           </div>
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <div className="store-sel-wrap" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <Store size={14} color="#B0AECB" style={{ position: 'absolute', left: '12px', pointerEvents: 'none' }} />
             <select 
               className="store-sel" 
@@ -560,7 +576,7 @@ export default function ProductPage() {
                 {/* Store & Category */}
                 <div>
                   <p className="section-label">Penempatan</p>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="modal-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <FSelect label="Cabang Toko" icon={Store} value={formData.storeId} required disabled={!!editingId}
                       onChange={(e: any) => { setFormData({ ...formData, storeId: e.target.value, categoryId: '' }); loadCategories(e.target.value) }}>
                       {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -580,14 +596,14 @@ export default function ProductPage() {
                 </div>
 
                 {/* SKU & Barcode */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="modal-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <FInput label="Kode SKU" icon={Layers} value={formData.sku} onChange={(v: string) => setFormData({ ...formData, sku: v })} placeholder="Otomatis jika kosong" />
                   <FInput label="Barcode" icon={Barcode} value={formData.barcode} onChange={(v: string) => setFormData({ ...formData, barcode: v })} placeholder="Otomatis jika kosong" />
                 </div>
 
                 <div>
                   <p className="section-label">Harga</p>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="modal-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <FInput label="Harga Modal (Rp)" type="number" min={0} value={formData.costPrice || ''} onChange={(v: number) => setFormData({ ...formData, costPrice: v })} required placeholder="0" />
                     <FInput label="Harga Jual (Rp)" type="number" min={0} value={formData.sellingPrice || ''} onChange={(v: number) => setFormData({ ...formData, sellingPrice: v })} required placeholder="0" />
                   </div>
@@ -605,7 +621,7 @@ export default function ProductPage() {
                 {/* Stock */}
                 <div>
                   <p className="section-label">Inventori</p>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="modal-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <FInput label="Stok Awal" icon={Boxes} type="number" min={0} value={formData.stock || ''} onChange={(v: number) => setFormData({ ...formData, stock: v })} placeholder="0" />
                     <FInput label="Batas Minimum" icon={AlertTriangle} type="number" min={0} value={formData.minimumStock || ''} onChange={(v: number) => setFormData({ ...formData, minimumStock: v })} placeholder="0" />
                   </div>

@@ -274,12 +274,23 @@ export default function CashierPage() {
         @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: translateY(0) } }
         @keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }
+
+        @media (max-width: 640px) {
+          .cashier-root-container { padding: 16px 12px !important; }
+          .cashier-header-row { flex-direction: column; align-items: stretch !important; gap: 16px !important; }
+          .cashier-header-row button { width: 100%; justify-content: center; }
+          .cashier-filters { flex-direction: column; align-items: stretch !important; gap: 12px !important; }
+          .search-wrap { max-width: none !important; width: 100%; }
+          .store-select-wrapper { width: 100%; }
+          .store-select { width: 100%; }
+          .row-actions { opacity: 1 !important; }
+        }
       `}</style>
 
-      <div className="cashier-root" style={{ padding: '32px 24px', maxWidth: '1000px', margin: '0 auto' }}>
+      <div className="cashier-root cashier-root-container" style={{ padding: '32px 24px', maxWidth: '1000px', margin: '0 auto' }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '32px' }}>
+        <div className="cashier-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '32px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
               <div style={{ width: '32px', height: '32px', background: '#E0F2FE', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -303,7 +314,7 @@ export default function CashierPage() {
         </div>
 
         {/* Filters */}
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '20px', alignItems: 'center' }}>
+        <div className="cashier-filters" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '20px', alignItems: 'center' }}>
           <div className="search-wrap" style={{ flex: '1', minWidth: '200px', maxWidth: '320px' }}>
             <Search size={15} color="#B0AECB" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
             <input

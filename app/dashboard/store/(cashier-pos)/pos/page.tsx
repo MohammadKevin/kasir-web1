@@ -17,7 +17,8 @@ import {
  Package,
  ArrowRight,
  ShoppingCart,
- CheckCircle2
+ CheckCircle2,
+ ArrowLeft
 } from 'lucide-react'
 import { api } from '@/lib/api'
 
@@ -86,6 +87,7 @@ export default function PosPage() {
 
  const [receiptData, setReceiptData] = useState<any>(null)
  const [isOpenReceipt, setIsOpenReceipt] = useState(false)
+ const [mobileView, setMobileView] = useState<'catalog' | 'cart'>('catalog')
 
  const barcodeBuffer = useRef<string>('')
  const lastKeyTime = useRef<number>(0)
@@ -436,6 +438,7 @@ export default function PosPage() {
  setSaveCustomer(false)
  setIsOpenReceipt(false)
  setReceiptData(null)
+ setMobileView('catalog')
  loadData()
  }
 
@@ -464,10 +467,10 @@ export default function PosPage() {
  ]
 
  return (
- <div className="grid gap-6 lg:grid-cols-[1fr_390px] h-full overflow-hidden">
+ <div className="grid gap-6 lg:grid-cols-[1fr_390px] h-full overflow-hidden relative">
 
  {/* ─── LEFT: Product Catalog ─── */}
- <div className="flex flex-col h-full overflow-hidden space-y-4">
+ <div className={`flex flex-col h-full overflow-hidden space-y-4 ${mobileView === 'catalog' ? 'flex' : 'hidden lg:flex'}`}>
 
  {/* Search bar */}
  <div className="flex items-center gap-3 bg-white border border-slate-200 px-4 py-3 rounded-2xl shadow-xs flex-shrink-0">
@@ -596,11 +599,20 @@ export default function PosPage() {
  </div>
 
  {/* ─── RIGHT: Checkout Panel ─── */}
- <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col h-full overflow-hidden">
+ <div className={`bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col h-full overflow-hidden ${mobileView === 'cart' ? 'flex' : 'hidden lg:flex'}`}>
 
  {/* Header */}
  <div className="border-b border-slate-100 pb-3 flex items-center justify-between flex-shrink-0 mb-4">
+ <div className="flex items-center gap-2">
+ <button
+ type="button"
+ onClick={() => setMobileView('catalog')}
+ className="lg:hidden p-1.5 border border-slate-200 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors bg-white shrink-0 cursor-pointer"
+ >
+ <ArrowLeft size={14} />
+ </button>
  <h2 className="text-xs font-extrabold text-slate-450 uppercase tracking-widest">Ringkasan Pembayaran</h2>
+ </div>
  <span className="text-[11px] font-bold text-slate-700 ">{cashier?.name || 'Kasir'}</span>
  </div>
 
@@ -899,6 +911,24 @@ export default function PosPage() {
  </div>
  </div>
  </div>
+ )}
+
+ {cart.length > 0 && mobileView === 'catalog' && (
+   <div className="lg:hidden fixed bottom-6 left-6 right-6 z-30 animate-in fade-in slide-in-from-bottom-4 duration-200">
+     <button
+       onClick={() => setMobileView('cart')}
+       className="w-full bg-blue-600 text-white rounded-xl py-3 px-4 shadow-lg shadow-blue-500/30 flex items-center justify-between font-bold text-xs hover:bg-blue-700 transition-colors cursor-pointer"
+     >
+       <span className="flex items-center gap-2">
+         <ShoppingCart size={15} />
+         <span>{cart.reduce((sum, item) => sum + item.qty, 0)} item</span>
+       </span>
+       <span className="flex items-center gap-1">
+         <span>{fmt(finalTotal)}</span>
+         <ArrowRight size={13} />
+       </span>
+     </button>
+   </div>
  )}
  </div>
  )

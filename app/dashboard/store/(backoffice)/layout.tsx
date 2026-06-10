@@ -100,7 +100,7 @@ export default function StoreLayout({
               <div className="flex gap-2 items-center">
                 <div className="h-5 w-5 rounded bg-blue-600 shadow-3xs" />
                 <span className="font-bold text-slate-900 tracking-tight">
-                  Store<span className="text-blue-600">Flow</span>
+                  laila<span className="text-blue-600">collections</span>
                 </span>
               </div>
               <button className="lg:hidden p-1 text-slate-400 hover:text-slate-900" onClick={() => setSidebarOpen(false)}>
@@ -165,7 +165,7 @@ export default function StoreLayout({
             </h2>
           </div>
           <span className="text-sm font-bold tracking-tight text-slate-900 lg:hidden block">
-            Store<span className="text-blue-600">Flow</span>
+            laila<span className="text-blue-600">collections</span>
           </span>
         </header>
 

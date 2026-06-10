@@ -324,11 +324,18 @@ export default function StorePage() {
         @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: translateY(0) } }
         @keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }
+
+        @media (max-width: 640px) {
+          .store-root-container { padding: 16px 12px !important; }
+          .store-header-row { flex-direction: column; align-items: stretch !important; gap: 16px !important; }
+          .store-header-row button { width: 100%; justify-content: center; }
+          .card-actions { opacity: 1 !important; transform: none !important; }
+        }
       `}</style>
 
-      <div className="store-root" style={{ padding: '32px 24px', maxWidth: '1100px', margin: '0 auto' }}>
+      <div className="store-root store-root-container" style={{ padding: '32px 24px', maxWidth: '1100px', margin: '0 auto' }}>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '32px' }}>
+        <div className="store-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '32px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
               <div style={{ width: '32px', height: '32px', background: '#E0F2FE', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

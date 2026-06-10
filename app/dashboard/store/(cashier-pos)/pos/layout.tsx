@@ -182,11 +182,11 @@ export default function PosLayout({
       
       <header className="h-14 bg-white border-b border-slate-200 px-4 flex items-center justify-between flex-shrink-0 shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg text-xs font-bold text-blue-600">
+          <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 px-2 sm:px-2.5 py-1 rounded-lg text-xs font-bold text-blue-600">
             <Monitor size={14} />
-            <span>TERMINAL POS</span>
+            <span className="hidden sm:inline">TERMINAL POS</span>
           </div>
-          <div className="flex items-center gap-1 text-xs font-semibold text-slate-600">
+          <div className="hidden md:flex items-center gap-1 text-xs font-semibold text-slate-600">
             <Store size={13} className="text-slate-400" />
             <span>{storeName || 'Memuat Outlet...'}</span>
           </div>
@@ -197,7 +197,7 @@ export default function PosLayout({
             <div className="h-7 w-7 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500">
               <User size={14} />
             </div>
-            <div className="text-left">
+            <div className="text-left hidden sm:block">
               <p className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider leading-none">Petugas Shift</p>
               <p className="text-xs font-bold text-slate-850 mt-0.5 leading-none">{cashier?.name || 'Loading...'}</p>
             </div>
@@ -206,19 +206,19 @@ export default function PosLayout({
           <div className="flex items-center gap-2">
             <button
               onClick={() => { setClosingCashInput(''); setIsOpenCloseShiftModal(true); }}
-              className="flex items-center gap-1.5 rounded-lg bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 text-xs font-bold text-red-600 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 rounded-lg bg-red-50 hover:bg-red-100 border border-red-200 px-2 sm:px-3 py-1.5 text-xs font-bold text-red-600 transition-all cursor-pointer animate-none"
               title="Tutup laci kasir dan simpan rekap log penjualan harian"
             >
               <KeyRound size={13} />
-              <span>Tutup Shift</span>
+              <span className="hidden sm:inline">Tutup Shift</span>
             </button>
 
             <button
               onClick={handleExitPos}
-              className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 px-3 py-1.5 text-xs font-bold text-white transition-all shadow-sm shadow-blue-500/10 cursor-pointer"
+              className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 px-2 sm:px-3 py-1.5 text-xs font-bold text-white transition-all shadow-sm shadow-blue-500/10 cursor-pointer"
             >
               <LogOut size={13} />
-              <span>Dashboard</span>
+              <span className="hidden sm:inline">Dashboard</span>
             </button>
           </div>
         </div>

@@ -216,7 +216,7 @@ export default function AdminLayout({
             <Menu size={22} />
           </button>
           <span className="ml-3 text-sm font-bold tracking-tight text-slate-900">
-            Store<span className="text-blue-600">Flow</span> Admin
+            laila<span className="text-blue-600">collections</span> Admin
           </span>
         </header>
 

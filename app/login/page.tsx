@@ -72,7 +72,7 @@ export default function LoginPage() {
             <span className="h-3.5 w-3.5 rounded-sm bg-white rotate-45" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Store<span className="text-blue-600">Flow</span>
+            laila<span className="text-blue-600">collections</span>
           </h1>
           <p className="mt-1.5 text-sm text-slate-500">
             Masuk untuk mengelola toko Anda
