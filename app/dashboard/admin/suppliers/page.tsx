@@ -127,9 +127,7 @@ export default function SupplierPage() {
         // Logika PATCH: Hanya kirim property modifikasi (Dilarang membawa storeId)
         const updatePayload: { name: string; phone?: string } = {
           name: formData.name.trim(),
-        }
-        if (formData.phone && formData.phone.trim() !== '') {
-          updatePayload.phone = formData.phone.trim()
+          phone: formData.phone.trim(), // Send the trimmed phone number (allowing it to be empty string if cleared)
         }
 
         await api.patch(`/suppliers/${editingId}`, updatePayload, { headers })
@@ -138,9 +136,7 @@ export default function SupplierPage() {
         const createPayload: { storeId: string; name: string; phone?: string } = {
           storeId: formData.storeId,
           name: formData.name.trim(),
-        }
-        if (formData.phone && formData.phone.trim() !== '') {
-          createPayload.phone = formData.phone.trim()
+          phone: formData.phone.trim(),
         }
 
         await api.post('/suppliers', createPayload, { headers })
@@ -170,8 +166,10 @@ export default function SupplierPage() {
         },
       })
       loadSuppliers(selectedStoreId)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Gagal menghapus supplier:', error)
+      const serverMessage = error.response?.data?.message
+      alert(`Gagal menghapus supplier: ${Array.isArray(serverMessage) ? serverMessage.join(', ') : serverMessage || error.message}`)
     }
   }
 
@@ -192,6 +190,26 @@ export default function SupplierPage() {
         </div>
         <div className="h-12 w-full max-w-md animate-pulse rounded-xl bg-slate-100" />
         <div className="h-96 w-full animate-pulse rounded-2xl bg-slate-50 border border-slate-100" />
+      </div>
+    )
+  }
+
+  if (!loading && stores.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 shadow-sm mb-4">
+          <Store className="w-8 h-8" />
+        </div>
+        <h3 className="text-xl font-bold text-slate-900 mb-2">Belum Ada Toko Terdaftar</h3>
+        <p className="text-sm text-slate-500 max-w-sm mb-6">
+          Anda perlu mendaftarkan setidaknya satu cabang toko terlebih dahulu sebelum dapat mengelola data supplier di halaman ini.
+        </p>
+        <a
+          href="/dashboard/admin/stores"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-md hover:bg-blue-700 shadow-blue-500/10 transition-all active:scale-98 cursor-pointer"
+        >
+          Kelola Toko Sekarang
+        </a>
       </div>
     )
   }
@@ -260,11 +278,28 @@ export default function SupplierPage() {
 
             <tbody className="divide-y divide-slate-100">
               {loading ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-slate-400">
-                    <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-800" />
-                  </td>
-                </tr>
+                Array.from({ length: 5 }).map((_, idx) => (
+                  <tr key={idx} className="animate-pulse">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-xl bg-slate-200" />
+                        <div className="h-4 w-32 rounded bg-slate-200" />
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-4 w-24 rounded bg-slate-100" />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="h-4 w-28 rounded bg-slate-100" />
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <div className="h-8 w-8 rounded bg-slate-100" />
+                        <div className="h-8 w-8 rounded bg-slate-100" />
+                      </div>
+                    </td>
+                  </tr>
+                ))
               ) : filteredSuppliers.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-16 text-center text-slate-400">

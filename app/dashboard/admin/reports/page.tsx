@@ -220,7 +220,12 @@ export default function ReportPage() {
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between border-b border-slate-200 pb-2">
         <div className="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-xl self-start">
-          <button onClick={() => setActiveTab('sales')} className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === 'sales' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-900'}`}>Penjualan</button>
+          <button onClick={() => setActiveTab('sales')} className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeTab === 'sales' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-900'}`}>Penjualan</button>
+          <button onClick={() => setActiveTab('expenses')} className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeTab === 'expenses' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-900'}`}>Pengeluaran</button>
+          <button onClick={() => setActiveTab('products')} className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeTab === 'products' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-900'}`}>Produk</button>
+          <button onClick={() => setActiveTab('shifts')} className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeTab === 'shifts' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-900'}`}>Shift Kerja</button>
+          <button onClick={() => setActiveTab('purchases')} className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeTab === 'purchases' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-900'}`}>Kulakan</button>
+          <button onClick={() => setActiveTab('stock')} className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeTab === 'stock' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-900'}`}>Log Mutasi</button>
         </div>
 
         {activeTab === 'sales' && (
