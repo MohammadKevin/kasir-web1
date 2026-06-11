@@ -226,27 +226,55 @@ export default function AdminDashboard() {
   }, [data.allTransactions, period])
 
   const cards = [
-    { title: 'Total Toko', value: data.totalStores.toLocaleString('id-ID'), icon: Store, color: 'text-blue-600', bgColor: 'bg-blue-50' },
-    { title: 'Total Kasir', value: data.totalCashiers.toLocaleString('id-ID'), icon: Users, color: 'text-emerald-600', bgColor: 'bg-emerald-50' },
-    { title: 'Total Transaksi', value: data.totalTransactions.toLocaleString('id-ID'), icon: ShoppingBag, color: 'text-violet-600', bgColor: 'bg-violet-50' },
-    { title: 'Total Pendapatan', value: `Rp ${data.totalRevenue.toLocaleString('id-ID')}`, icon: DollarSign, color: 'text-amber-600', bgColor: 'bg-amber-50' },
+    { 
+      title: 'Total Toko', 
+      value: data.totalStores.toLocaleString('id-ID'), 
+      icon: Store, 
+      color: 'text-blue-600 bg-blue-50/70 border-blue-100/80 hover:border-blue-300 hover:shadow-blue-500/5', 
+      glowClass: 'glow-blue',
+      gradClass: 'from-blue-50/20 to-white'
+    },
+    { 
+      title: 'Total Kasir', 
+      value: data.totalCashiers.toLocaleString('id-ID'), 
+      icon: Users, 
+      color: 'text-emerald-600 bg-emerald-50/70 border-emerald-100/80 hover:border-emerald-300 hover:shadow-emerald-500/5', 
+      glowClass: 'glow-emerald',
+      gradClass: 'from-emerald-50/20 to-white'
+    },
+    { 
+      title: 'Total Transaksi', 
+      value: data.totalTransactions.toLocaleString('id-ID'), 
+      icon: ShoppingBag, 
+      color: 'text-violet-600 bg-violet-50/70 border-violet-100/80 hover:border-violet-300 hover:shadow-violet-500/5', 
+      glowClass: 'glow-violet',
+      gradClass: 'from-violet-50/20 to-white'
+    },
+    { 
+      title: 'Total Pendapatan', 
+      value: `Rp ${data.totalRevenue.toLocaleString('id-ID')}`, 
+      icon: DollarSign, 
+      color: 'text-amber-600 bg-amber-50/70 border-amber-100/80 hover:border-amber-300 hover:shadow-amber-500/5', 
+      glowClass: 'glow-amber',
+      gradClass: 'from-amber-50/20 to-white'
+    },
   ]
 
   if (loading) {
     return (
       <div className="space-y-6 p-6">
         <div className="space-y-2">
-          <div className="h-9 w-48 animate-pulse rounded-lg bg-slate-200" />
-          <div className="h-5 w-64 animate-pulse rounded-lg bg-slate-100" />
+          <div className="h-9 w-48 animate-pulse rounded-xl bg-slate-200" />
+          <div className="h-5 w-64 animate-pulse rounded-xl bg-slate-100" />
         </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-32 animate-pulse rounded-2xl border border-slate-100 bg-white p-6" />
+            <div key={i} className="h-32 animate-pulse rounded-3xl border border-slate-200/50 bg-white p-6" />
           ))}
         </div>
         <div className="grid gap-6 lg:grid-cols-2">
-          <div className="h-80 animate-pulse rounded-2xl border border-slate-100 bg-white" />
-          <div className="h-80 animate-pulse rounded-2xl border border-slate-100 bg-white" />
+          <div className="h-80 animate-pulse rounded-3xl border border-slate-200/50 bg-white" />
+          <div className="h-80 animate-pulse rounded-3xl border border-slate-200/50 bg-white" />
         </div>
       </div>
     )
@@ -255,14 +283,14 @@ export default function AdminDashboard() {
   if (error) {
     return (
       <div className="p-6">
-        <div className="flex max-w-xl items-center gap-4 rounded-2xl border border-red-100 bg-red-50 p-5 text-red-800">
+        <div className="flex max-w-xl items-center gap-4 rounded-3xl border border-red-150 bg-red-50/50 p-6 text-red-800 backdrop-blur-xs">
           <AlertCircle className="h-6 w-6 shrink-0 text-red-600" />
           <div className="flex-1">
-            <h3 className="font-semibold">Terjadi Kesalahan</h3>
-            <p className="mt-1 text-sm text-red-700">{error}</p>
+            <h3 className="font-bold text-sm">Terjadi Kesalahan</h3>
+            <p className="mt-1 text-xs text-slate-550 leading-relaxed">{error}</p>
           </div>
-          <button onClick={loadDashboard} className="flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50">
-            <RefreshCw className="h-4 w-4" /> Coba Lagi
+          <button onClick={loadDashboard} className="flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-slate-705 shadow-sm border border-slate-200 transition hover:bg-slate-50 cursor-pointer">
+            <RefreshCw className="h-3.5 w-3.5" /> Coba Lagi
           </button>
         </div>
       </div>
@@ -274,11 +302,11 @@ export default function AdminDashboard() {
       
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Dashboard</h1>
-          <p className="mt-1 text-sm text-slate-500">Statistik dan performa seluruh bisnis Anda secara real-time</p>
+          <h1 className="text-3xl font-black tracking-tight text-slate-900">Dashboard</h1>
+          <p className="mt-1 text-sm font-semibold text-slate-550">Statistik dan performa seluruh bisnis Anda secara real-time</p>
         </div>
-        <button onClick={loadDashboard} className="flex self-start items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 active:bg-slate-100">
-          <RefreshCw className="h-4 w-4" /> Perbarui Data
+        <button onClick={loadDashboard} className="flex self-start items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-650 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 active:scale-97 cursor-pointer hover:border-slate-300">
+          <RefreshCw className="h-3.5 w-3.5 text-slate-400" /> Perbarui Data
         </button>
       </div>
 
@@ -286,14 +314,15 @@ export default function AdminDashboard() {
         {cards.map((card) => {
           const Icon = card.icon
           return (
-            <div key={card.title} className="group relative overflow-hidden rounded-2xl border border-slate-100 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-slate-200 hover:shadow-md">
-              <div className="flex items-center justify-between">
+            <div key={card.title} className={`group relative overflow-hidden rounded-3xl border bg-gradient-to-br ${card.gradClass} p-6 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lg ${card.color.split(' ').slice(2).join(' ')} ${card.glowClass}`}>
+              <div className="absolute top-0 right-0 -mr-6 -mt-6 h-24 w-24 rounded-full bg-slate-950/[0.01] transition-transform duration-300 group-hover:scale-150" />
+              <div className="flex items-center justify-between relative z-10">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-slate-500">{card.title}</p>
-                  <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{card.value}</h2>
+                  <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">{card.title}</p>
+                  <h2 className="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">{card.value}</h2>
                 </div>
-                <div className={`rounded-xl p-3 ${card.bgColor} ${card.color} transition-transform group-hover:scale-110`}>
-                  <Icon className="h-6 w-6" />
+                <div className={`rounded-2xl p-3.5 transition-transform group-hover:scale-110 border border-slate-100/50 bg-white shadow-xs ${card.color.split(' ')[0]}`}>
+                  <Icon className="h-5.5 w-5.5" />
                 </div>
               </div>
             </div>
@@ -301,46 +330,53 @@ export default function AdminDashboard() {
         })}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
         
-        <div className="rounded-2xl border border-slate-100 bg-white shadow-sm flex flex-col justify-between overflow-hidden">
+        {/* Table container */}
+        <div className="rounded-3xl border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between overflow-hidden">
           <div>
-            <div className="border-b border-slate-100 p-5">
-              <h3 className="text-base font-bold text-slate-900">Riwayat Transaksi Terbaru</h3>
-              <p className="text-xs text-slate-500 mt-0.5">5 transaksi log kasir dari seluruh cabang toko</p>
+            <div className="border-b border-slate-100 p-6 bg-slate-50/50 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-black text-slate-950 uppercase tracking-wider">Riwayat Transaksi Terbaru</h3>
+                <p className="text-xs font-semibold text-slate-400 mt-1">5 transaksi log kasir dari seluruh cabang toko</p>
+              </div>
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
             </div>
 
             <div className="overflow-x-auto">
               {data.recentTransactions.length === 0 ? (
-                <div className="flex flex-col items-center justify-center p-12 text-center">
-                  <ShoppingBag className="h-8 w-8 text-slate-300" />
-                  <p className="mt-2 text-xs font-medium text-slate-500">Belum ada aktivitas transaksi</p>
+                <div className="flex flex-col items-center justify-center p-16 text-center">
+                  <div className="p-4 rounded-full bg-slate-50 border border-slate-100 mb-3 text-slate-350">
+                    <ShoppingBag className="h-6 w-6" />
+                  </div>
+                  <p className="text-xs font-bold text-slate-500">Belum ada aktivitas transaksi</p>
                 </div>
               ) : (
                 <table className="w-full min-w-[550px] text-left border-collapse text-xs">
                   <thead>
-                    <tr className="border-b border-slate-100 bg-slate-50/70 font-semibold uppercase tracking-wider text-slate-500">
-                      <th className="p-3.5 pl-5">Invoice</th>
-                      <th className="p-3.5">Cabang</th>
-                      <th className="p-3.5">Operator</th>
-                      <th className="p-3.5">Status</th>
-                      <th className="p-3.5 pr-5 text-right">Total</th>
+                    <tr className="border-b border-slate-100 bg-slate-50/30 font-bold uppercase tracking-wider text-slate-400">
+                      <th className="p-4 pl-6">Invoice</th>
+                      <th className="p-4">Cabang</th>
+                      <th className="p-4">Operator</th>
+                      <th className="p-4">Status</th>
+                      <th className="p-4 pr-6 text-right">Total</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 text-slate-600">
+                  <tbody className="divide-y divide-slate-100 text-slate-600 font-medium">
                     {data.recentTransactions.map((tx) => (
-                      <tr key={tx.id} className="group hover:bg-slate-50/40 transition-colors">
-                        <td className="p-3.5 pl-5 font-mono font-semibold text-slate-900">{tx.invoiceNumber}</td>
-                        <td className="p-3.5 font-medium text-slate-800">{tx.storeName}</td>
-                        <td className="p-3.5">{tx.cashier?.name}</td>
-                        <td className="p-3.5">
-                          <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 font-medium border text-[10px] ${
-                            tx.status === 'PAID' ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-red-50 border-red-100 text-red-700'
+                      <tr key={tx.id} className="group hover:bg-slate-50/60 transition-colors">
+                        <td className="p-4 pl-6 font-mono font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{tx.invoiceNumber}</td>
+                        <td className="p-4 text-slate-850 font-bold">{tx.storeName}</td>
+                        <td className="p-4 text-slate-500">{tx.cashier?.name}</td>
+                        <td className="p-4">
+                          <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-bold border text-[9px] uppercase tracking-wider ${
+                            tx.status === 'PAID' ? 'bg-emerald-50 border-emerald-250 text-emerald-700' : 'bg-red-50 border-red-200 text-red-750'
                           }`}>
-                            {tx.status === 'PAID' ? 'Selesai' : 'Batal'}
+                            <span className={`h-1 w-1 rounded-full ${tx.status === 'PAID' ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                            {tx.status === 'PAID' ? 'Lunas' : 'Void'}
                           </span>
                         </td>
-                        <td className="p-3.5 pr-5 text-right font-bold text-slate-900">Rp {tx.total.toLocaleString('id-ID')}</td>
+                        <td className="p-4 pr-6 text-right font-black text-slate-950 font-mono">Rp {tx.total.toLocaleString('id-ID')}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -350,21 +386,22 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-100 bg-white shadow-sm p-5 flex flex-col justify-between">
+        {/* Chart container */}
+        <div className="rounded-3xl border border-slate-200/80 bg-white shadow-sm p-6 flex flex-col justify-between">
           <div>
-            <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+            <div className="flex items-start justify-between border-b border-slate-100 pb-5">
               <div>
-                <h3 className="text-base font-bold text-slate-900">Grafik Garis Pendapatan</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Manifestasi omset penjualan riil cabang usaha</p>
+                <h3 className="text-sm font-black text-slate-950 uppercase tracking-wider">Grafik Garis Pendapatan</h3>
+                <p className="text-xs font-semibold text-slate-400 mt-1">Manifestasi omset penjualan riil cabang usaha</p>
               </div>
               
-              <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200/40">
+              <div className="flex items-center bg-slate-100/80 p-1 rounded-xl border border-slate-200/50">
                 {(['1d', '1w', '1m', '1y'] as FilterPeriod[]).map((p) => (
                   <button
                     key={p}
                     onClick={() => setPeriod(p)}
-                    className={`px-2.5 py-1 rounded-md text-[10px] uppercase font-bold transition-all ${
-                      period === p ? 'bg-blue-600 text-white shadow-2xs border border-blue-600' : 'text-slate-400 hover:text-slate-700'
+                    className={`px-3 py-1.5 rounded-lg text-[10px] uppercase font-black transition-all cursor-pointer ${
+                      period === p ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-400 hover:text-slate-700'
                     }`}
                   >
                     {p}
@@ -374,19 +411,29 @@ export default function AdminDashboard() {
             </div>
 
             <div className="relative pt-6 px-2">
-              <div className={`flex items-center gap-1.5 text-xs font-bold border rounded-lg px-2.5 py-1.5 w-fit mb-4 ${
-                chartData.growth ? 'text-emerald-600 bg-emerald-50 border-emerald-100' : 'text-amber-600 bg-amber-50 border-amber-100'
+              <div className={`flex items-center gap-1.5 text-[10px] font-bold border rounded-full px-3 py-1 w-fit mb-6 uppercase tracking-wider ${
+                chartData.growth ? 'text-emerald-600 bg-emerald-55/40 border-emerald-150' : 'text-amber-600 bg-amber-55/40 border-amber-150'
               }`}>
-                <TrendingUp size={14} className={chartData.growth ? '' : 'transform rotate-90'} />
+                <TrendingUp size={12} className={chartData.growth ? '' : 'transform rotate-90'} />
                 <span>{chartData.growth ? 'Tren Penjualan Stabil/Naik' : 'Perubahan Sesi Fluktuatif'}</span>
               </div>
 
-              <div className="w-full h-36 border-b border-l border-slate-200/80 relative">
-                <svg viewBox="0 0 400 100" className="w-full h-full overflow-visible" preserveAspectRatio="none">
+              {/* Chart Canvas with custom gridlines */}
+              <div className="w-full h-40 border-b border-l border-slate-200 relative">
+                
+                {/* Visual grid lines backdrop */}
+                <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-0.5">
+                  <div className="w-full border-t border-dashed border-slate-100" />
+                  <div className="w-full border-t border-dashed border-slate-100" />
+                  <div className="w-full border-t border-dashed border-slate-100" />
+                  <div className="w-full border-t border-dashed border-slate-100" />
+                </div>
+
+                <svg viewBox="0 0 400 100" className="w-full h-full overflow-visible relative z-10" preserveAspectRatio="none">
                   <defs>
                     <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.2" />
-                      <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+                      <stop offset="0%" stopColor="#2563eb" stopOpacity="0.25" />
+                      <stop offset="100%" stopColor="#2563eb" stopOpacity="0" />
                     </linearGradient>
                   </defs>
                   
@@ -396,10 +443,24 @@ export default function AdminDashboard() {
                   {chartData.points && (
                     <polyline fill="none" stroke="#2563eb" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" points={chartData.points} className="transition-all duration-300" />
                   )}
+
+                  {/* Pulsing indicator dots */}
+                  {chartData.points && chartData.points.split(' ').map((pt, i) => {
+                    const coords = pt.split(',')
+                    const x = coords[0]
+                    const y = coords[1]
+                    if (!x || !y) return null
+                    return (
+                      <g key={i}>
+                        <circle cx={x} cy={y} r="3.5" className="fill-blue-600 stroke-white stroke-2" />
+                        <circle cx={x} cy={y} r="6" className="fill-blue-600/20 animate-ping" />
+                      </g>
+                    )
+                  })}
                 </svg>
               </div>
 
-              <div className="flex justify-between text-[10px] text-slate-400 font-semibold font-mono mt-2 px-1">
+              <div className="flex justify-between text-[10px] text-slate-400 font-extrabold font-mono mt-3 px-1">
                 {chartData.labels.map((lbl) => <span key={lbl}>{lbl}</span>)}
               </div>
             </div>

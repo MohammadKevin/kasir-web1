@@ -404,7 +404,6 @@ export default function PosPage() {
  customerName: isCustomerMode && customerName.trim() ? customerName.trim() : undefined,
  saveCustomer: isCustomerMode ? saveCustomer : false,
  items: cart.map(x => {
- const md = getProductMasterDiscount(x)
  return {
  productId: x.id,
  quantity: Math.round(Number(x.qty)),
@@ -477,134 +476,135 @@ export default function PosPage() {
  return (
  <div className="grid gap-6 lg:grid-cols-[1fr_390px] h-full overflow-hidden relative">
 
- {/* ─── LEFT: Product Catalog ─── */}
- <div className={`flex flex-col h-full overflow-hidden space-y-4 ${mobileView === 'catalog' ? 'flex' : 'hidden lg:flex'}`}>
+  {/* ─── LEFT: Product Catalog ─── */}
+  <div className={`flex flex-col h-full overflow-hidden space-y-4 ${mobileView === 'catalog' ? 'flex' : 'hidden lg:flex'}`}>
 
- {/* Search bar */}
- <div className="flex items-center gap-3 bg-white border border-slate-200 px-4 py-3 rounded-2xl shadow-xs flex-shrink-0">
- <Search size={16} className="text-slate-400 shrink-0" />
- <input
- ref={searchInputRef}
- value={search}
- onChange={e => setSearch(e.target.value)}
- placeholder="Cari produk (F2)"
- className="w-full text-xs outline-none bg-transparent text-slate-850 placeholder:text-slate-450 font-semibold"
- />
- <ScanLine size={16} className="text-slate-400 shrink-0" />
- </div>
+    {/* Search bar */}
+    <div className="flex items-center gap-3 bg-white border border-slate-200/80 px-4 py-3 rounded-2xl shadow-xs flex-shrink-0 relative overflow-hidden group focus-within:border-blue-400 focus-within:shadow-md transition-all duration-200">
+      <div className="laser-beam opacity-0 group-focus-within:opacity-100 transition-opacity duration-200" />
+      <Search size={16} className="text-slate-400 shrink-0 group-focus-within:text-blue-500 transition-colors" />
+      <input
+        ref={searchInputRef}
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        placeholder="Cari nama produk, SKU, atau scan barcode... (F2)"
+        className="w-full text-xs outline-none bg-transparent text-slate-850 placeholder:text-slate-450 font-semibold"
+      />
+      <ScanLine size={16} className="text-slate-400 shrink-0 animate-pulse text-red-500" />
+    </div>
 
- {/* Category filter */}
- <div className="flex flex-wrap gap-2 flex-shrink-0 overflow-x-auto pb-1">
- <button
- onClick={() => setCategoryFilter('all')}
- className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all whitespace-nowrap cursor-pointer ${
- categoryFilter === 'all'
- ? 'bg-blue-600 border-blue-600 text-white shadow-xs'
- : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 '
- }`}
- >
- Semua produk
- </button>
- {categories.map(cat => (
- <button
- key={cat.id}
- onClick={() => setCategoryFilter(cat.id)}
- className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all whitespace-nowrap cursor-pointer ${
- categoryFilter === cat.id
- ? 'bg-blue-600 border-blue-600 text-white shadow-xs'
- : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 '
- }`}
- >
- {cat.name}
- </button>
- ))}
- </div>
+    {/* Category filter */}
+    <div className="flex flex-wrap gap-2 flex-shrink-0 overflow-x-auto pb-1.5">
+      <button
+        onClick={() => setCategoryFilter('all')}
+        className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all whitespace-nowrap cursor-pointer ${
+          categoryFilter === 'all'
+            ? 'bg-gradient-to-r from-blue-600 to-indigo-650 border-blue-600 text-white shadow-md shadow-blue-500/10'
+            : 'bg-white border-slate-200 text-slate-650 hover:bg-slate-50'
+        }`}
+      >
+        Semua produk
+      </button>
+      {categories.map(cat => (
+        <button
+          key={cat.id}
+          onClick={() => setCategoryFilter(cat.id)}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all whitespace-nowrap cursor-pointer ${
+            categoryFilter === cat.id
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-650 border-blue-600 text-white shadow-md shadow-blue-500/10'
+              : 'bg-white border-slate-200 text-slate-650 hover:bg-slate-50'
+          }`}
+        >
+          {cat.name}
+        </button>
+      ))}
+    </div>
 
- {/* Product grid */}
- <div className="flex-1 overflow-y-auto pr-1 grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-4 content-start pb-6">
- {loading
- ? Array.from({ length: 8 }).map((_, i) => (
- <div key={i} className="h-56 rounded-2xl bg-slate-100 animate-pulse border border-slate-200 " />
- ))
- : filtered.length === 0
- ? (
- <div className="col-span-full py-24 text-center text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-white text-xs">
- Produk tidak ditemukan
- </div>
- )
- : filtered.map(p => {
- const masterDiscount = getProductMasterDiscount(p)
- const discountedPrice = p.sellingPrice - masterDiscount
- const hasDiscount = masterDiscount > 0
- const outOfStock = p.stock <= 0
- const isLowStock = !outOfStock && p.stock <= 5
+    {/* Product grid */}
+    <div className="flex-1 overflow-y-auto pr-1 grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-4 content-start pb-6">
+      {loading
+        ? Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="h-56 rounded-3xl bg-slate-100 animate-pulse border border-slate-200" />
+          ))
+        : filtered.length === 0
+        ? (
+            <div className="col-span-full py-24 text-center text-slate-450 border border-dashed border-slate-200 rounded-3xl bg-white text-xs font-semibold">
+              Produk tidak ditemukan
+            </div>
+          )
+        : filtered.map(p => {
+            const masterDiscount = getProductMasterDiscount(p)
+            const discountedPrice = p.sellingPrice - masterDiscount
+            const hasDiscount = masterDiscount > 0
+            const outOfStock = p.stock <= 0
+            const isLowStock = !outOfStock && p.stock <= 5
 
- return (
- <div
- key={p.id}
- className={`group bg-white border rounded-2xl p-3.5 shadow-xs flex flex-col justify-between relative overflow-hidden transition-all duration-200 ${
- outOfStock 
- ? 'opacity-50 border-slate-200 ' 
- : 'border-slate-150 hover:border-blue-400 hover:shadow-md'
- }`}
- >
- {/* Product image */}
- <div className="aspect-video w-full overflow-hidden rounded-xl bg-slate-50 border border-slate-105 flex items-center justify-center text-slate-300 relative">
- {p.image ? (
- <img src={p.image} alt={p.name} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
- ) : (
- <Package size={24} className="text-slate-300 " />
- )}
- 
- {/* Category Badge overlay */}
- <span className="absolute top-2 right-2 bg-blue-50 text-blue-600 text-[9px] font-extrabold px-2 py-0.5 rounded-lg border border-blue-100 leading-none">
- {getCategoryName(p.categoryId)}
- </span>
+            return (
+              <div
+                key={p.id}
+                className={`group bg-white border rounded-3xl p-4 shadow-xs flex flex-col justify-between relative overflow-hidden transition-all duration-350 ${
+                  outOfStock 
+                    ? 'opacity-60 border-slate-200' 
+                    : 'border-slate-200/80 hover:border-blue-450 hover:shadow-lg hover:-translate-y-1'
+                }`}
+              >
+                {/* Product image */}
+                <div className="aspect-video w-full overflow-hidden rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-350 relative">
+                  {p.image ? (
+                    <img src={p.image} alt={p.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                  ) : (
+                    <Package size={24} className="text-slate-350" />
+                  )}
+                  
+                  {/* Category Badge overlay */}
+                  <span className="absolute top-2 right-2 bg-blue-50/90 text-blue-600 text-[9px] font-extrabold px-2 py-0.5 rounded-lg border border-blue-100/50 leading-none backdrop-blur-xs">
+                    {getCategoryName(p.categoryId)}
+                  </span>
 
- {hasDiscount && (
- <span className="absolute top-2 left-2 bg-red-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-lg shadow-xs leading-none">
- PROMO
- </span>
- )}
+                  {hasDiscount && (
+                    <span className="absolute top-2 left-2 bg-gradient-to-r from-red-500 to-rose-650 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-lg shadow-sm leading-none border border-red-400/25">
+                      PROMO
+                    </span>
+                  )}
 
- {outOfStock && (
- <div className="absolute inset-0 bg-white/70 flex items-center justify-center backdrop-blur-[1px]">
- <span className="text-[10px] font-extrabold text-red-650 bg-white border border-red-200 px-2.5 py-1 rounded-lg">Habis</span>
- </div>
- )}
- </div>
+                  {outOfStock && (
+                    <div className="absolute inset-0 bg-white/70 flex items-center justify-center backdrop-blur-[1px]">
+                      <span className="text-[10px] font-extrabold text-red-700 bg-white border border-red-200 px-3 py-1 rounded-xl shadow-xs">Habis</span>
+                    </div>
+                  )}
+                </div>
 
- {/* Info */}
- <div className="mt-3">
- <p className="text-[9px] font-mono text-slate-400 uppercase tracking-wider">{p.sku || '–'}</p>
- <h3 className="font-extrabold text-slate-900 text-xs mt-1 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors" title={p.name}>{p.name}</h3>
- </div>
+                {/* Info */}
+                <div className="mt-3.5">
+                  <p className="text-[9px] font-mono text-slate-400 uppercase tracking-widest font-semibold">{p.sku || '–'}</p>
+                  <h3 className="font-extrabold text-slate-900 text-xs mt-1 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors" title={p.name}>{p.name}</h3>
+                </div>
 
- {/* Price & Stock row */}
- <div className="mt-3.5 pt-3 border-t border-slate-100 flex items-end justify-between gap-2">
- <div>
- <span className="text-xs font-black font-mono text-blue-600 ">{fmt(discountedPrice)}</span>
- {hasDiscount && (
- <span className="block text-[9px] text-slate-400 font-mono line-through mt-0.5">{fmt(p.sellingPrice)}</span>
- )}
- <span className={`block text-[9px] mt-1 font-semibold ${isLowStock ? 'text-red-550' : 'text-slate-450 '}`}>
- Stok: {p.stock}
- </span>
- </div>
- <button
- onClick={() => addToCart(p)}
- disabled={outOfStock}
- className="h-8 w-8 rounded-lg bg-blue-600 hover:bg-blue-750 text-white flex items-center justify-center shadow-xs transition-colors disabled:bg-slate-100 disabled:text-slate-400 cursor-pointer shrink-0"
- >
- <Plus size={16} />
- </button>
- </div>
- </div>
- )
- })
- }
- </div>
- </div>
+                {/* Price & Stock row */}
+                <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-end justify-between gap-2">
+                  <div>
+                    <span className="text-xs font-black font-mono text-blue-600">{fmt(discountedPrice)}</span>
+                    {hasDiscount && (
+                      <span className="block text-[9px] text-slate-400 font-mono line-through mt-0.5">{fmt(p.sellingPrice)}</span>
+                    )}
+                    <span className={`block text-[9px] mt-1.5 font-bold ${isLowStock ? 'text-red-500' : 'text-slate-450'}`}>
+                      Stok: {p.stock}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => addToCart(p)}
+                    disabled={outOfStock}
+                    className="h-8.5 w-8.5 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-650 hover:from-blue-700 hover:to-indigo-700 text-white flex items-center justify-center shadow-md shadow-blue-500/10 transition-all duration-200 hover:scale-105 active:scale-95 disabled:bg-slate-100 disabled:text-slate-450 cursor-pointer shrink-0"
+                  >
+                    <Plus size={15} />
+                  </button>
+                </div>
+              </div>
+            )
+          })
+        }
+    </div>
+  </div>
 
  {/* ─── RIGHT: Checkout Panel ─── */}
  <div className={`bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col h-full overflow-hidden ${mobileView === 'cart' ? 'flex' : 'hidden lg:flex'}`}>
@@ -841,85 +841,85 @@ export default function PosPage() {
  </div>
 
  {/* ─── Receipt Success Dialog ─── */}
- {isOpenReceipt && receiptData && (
- <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
- <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+  {isOpenReceipt && receiptData && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="w-full max-w-sm rounded-[32px] border border-slate-100 bg-white p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200 relative overflow-hidden">
+        
+        <div className="flex flex-col items-center text-center space-y-2">
+          <div className="h-11 w-11 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 border border-emerald-200 shadow-sm animate-bounce">
+            <CheckCircle2 size={22} />
+          </div>
+          <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Transaksi Berhasil</h3>
+          <p className="text-xs font-black text-slate-850 font-mono tracking-tight">{receiptData.invoice}</p>
+        </div>
 
- <div className="flex flex-col items-center text-center space-y-2">
- <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 ">
- <CheckCircle2 size={24} />
- </div>
- <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest">Transaksi Berhasil</h3>
- <p className="text-sm font-black text-slate-800 font-mono">{receiptData.invoice}</p>
- </div>
+        {/* Virtual Receipt Paper Mockup with Torn Paper styling */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 font-mono text-xs space-y-3.5 shadow-sm torn-paper max-h-[300px] overflow-y-auto relative">
+          <div className="text-center border-b border-dashed border-slate-300 pb-3">
+            <p className="font-black text-xs text-slate-905 uppercase tracking-wider">{receiptData.store}</p>
+            <p className="text-[9px] font-bold text-slate-455 mt-1">LAILA COLLECTIONS</p>
+          </div>
 
- {/* Virtual Receipt Paper Mockup */}
- <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 font-mono text-xs space-y-3 shadow-inner max-h-[300px] overflow-y-auto">
- <div className="text-center border-b border-dashed border-slate-300 pb-2">
- <p className="font-extrabold text-sm text-slate-900 uppercase tracking-wider">{receiptData.store}</p>
- <p className="text-[10px] text-slate-500 mt-0.5">Nota Digital POS</p>
- </div>
+          <div className="space-y-1 text-slate-500 text-[10px] leading-relaxed">
+            <div className="flex justify-between"><span>Waktu:</span><span>{new Date(receiptData.createdAt).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</span></div>
+            <div className="flex justify-between"><span>Kasir:</span><span className="truncate max-w-[120px]">{receiptData.cashier}</span></div>
+            <div className="flex justify-between"><span>Pelanggan:</span><span className="truncate max-w-[120px]">{receiptData.customer || 'Pelanggan Umum'}</span></div>
+          </div>
 
- <div className="space-y-1 text-slate-600 text-[10px]">
- <div className="flex justify-between"><span>Waktu:</span><span>{new Date(receiptData.createdAt).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</span></div>
- <div className="flex justify-between"><span>Kasir:</span><span className="truncate max-w-[150px]">{receiptData.cashier}</span></div>
- <div className="flex justify-between"><span>Pelanggan:</span><span>{receiptData.customer || 'Pelanggan Umum'}</span></div>
- </div>
+          <div className="border-t border-b border-dashed border-slate-300 py-2.5 space-y-2 max-h-[120px] overflow-y-auto pr-0.5">
+            {receiptData.items.map((item: any, idx: number) => {
+              const itemDiscount = (item.discount || 0) * item.quantity
+              return (
+                <div key={idx} className="space-y-0.5">
+                  <div className="flex justify-between items-start gap-4">
+                    <span className="font-bold text-slate-800 text-[10px]">{idx + 1}. {item.product}</span>
+                    <span className="font-bold text-slate-800 shrink-0">{fmt(item.originalPrice * item.quantity)}</span>
+                  </div>
+                  <div className="flex justify-between text-[9px] text-slate-400 pl-3">
+                    <span>{item.quantity} x {fmt(item.originalPrice)}</span>
+                    {itemDiscount > 0 && <span className="text-rose-500 font-bold">- {fmt(itemDiscount)}</span>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
 
- <div className="border-t border-b border-dashed border-slate-300 py-2.5 space-y-2.5 max-h-[140px] overflow-y-auto pr-1">
- {receiptData.items.map((item: any, idx: number) => {
- const itemDiscount = (item.discount || 0) * item.quantity
- return (
- <div key={idx} className="space-y-0.5">
- <div className="flex justify-between items-start gap-4">
- <span className="font-bold text-slate-800 text-[11px]">{idx + 1}. {item.product}</span>
- <span className="font-bold text-slate-800 shrink-0">{fmt(item.originalPrice * item.quantity)}</span>
- </div>
- <div className="flex justify-between text-[10px] text-slate-500 pl-3">
- <span>{item.quantity} x {fmt(item.originalPrice)}</span>
- {itemDiscount > 0 && <span className="text-rose-500 font-medium">- {fmt(itemDiscount)}</span>}
- </div>
- </div>
- )
- })}
- </div>
+          <div className="space-y-1.5 text-[10px] text-slate-650">
+            <div className="flex justify-between"><span>Subtotal:</span><span>{fmt(receiptData.subtotal)}</span></div>
+            <div className="flex justify-between text-rose-500 font-bold"><span>Diskon:</span><span>- {fmt(receiptData.discount)}</span></div>
+            <div className="flex justify-between font-black text-slate-950 text-xs border-t border-dashed border-slate-350 pt-2">
+              <span>GRAND TOTAL:</span><span>{fmt(receiptData.total)}</span>
+            </div>
+            <div className="flex justify-between text-slate-500 text-[9px] pt-1"><span>Bayar ({PAYMENT_METHOD_MAP[payment] || payment}):</span><span>{fmt(receiptData.paidAmount)}</span></div>
+            <div className="flex justify-between font-black text-emerald-605"><span>Kembalian:</span><span>{fmt(receiptData.changeAmount)}</span></div>
+          </div>
+        </div>
 
- <div className="space-y-1.5 text-[11px] text-slate-600 ">
- <div className="flex justify-between"><span>Subtotal:</span><span>{fmt(receiptData.subtotal)}</span></div>
- <div className="flex justify-between text-rose-500 font-semibold"><span>Diskon:</span><span>- {fmt(receiptData.discount)}</span></div>
- <div className="flex justify-between font-bold text-slate-900 text-xs border-t border-dashed border-slate-300 pt-2">
- <span>GRAND TOTAL:</span><span>{fmt(receiptData.total)}</span>
- </div>
- <div className="flex justify-between text-slate-600 text-[10px] pt-1"><span>Bayar ({PAYMENT_METHOD_MAP[payment] || payment}):</span><span>{fmt(receiptData.paidAmount)}</span></div>
- <div className="flex justify-between font-bold text-emerald-600 "><span>Kembalian:</span><span>{fmt(receiptData.changeAmount)}</span></div>
- </div>
- </div>
+        <div className="text-[9px] text-slate-400 text-center font-bold tracking-wide">
+          Struk dicetak otomatis melalui printer thermal
+        </div>
 
- <div className="text-[10px] text-slate-500 text-center font-medium">
- Struk dicetak otomatis melalui printer thermal
- </div>
-
- <div className="grid grid-cols-2 gap-3">
- <button
- type="button"
- onClick={handlePrintReceipt}
- className="rounded-xl border border-blue-600 text-blue-600 hover:bg-blue-50 py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
- >
- <Printer size={13} />
- Cetak Ulang
- </button>
- <button
- type="button"
- onClick={handleResetPos}
- className="rounded-xl bg-blue-600 text-white py-2.5 text-xs font-bold hover:bg-blue-700 flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-md shadow-blue-500/10"
- >
- Order Baru
- <ArrowRight size={13} />
- </button>
- </div>
- </div>
- </div>
- )}
+        <div className="grid grid-cols-2 gap-3 pt-1">
+          <button
+            type="button"
+            onClick={handlePrintReceipt}
+            className="rounded-xl border border-blue-600 hover:bg-blue-50/50 py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer text-blue-600"
+          >
+            <Printer size={13} />
+            Cetak Ulang
+          </button>
+          <button
+            type="button"
+            onClick={handleResetPos}
+            className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-650 hover:from-blue-700 hover:to-indigo-700 text-white py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shadow-blue-500/10 active:scale-97"
+          >
+            Order Baru
+            <ArrowRight size={13} />
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
 
  {cart.length > 0 && mobileView === 'catalog' && (
    <div className="lg:hidden fixed bottom-6 left-6 right-6 z-30 animate-in fade-in slide-in-from-bottom-4 duration-200">

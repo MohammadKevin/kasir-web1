@@ -103,10 +103,10 @@ export default function AdminLayout({
             <div>
               <Link
                 href="/dashboard/admin"
-                className={`flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                className={`flex items-center rounded-xl px-4 py-2.5 text-sm font-bold transition-all duration-200 ${
                   pathname === '/dashboard/admin'
-                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-650 text-white shadow-md shadow-blue-500/20 scale-[1.01]'
+                    : 'text-slate-650 hover:bg-slate-50 hover:text-slate-900 hover:translate-x-1'
                 }`}
               >
                 Ringkasan Dashboard
@@ -114,20 +114,20 @@ export default function AdminLayout({
             </div>
 
             <div>
-              <div className="mb-2 px-3 text-xs font-bold uppercase tracking-wider text-slate-400">
+              <div className="mb-2.5 px-4 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
                 Manajemen
               </div>
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {managementMenus.map((item) => {
                   const isActive = pathname === item.path
                   return (
                     <Link
                       key={item.path}
                       href={item.path}
-                      className={`block rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                      className={`block px-4 py-2 text-sm font-semibold transition-all duration-200 ${
                         isActive
-                          ? 'bg-blue-50 text-blue-600 font-semibold'
-                          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                          ? 'bg-blue-50/75 text-blue-600 font-bold border-l-4 border-blue-600 pl-3 rounded-r-xl rounded-l-none'
+                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950 hover:translate-x-1 rounded-xl'
                       }`}
                     >
                       {item.name}
@@ -137,45 +137,45 @@ export default function AdminLayout({
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               {menus.map((section) => {
                 const isSectionOpen = open.includes(section.title)
                 
                 return (
-                  <div key={section.title} className="space-y-1">
+                  <div key={section.title} className="space-y-1.5">
                     <button
                       onClick={() => toggle(section.title)}
-                      className="flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-400 transition-colors hover:text-slate-600"
+                      className="flex w-full items-center justify-between px-4 py-2 text-[10px] font-extrabold uppercase tracking-widest text-slate-400 transition-colors hover:text-slate-650 cursor-pointer"
                     >
                       <span>{section.title}</span>
                       
                       <svg 
-                        className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ${isSectionOpen ? 'rotate-180' : ''}`} 
+                        className={`h-3 w-3 text-slate-400 transition-transform duration-200 ${isSectionOpen ? 'rotate-180' : ''}`} 
                         fill="none" 
                         viewBox="0 0 24 24" 
                         stroke="currentColor"
-                        strokeWidth={2.5}
+                        strokeWidth={3}
                       >
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                       </svg>
                     </button>
 
                     <div 
-                      className={`grid transition-all duration-200 ease-in-out ${
+                      className={`grid transition-all duration-250 ease-in-out ${
                         isSectionOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
                       }`}
                     >
-                      <div className="overflow-hidden space-y-0.5 pl-1 border-l border-slate-100 ml-1">
+                      <div className="overflow-hidden space-y-1 pl-1 border-l-2 border-slate-100 ml-3">
                         {section.items.map((item) => {
                           const isActive = pathname === item.path
                           return (
                             <Link
                               key={item.path}
                               href={item.path}
-                              className={`block rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                              className={`block px-4 py-2 text-sm font-semibold transition-all duration-200 ${
                                 isActive
-                                  ? 'bg-blue-50 text-blue-600 font-semibold'
-                                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                                  ? 'bg-blue-50/75 text-blue-600 font-bold border-l-4 border-blue-600 pl-3 rounded-r-xl rounded-l-none'
+                                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950 hover:translate-x-1 rounded-xl'
                               }`}
                             >
                               {item.name}

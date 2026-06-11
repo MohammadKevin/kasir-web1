@@ -108,7 +108,7 @@ export default function StoreLayout({
               </button>
             </div>
 
-            <nav className="space-y-1">
+            <nav className="space-y-1.5">
               {menus.map((m) => {
                 const Icon = m.icon
                 const isActive = pathname === m.path
@@ -116,10 +116,10 @@ export default function StoreLayout({
                   <Link
                     key={m.path}
                     href={m.path}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 ${
                       isActive
-                        ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
-                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                        ? 'bg-gradient-to-r from-blue-600 to-indigo-650 text-white shadow-md shadow-blue-500/20 scale-[1.01]'
+                        : 'text-slate-650 hover:bg-slate-50 hover:text-slate-900 hover:translate-x-1'
                     }`}
                   >
                     <Icon size={14} />
@@ -129,12 +129,13 @@ export default function StoreLayout({
               })}
             </nav>
 
-            <div className="rounded-xl border border-slate-200 p-3.5 bg-slate-50">
-              <div className="flex items-center gap-2 text-slate-700">
-                <Store size={14} className="text-slate-500" />
-                <span className="text-xs font-semibold">Outlet Terikat</span>
+            <div className="rounded-2xl border border-slate-200/80 p-4 bg-slate-50/70 shadow-xs relative overflow-hidden group hover:border-blue-250 transition-all duration-200">
+              <div className="absolute -right-4 -bottom-4 h-12 w-12 rounded-full bg-blue-500/5 blur-xl group-hover:bg-blue-500/10 transition-colors" />
+              <div className="flex items-center gap-2 text-slate-500">
+                <Store size={13} className="text-slate-400 shrink-0" />
+                <span className="text-[10px] font-extrabold uppercase tracking-widest">Outlet Terikat</span>
               </div>
-              <p className="mt-1.5 text-xs font-bold text-slate-900 leading-normal">
+              <p className="mt-2 text-xs font-extrabold text-slate-900 leading-normal">
                 {storeName || 'Memuat...'}
               </p>
             </div>

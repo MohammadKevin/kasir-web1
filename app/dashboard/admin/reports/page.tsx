@@ -184,48 +184,65 @@ export default function ReportPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="border border-slate-100 rounded-2xl p-5 bg-white shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-100 text-emerald-600">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Omset Card */}
+        <div className="border border-emerald-100/80 rounded-3xl p-6 bg-gradient-to-br from-emerald-50/20 to-white shadow-sm glow-emerald flex items-center gap-4 hover:border-emerald-300 transition-all duration-200">
+          <div className="p-3.5 bg-emerald-500/10 rounded-2xl border border-emerald-100 text-emerald-600">
             <TrendingUp className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Omset Penjualan</p>
-            <p className="text-2xl font-black text-slate-900 font-mono mt-0.5">Rp {profit.totalSales.toLocaleString('id-ID')}</p>
+            <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Omset Penjualan</p>
+            <p className="text-2xl font-black text-slate-950 font-mono mt-1">Rp {profit.totalSales.toLocaleString('id-ID')}</p>
           </div>
         </div>
 
-        <div className="border border-slate-100 rounded-2xl p-5 bg-white shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-red-50 rounded-2xl border border-red-100 text-red-600">
+        {/* Expenses Card */}
+        <div className="border border-red-100/80 rounded-3xl p-6 bg-gradient-to-br from-red-50/20 to-white shadow-sm glow-red flex items-center gap-4 hover:border-red-300 transition-all duration-200">
+          <div className="p-3.5 bg-red-500/10 rounded-2xl border border-red-100 text-red-650">
             <TrendingDown className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Biaya Pengeluaran</p>
-            <p className="text-2xl font-black text-slate-900 font-mono mt-0.5">Rp {profit.totalExpense.toLocaleString('id-ID')}</p>
+            <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Biaya Pengeluaran</p>
+            <p className="text-2xl font-black text-slate-950 font-mono mt-1">Rp {profit.totalExpense.toLocaleString('id-ID')}</p>
           </div>
         </div>
 
-        <div className="border border-slate-100 rounded-2xl p-5 bg-white shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-blue-50 rounded-2xl border border-blue-100 text-blue-600">
+        {/* Net Profit Card */}
+        <div className="border border-blue-100/80 rounded-3xl p-6 bg-gradient-to-br from-blue-50/20 to-white shadow-sm glow-blue flex items-center gap-4 hover:border-blue-300 transition-all duration-200">
+          <div className="p-3.5 bg-blue-500/10 rounded-2xl border border-blue-100 text-blue-600">
             <DollarSign className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Estimasi Laba Bersih</p>
-            <p className={`text-2xl font-black font-mono mt-0.5 ${profit.estimatedProfit >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+            <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Estimasi Laba Bersih</p>
+            <p className={`text-2xl font-black font-mono mt-1 ${profit.estimatedProfit >= 0 ? 'text-blue-600' : 'text-red-650'}`}>
               Rp {profit.estimatedProfit.toLocaleString('id-ID')}
             </p>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between border-b border-slate-200 pb-2">
-        <div className="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-xl self-start">
-          <button onClick={() => setActiveTab('sales')} className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeTab === 'sales' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-900'}`}>Penjualan</button>
-          <button onClick={() => setActiveTab('expenses')} className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeTab === 'expenses' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-900'}`}>Pengeluaran</button>
-          <button onClick={() => setActiveTab('products')} className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeTab === 'products' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-900'}`}>Produk</button>
-          <button onClick={() => setActiveTab('shifts')} className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeTab === 'shifts' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-900'}`}>Shift Kerja</button>
-          <button onClick={() => setActiveTab('purchases')} className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeTab === 'purchases' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-900'}`}>Kulakan</button>
-          <button onClick={() => setActiveTab('stock')} className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeTab === 'stock' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-900'}`}>Log Mutasi</button>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between border-b border-slate-200/60 pb-3">
+        <div className="flex flex-wrap gap-1 bg-slate-100/80 p-1.5 rounded-2xl self-start border border-slate-200/40">
+          {[
+            { id: 'sales', label: 'Penjualan' },
+            { id: 'expenses', label: 'Pengeluaran' },
+            { id: 'products', label: 'Produk' },
+            { id: 'shifts', label: 'Shift Kerja' },
+            { id: 'purchases', label: 'Kulakan' },
+            { id: 'stock', label: 'Log Mutasi' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as TabType)}
+              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                activeTab === tab.id
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-650 text-white shadow-md shadow-blue-500/10'
+                  : 'text-slate-550 hover:text-slate-900'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         {activeTab === 'sales' && (
@@ -233,7 +250,7 @@ export default function ReportPage() {
             <button
               onClick={() => handleExport('excel')}
               disabled={downloading !== null}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 transition-all disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-705 shadow-xs hover:bg-slate-50 transition-all hover:border-slate-300 disabled:opacity-50 cursor-pointer active:scale-97"
             >
               {downloading === 'excel' ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />}
               Laporan Excel
@@ -241,7 +258,7 @@ export default function ReportPage() {
             <button
               onClick={() => handleExport('pdf')}
               disabled={downloading !== null}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 transition-all disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-705 shadow-xs hover:bg-slate-50 transition-all hover:border-slate-300 disabled:opacity-50 cursor-pointer active:scale-97"
             >
               {downloading === 'pdf' ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <FileText className="w-3.5 h-3.5 text-red-650" />}
               Dokumen PDF
