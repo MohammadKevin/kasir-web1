@@ -6,6 +6,8 @@ import {
 const PUBLIC_ROUTES = [
   '/',
   '/login',
+  '/sitemap.xml',
+  '/robots.txt',
 ]
 
 const ROLE_ROUTES = {
@@ -45,10 +47,14 @@ export function proxy(
       .get('userRole')
       ?.value
 
+  const isGoogleVerification =
+    pathname.startsWith('/google') &&
+    pathname.endsWith('.html')
+
   const isPublic =
     PUBLIC_ROUTES.includes(
       pathname,
-    )
+    ) || isGoogleVerification
 
   const isLoggedIn =
     isTokenValid(token)
@@ -122,6 +128,6 @@ export function proxy(
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|sitemap\\.xml|robots\\.txt|google.*\\.html).*)',
   ],
 }
