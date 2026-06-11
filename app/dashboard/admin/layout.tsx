@@ -3,33 +3,52 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X } from 'lucide-react'
+import {
+  LayoutDashboard,
+  Building2,
+  Users,
+  Package,
+  Barcode as BarcodeIcon,
+  Tag,
+  UserCheck,
+  Truck,
+  Receipt,
+  ShoppingCart,
+  Percent,
+  Boxes,
+  CreditCard,
+  BarChart3,
+  Menu,
+  X,
+  ChevronDown,
+  LogOut
+} from 'lucide-react'
 
 const managementMenus = [
-  { name: 'Cabang Toko', path: '/dashboard/admin/stores' },
-  { name: 'Kasir', path: '/dashboard/admin/cashier' },
-  { name: 'Produk', path: '/dashboard/admin/products' },
-  { name: 'Barcode', path: '/dashboard/admin/barcode' },
-  { name: 'Kategori', path: '/dashboard/admin/categories' },
-  { name: 'Pelanggan', path: '/dashboard/admin/customers' },
-  { name: 'Supplier', path: '/dashboard/admin/suppliers' },
+  { name: 'Cabang Toko', path: '/dashboard/admin/stores', icon: Building2 },
+  { name: 'Kasir', path: '/dashboard/admin/cashier', icon: Users },
+  { name: 'Produk', path: '/dashboard/admin/products', icon: Package },
+  { name: 'Barcode', path: '/dashboard/admin/barcode', icon: BarcodeIcon },
+  { name: 'Kategori', path: '/dashboard/admin/categories', icon: Tag },
+  { name: 'Pelanggan', path: '/dashboard/admin/customers', icon: UserCheck },
+  { name: 'Supplier', path: '/dashboard/admin/suppliers', icon: Truck },
 ]
 
 const menus = [
   {
     title: 'Penjualan',
     items: [
-      { name: 'Riwayat Transaksi', path: '/dashboard/admin/transactions' },
-      { name: 'Kulakan / Pembelian', path: '/dashboard/admin/purchases' },
-      { name: 'Diskon / Promo', path: '/dashboard/admin/discounts' },
-      { name: 'Stok Barang', path: '/dashboard/admin/stock' },
+      { name: 'Riwayat Transaksi', path: '/dashboard/admin/transactions', icon: Receipt },
+      { name: 'Kulakan / Pembelian', path: '/dashboard/admin/purchases', icon: ShoppingCart },
+      { name: 'Diskon / Promo', path: '/dashboard/admin/discounts', icon: Percent },
+      { name: 'Stok Barang', path: '/dashboard/admin/stock', icon: Boxes },
     ],
   },
   {
     title: 'Keuangan',
     items: [
-      { name: 'Pengeluaran', path: '/dashboard/admin/expenses' },
-      { name: 'Laporan', path: '/dashboard/admin/reports' },
+      { name: 'Pengeluaran', path: '/dashboard/admin/expenses', icon: CreditCard },
+      { name: 'Laporan', path: '/dashboard/admin/reports', icon: BarChart3 },
     ],
   },
 ]
@@ -42,6 +61,20 @@ export default function AdminLayout({
   const pathname = usePathname()
   const [open, setOpen] = useState<string[]>([])
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [user, setUser] = useState<{ name: string; type: string } | null>(null)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedUser = localStorage.getItem('user')
+      if (storedUser) {
+        try {
+          setUser(JSON.parse(storedUser))
+        } catch (e) {
+          console.error(e)
+        }
+      }
+    }
+  }, [])
 
   useEffect(() => {
     const active = menus.find((section) =>
@@ -64,12 +97,15 @@ export default function AdminLayout({
   function logout() {
     localStorage.clear()
     document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
     window.location.href = '/login'
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50 text-slate-800 antialiased">
+    <div className="flex min-h-screen bg-slate-50 text-slate-800 antialiased font-sans">
       
+      {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div 
           className="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-xs md:hidden"
@@ -77,66 +113,80 @@ export default function AdminLayout({
         />
       )}
 
-      <aside className={`fixed inset-y-0 left-0 z-50 flex h-full w-64 flex-col border-r border-slate-200 bg-white px-5 py-6 justify-between transition-transform duration-300 md:sticky md:top-0 md:h-screen md:translate-x-0 ${
+      {/* Sidebar navigation */}
+      <aside className={`fixed inset-y-0 left-0 z-50 flex h-full w-64 flex-col border-r border-slate-200/80 bg-white px-5 py-6 justify-between transition-transform duration-300 md:sticky md:top-0 md:h-screen md:translate-x-0 ${
         isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         
         <div className="flex flex-col flex-1 overflow-y-auto pr-1">
           
+          {/* Sidebar Header Brand */}
           <div className="mb-8 px-2 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <span className="h-5 w-5 rounded bg-blue-600 block flex-shrink-0 shadow-sm shadow-blue-500/20" />
-              <h1 className="text-lg font-bold tracking-tight text-slate-900">
-                laila<span className="text-blue-600">collections</span>
-              </h1>
+            <div className="flex items-center gap-2">
+              <div className="h-6 w-6 rounded-md bg-gradient-to-tr from-blue-600 to-indigo-650 flex items-center justify-center text-white font-black text-xs shadow-md shadow-blue-500/20">
+                L
+              </div>
+              <div>
+                <h1 className="text-sm font-black tracking-tight text-slate-900 leading-none">
+                  laila<span className="text-blue-600 font-extrabold">collections</span>
+                </h1>
+                <p className="text-[9px] font-bold text-slate-400 mt-1">v.1.0</p>
+              </div>
             </div>
             <button 
               onClick={() => setIsSidebarOpen(false)}
-              className="rounded-lg p-1 text-slate-500 hover:bg-slate-100 md:hidden"
+              className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 md:hidden"
             >
               <X size={18} />
             </button>
           </div>
 
+          {/* Menus */}
           <div className="space-y-6">
             
+            {/* Dashboard Overview */}
             <div>
               <Link
                 href="/dashboard/admin"
-                className={`flex items-center rounded-xl px-4 py-2.5 text-sm font-bold transition-all duration-200 ${
+                className={`flex items-center gap-3 rounded-xl px-4 py-2.5 text-xs font-bold transition-all duration-200 ${
                   pathname === '/dashboard/admin'
                     ? 'bg-gradient-to-r from-blue-600 to-indigo-650 text-white shadow-md shadow-blue-500/20 scale-[1.01]'
-                    : 'text-slate-650 hover:bg-slate-50 hover:text-slate-900 hover:translate-x-1'
+                    : 'text-slate-655 hover:bg-slate-55/70 hover:text-slate-900 hover:translate-x-1'
                 }`}
               >
-                Ringkasan Dashboard
+                <LayoutDashboard size={15} />
+                <span>Ringkasan Dashboard</span>
               </Link>
             </div>
 
+            {/* Management Section */}
             <div>
-              <div className="mb-2.5 px-4 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+              <div className="mb-2.5 px-4 text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
                 Manajemen
               </div>
               <div className="space-y-1">
                 {managementMenus.map((item) => {
                   const isActive = pathname === item.path
+                  const Icon = item.icon
                   return (
                     <Link
                       key={item.path}
                       href={item.path}
-                      className={`block px-4 py-2 text-sm font-semibold transition-all duration-200 ${
+                      className={`flex items-center gap-3 px-4 py-2 text-xs font-bold transition-all duration-205 ${
                         isActive
-                          ? 'bg-blue-50/75 text-blue-600 font-bold border-l-4 border-blue-600 pl-3 rounded-r-xl rounded-l-none'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950 hover:translate-x-1 rounded-xl'
+                          ? 'bg-blue-50/80 text-blue-600 border-l-4 border-blue-600 pl-3 rounded-r-xl rounded-l-none'
+                          : 'text-slate-600 hover:bg-slate-55/70 hover:text-slate-955 hover:translate-x-1 rounded-xl'
                       }`}
                     >
-                      {item.name}
+                      <Icon size={14} className={isActive ? 'text-blue-600' : 'text-slate-400'} />
+                      <span>{item.name}</span>
                     </Link>
                   )
                 })}
               </div>
             </div>
 
+            {/* Dynamic Dropdown sections */}
             <div className="space-y-4">
               {menus.map((section) => {
                 const isSectionOpen = open.includes(section.title)
@@ -145,19 +195,13 @@ export default function AdminLayout({
                   <div key={section.title} className="space-y-1.5">
                     <button
                       onClick={() => toggle(section.title)}
-                      className="flex w-full items-center justify-between px-4 py-2 text-[10px] font-extrabold uppercase tracking-widest text-slate-400 transition-colors hover:text-slate-650 cursor-pointer"
+                      className="flex w-full items-center justify-between px-4 py-2 text-[9px] font-extrabold uppercase tracking-widest text-slate-400 transition-colors hover:text-slate-650 cursor-pointer"
                     >
                       <span>{section.title}</span>
-                      
-                      <svg 
-                        className={`h-3 w-3 text-slate-400 transition-transform duration-200 ${isSectionOpen ? 'rotate-180' : ''}`} 
-                        fill="none" 
-                        viewBox="0 0 24 24" 
-                        stroke="currentColor"
-                        strokeWidth={3}
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                      </svg>
+                      <ChevronDown 
+                        size={12} 
+                        className={`text-slate-400 transition-transform duration-200 ${isSectionOpen ? 'rotate-180' : ''}`} 
+                      />
                     </button>
 
                     <div 
@@ -165,20 +209,22 @@ export default function AdminLayout({
                         isSectionOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
                       }`}
                     >
-                      <div className="overflow-hidden space-y-1 pl-1 border-l-2 border-slate-100 ml-3">
+                      <div className="overflow-hidden space-y-1 pl-1 border-l border-slate-100 ml-3">
                         {section.items.map((item) => {
                           const isActive = pathname === item.path
+                          const Icon = item.icon
                           return (
                             <Link
                               key={item.path}
                               href={item.path}
-                              className={`block px-4 py-2 text-sm font-semibold transition-all duration-200 ${
+                              className={`flex items-center gap-3 px-4 py-2 text-xs font-bold transition-all duration-205 ${
                                 isActive
-                                  ? 'bg-blue-50/75 text-blue-600 font-bold border-l-4 border-blue-600 pl-3 rounded-r-xl rounded-l-none'
-                                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950 hover:translate-x-1 rounded-xl'
+                                  ? 'bg-blue-50/80 text-blue-600 border-l-4 border-blue-600 pl-3 rounded-r-xl rounded-l-none'
+                                  : 'text-slate-600 hover:bg-slate-55/70 hover:text-slate-955 hover:translate-x-1 rounded-xl'
                               }`}
                             >
-                              {item.name}
+                              <Icon size={13} className={isActive ? 'text-blue-600' : 'text-slate-400'} />
+                              <span>{item.name}</span>
                             </Link>
                           )
                         })}
@@ -193,31 +239,50 @@ export default function AdminLayout({
           </div>
         </div>
 
-        <div className="pt-4 border-t border-slate-100">
+        {/* User profile & Logout footer */}
+        <div className="pt-4 border-t border-slate-100 space-y-4">
+          {user && (
+            <div className="flex items-center gap-3 px-2 py-1">
+              <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-blue-100 to-indigo-55 bg-blue-50 text-blue-600 border border-blue-200/50 flex items-center justify-center font-black text-xs">
+                {user.name.slice(0, 2).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-extrabold text-slate-900 truncate leading-tight">{user.name}</p>
+                <p className="text-[8.5px] font-black uppercase text-slate-400 tracking-wider mt-0.5 leading-none">{user.type}</p>
+              </div>
+            </div>
+          )}
+          
           <button
             onClick={logout}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-red-50 hover:text-red-600 hover:border-red-200 active:bg-red-100"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-655 transition-all hover:bg-red-50 hover:text-red-650 hover:border-red-200 active:scale-97 cursor-pointer"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            Logout Akun
+            <LogOut size={13} />
+            <span>Keluar Sesi</span>
           </button>
+          
+          <div className="text-center text-[10px] text-slate-400 font-bold tracking-wider pt-1">
+            Laila Collections v.1.0
+          </div>
         </div>
 
       </aside>
 
+      {/* Main Frame content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="flex h-16 items-center border-b border-slate-200 bg-white px-6 md:hidden flex-shrink-0">
-          <button
-            onClick={() => setIsSidebarOpen(true)}
-            className="rounded-lg p-1.5 text-slate-600 hover:bg-slate-100"
-          >
-            <Menu size={22} />
-          </button>
-          <span className="ml-3 text-sm font-bold tracking-tight text-slate-900">
-            laila<span className="text-blue-600">collections</span> Admin
-          </span>
+        <header className="flex h-16 items-center border-b border-slate-200/80 bg-white px-6 md:hidden flex-shrink-0 justify-between">
+          <div className="flex items-center">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100"
+            >
+              <Menu size={22} />
+            </button>
+            <span className="ml-3 text-xs font-black tracking-tight text-slate-900">
+              laila<span className="text-blue-600 font-extrabold">collections</span>
+            </span>
+          </div>
+          <span className="text-[8px] font-black bg-blue-50 text-blue-600 border border-blue-150 rounded px-2 py-0.5 uppercase tracking-widest">ADMIN</span>
         </header>
 
         <main className="flex-1 p-6 md:p-10 overflow-y-auto">

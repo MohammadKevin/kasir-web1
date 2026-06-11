@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { api } from '@/lib/api'
 import { 
   BarChart3, 
@@ -8,13 +8,14 @@ import {
   TrendingUp, 
   TrendingDown, 
   DollarSign, 
-  ShoppingCart, 
-  Package, 
-  UserCheck, 
   Download, 
   FileSpreadsheet, 
   FileText,
-  Loader2
+  Loader2,
+  ChevronDown,
+  Info,
+  Calendar,
+  X
 } from 'lucide-react'
 
 type StoreType = {
@@ -41,16 +42,62 @@ export default function ReportPage() {
   const [profit, setProfit] = useState<ProfitData>({ totalSales: 0, totalExpense: 0, estimatedProfit: 0 })
   const [tableData, setTableData] = useState<any[]>([])
 
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+
   useEffect(() => {
     initPage()
   }, [])
 
   useEffect(() => {
     if (selectedStoreId) {
-      loadSummaryData(selectedStoreId)
-      loadTabTableData(selectedStoreId, activeTab)
+      loadSummaryData(selectedStoreId, startDate, endDate)
+      loadTabTableData(selectedStoreId, activeTab, startDate, endDate)
     }
-  }, [selectedStoreId, activeTab])
+  }, [selectedStoreId, activeTab, startDate, endDate])
+
+  function getActiveQuickFilter() {
+    const today = new Date()
+    const todayStr = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().split('T')[0]
+    
+    if (!startDate && !endDate) return 'all'
+    if (startDate === todayStr && endDate === todayStr) return 'today'
+    
+    const sevenDaysAgo = new Date()
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+    const sevenDaysAgoStr = new Date(sevenDaysAgo.getTime() - sevenDaysAgo.getTimezoneOffset() * 60000).toISOString().split('T')[0]
+    if (startDate === sevenDaysAgoStr && endDate === todayStr) return '7days'
+    
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+    const startOfMonthStr = new Date(startOfMonth.getTime() - startOfMonth.getTimezoneOffset() * 60000).toISOString().split('T')[0]
+    if (startDate === startOfMonthStr && endDate === todayStr) return 'month'
+    
+    return 'custom'
+  }
+
+  function handleQuickFilter(val: string) {
+    const today = new Date()
+    const todayStr = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().split('T')[0]
+    
+    if (val === 'all') {
+      setStartDate('')
+      setEndDate('')
+    } else if (val === 'today') {
+      setStartDate(todayStr)
+      setEndDate(todayStr)
+    } else if (val === '7days') {
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+      const sevenDaysAgoStr = new Date(sevenDaysAgo.getTime() - sevenDaysAgo.getTimezoneOffset() * 60000).toISOString().split('T')[0]
+      setStartDate(sevenDaysAgoStr)
+      setEndDate(todayStr)
+    } else if (val === 'month') {
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+      const startOfMonthStr = new Date(startOfMonth.getTime() - startOfMonth.getTimezoneOffset() * 60000).toISOString().split('T')[0]
+      setStartDate(startOfMonthStr)
+      setEndDate(todayStr)
+    }
+  }
 
   async function initPage() {
     try {
@@ -75,10 +122,11 @@ export default function ReportPage() {
     }
   }
 
-  async function loadSummaryData(storeId: string) {
+  async function loadSummaryData(storeId: string, start?: string, end?: string) {
     setLoadingSummary(true)
     try {
       const res = await api.get(`/reports/profit/${storeId}`, {
+        params: { startDate: start || undefined, endDate: end || undefined },
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       })
       setProfit(res.data)
@@ -89,7 +137,7 @@ export default function ReportPage() {
     }
   }
 
-  async function loadTabTableData(storeId: string, tab: TabType) {
+  async function loadTabTableData(storeId: string, tab: TabType, start?: string, end?: string) {
     setLoadingTable(true)
     setTableData([])
     try {
@@ -101,6 +149,7 @@ export default function ReportPage() {
       if (tab === 'stock') endpoint = `/reports/stock-movements/${storeId}`
 
       const res = await api.get(endpoint, {
+        params: { startDate: start || undefined, endDate: end || undefined },
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       })
 
@@ -120,6 +169,7 @@ export default function ReportPage() {
     setDownloading(type)
     try {
       const response = await api.get(`/reports/sales/${selectedStoreId}/${type}`, {
+        params: { startDate: startDate || undefined, endDate: endDate || undefined },
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         responseType: 'blob'
       })
@@ -133,7 +183,8 @@ export default function ReportPage() {
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.setAttribute('download', `laporan_penjualan_${selectedStoreId}.${type === 'excel' ? 'xlsx' : 'pdf'}`)
+      const dateStr = startDate && endDate ? `_${startDate}_to_${endDate}` : ''
+      link.setAttribute('download', `laporan_penjualan_${selectedStoreId}${dateStr}.${type === 'excel' ? 'xlsx' : 'pdf'}`)
       document.body.appendChild(link)
       link.click()
       link.remove()
@@ -147,82 +198,165 @@ export default function ReportPage() {
 
   if (loadingSummary && stores.length === 0) {
     return (
-      <div className="space-y-6 p-6">
-        <div className="h-12 w-1/3 animate-pulse rounded-xl bg-slate-200" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="h-24 animate-pulse rounded-2xl bg-slate-100" />
-          <div className="h-24 animate-pulse rounded-2xl bg-slate-100" />
-          <div className="h-24 animate-pulse rounded-2xl bg-slate-100" />
+      <div className="space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-2">
+            <div className="h-9 w-44 animate-pulse rounded-xl bg-slate-200" />
+            <div className="h-4 w-72 animate-pulse rounded-lg bg-slate-100" />
+          </div>
+          <div className="h-11 w-36 animate-pulse rounded-xl bg-slate-200" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="h-24 rounded-2xl animate-pulse bg-slate-100" />
+          <div className="h-24 rounded-2xl animate-pulse bg-slate-100" />
+          <div className="h-24 rounded-2xl animate-pulse bg-slate-100" />
         </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
+      
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Manajemen Laporan Toko</h1>
-          <p className="text-sm text-slate-500 mt-1">Audit finansial komprehensif, tracking performa inventori gudang, log shift, serta download berkas pembukuan kasir.</p>
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 bg-indigo-50 border border-indigo-100/55 rounded-xl flex items-center justify-center text-indigo-600 shrink-0">
+            <BarChart3 size={20} />
+          </div>
+          <div>
+            <h1 className="text-xl font-black text-slate-900 tracking-tight">Manajemen Laporan Toko</h1>
+            <p className="text-xs font-semibold text-slate-455 mt-0.5">Audit finansial komprehensif, tracking performa inventori gudang, log shift, serta unduh berkas pembukuan.</p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm self-start sm:self-auto">
-          <Store className="w-4 h-4 text-slate-400" />
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Toko:</span>
+        <div className="relative shrink-0">
           <select
             value={selectedStoreId}
             onChange={(e) => {
               setSelectedStoreId(e.target.value)
               localStorage.setItem('storeId', e.target.value)
             }}
-            className="bg-transparent text-sm font-semibold text-slate-800 outline-none pr-2 cursor-pointer border-none p-0 focus:ring-0"
+            className="w-full sm:w-60 appearance-none bg-white border border-slate-250/70 pl-4 pr-10 py-3.5 rounded-xl text-xs font-bold text-slate-800 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 cursor-pointer transition-all shadow-3xs"
           >
             {stores.map((store) => (
               <option key={store.id} value={store.id}>{store.name}</option>
             ))}
           </select>
+          <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Omset Card */}
-        <div className="border border-emerald-100/80 rounded-3xl p-6 bg-gradient-to-br from-emerald-50/20 to-white shadow-sm glow-emerald flex items-center gap-4 hover:border-emerald-300 transition-all duration-200">
-          <div className="p-3.5 bg-emerald-500/10 rounded-2xl border border-emerald-100 text-emerald-600">
-            <TrendingUp className="w-6 h-6" />
+      {/* Date Filter Bar */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-3xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3 text-slate-800">
+          <div className="h-9 w-9 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-center text-indigo-650 shrink-0">
+            <Calendar size={18} />
           </div>
           <div>
-            <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Omset Penjualan</p>
-            <p className="text-2xl font-black text-slate-950 font-mono mt-1">Rp {profit.totalSales.toLocaleString('id-ID')}</p>
+            <h2 className="text-xs font-black text-slate-900 tracking-tight">Rentang Waktu Laporan</h2>
+            <p className="text-[10px] text-slate-455 font-semibold mt-0.5">Filter metrik ringkasan & tabel data transaksi secara realtime.</p>
           </div>
         </div>
 
-        {/* Expenses Card */}
-        <div className="border border-red-100/80 rounded-3xl p-6 bg-gradient-to-br from-red-50/20 to-white shadow-sm glow-red flex items-center gap-4 hover:border-red-300 transition-all duration-200">
-          <div className="p-3.5 bg-red-500/10 rounded-2xl border border-red-100 text-red-650">
-            <TrendingDown className="w-6 h-6" />
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Quick ranges */}
+          <div className="flex bg-slate-100/80 p-1 rounded-xl border border-slate-200/40">
+            {[
+              { label: 'Semua', value: 'all' },
+              { label: 'Hari Ini', value: 'today' },
+              { label: '7 Hari Terakhir', value: '7days' },
+              { label: 'Bulan Ini', value: 'month' },
+            ].map((opt) => {
+              const isSelected = getActiveQuickFilter() === opt.value
+              return (
+                <button
+                  key={opt.value}
+                  onClick={() => handleQuickFilter(opt.value)}
+                  className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
+                    isSelected
+                      ? 'bg-white text-indigo-655 shadow-3xs font-extrabold'
+                      : 'text-slate-500 hover:text-slate-900'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="bg-white border border-slate-250/70 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 cursor-pointer transition-all shadow-3xs"
+              />
+            </div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">s/d</span>
+            <div className="relative">
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="bg-white border border-slate-250/70 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 cursor-pointer transition-all shadow-3xs"
+              />
+            </div>
+            {(startDate || endDate) && (
+              <button
+                onClick={() => {
+                  setStartDate('')
+                  setEndDate('')
+                }}
+                className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-xl border border-slate-200 transition-all cursor-pointer shadow-3xs"
+                title="Reset Filter Tanggal"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Profit Loss Indicators */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="border border-slate-200 rounded-2xl p-5 bg-white shadow-3xs flex items-center gap-4 hover:border-slate-350 transition-all duration-200">
+          <div className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-100/50 text-emerald-600 shrink-0">
+            <TrendingUp className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Biaya Pengeluaran</p>
-            <p className="text-2xl font-black text-slate-950 font-mono mt-1">Rp {profit.totalExpense.toLocaleString('id-ID')}</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Omset Penjualan</p>
+            <p className="text-xl font-black text-slate-900 font-mono mt-0.5">Rp {(profit.totalSales ?? 0).toLocaleString('id-ID')}</p>
           </div>
         </div>
 
-        {/* Net Profit Card */}
-        <div className="border border-blue-100/80 rounded-3xl p-6 bg-gradient-to-br from-blue-50/20 to-white shadow-sm glow-blue flex items-center gap-4 hover:border-blue-300 transition-all duration-200">
-          <div className="p-3.5 bg-blue-500/10 rounded-2xl border border-blue-100 text-blue-600">
-            <DollarSign className="w-6 h-6" />
+        <div className="border border-slate-200 rounded-2xl p-5 bg-white shadow-3xs flex items-center gap-4 hover:border-slate-355 transition-all duration-200">
+          <div className="p-3 bg-rose-550/10 rounded-xl border border-rose-100/50 text-rose-600 shrink-0">
+            <TrendingDown className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Estimasi Laba Bersih</p>
-            <p className={`text-2xl font-black font-mono mt-1 ${profit.estimatedProfit >= 0 ? 'text-blue-600' : 'text-red-650'}`}>
-              Rp {profit.estimatedProfit.toLocaleString('id-ID')}
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Biaya Pengeluaran</p>
+            <p className="text-xl font-black text-slate-900 font-mono mt-0.5">Rp {(profit.totalExpense ?? 0).toLocaleString('id-ID')}</p>
+          </div>
+        </div>
+
+        <div className="border border-slate-200 rounded-2xl p-5 bg-white shadow-3xs flex items-center gap-4 hover:border-slate-355 transition-all duration-200">
+          <div className="p-3 bg-indigo-500/10 rounded-xl border border-indigo-100/50 text-indigo-600 shrink-0">
+            <DollarSign className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Estimasi Laba Bersih</p>
+            <p className={`text-xl font-black font-mono mt-0.5 ${profit.estimatedProfit >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}>
+              Rp {(profit.estimatedProfit ?? 0).toLocaleString('id-ID')}
             </p>
           </div>
         </div>
       </div>
 
+      {/* Tabs */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between border-b border-slate-200/60 pb-3">
-        <div className="flex flex-wrap gap-1 bg-slate-100/80 p-1.5 rounded-2xl self-start border border-slate-200/40">
+        <div className="flex flex-wrap gap-1 bg-slate-100/80 p-1 rounded-2xl border border-slate-200/40">
           {[
             { id: 'sales', label: 'Penjualan' },
             { id: 'expenses', label: 'Pengeluaran' },
@@ -236,8 +370,8 @@ export default function ReportPage() {
               onClick={() => setActiveTab(tab.id as TabType)}
               className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
                 activeTab === tab.id
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-650 text-white shadow-md shadow-blue-500/10'
-                  : 'text-slate-550 hover:text-slate-900'
+                  ? 'bg-indigo-650 text-white shadow-3xs'
+                  : 'text-slate-500 hover:text-slate-900'
               }`}
             >
               {tab.label}
@@ -246,59 +380,60 @@ export default function ReportPage() {
         </div>
 
         {activeTab === 'sales' && (
-          <div className="flex items-center gap-2 self-start lg:self-auto">
+          <div className="flex items-center gap-2 self-start lg:self-auto shrink-0">
             <button
               onClick={() => handleExport('excel')}
               disabled={downloading !== null}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-705 shadow-xs hover:bg-slate-50 transition-all hover:border-slate-300 disabled:opacity-50 cursor-pointer active:scale-97"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-3xs hover:bg-slate-50 transition-all hover:border-slate-350 disabled:opacity-50 cursor-pointer"
             >
               {downloading === 'excel' ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />}
-              Laporan Excel
+              Excel
             </button>
             <button
               onClick={() => handleExport('pdf')}
               disabled={downloading !== null}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-705 shadow-xs hover:bg-slate-50 transition-all hover:border-slate-300 disabled:opacity-50 cursor-pointer active:scale-97"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-3xs hover:bg-slate-50 transition-all hover:border-slate-350 disabled:opacity-50 cursor-pointer"
             >
-              {downloading === 'pdf' ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <FileText className="w-3.5 h-3.5 text-red-650" />}
-              Dokumen PDF
+              {downloading === 'pdf' ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <FileText className="w-3.5 h-3.5 text-rose-600" />}
+              PDF
             </button>
           </div>
         )}
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
-        <div className="w-full overflow-x-auto">
+      {/* Tab Contents Table */}
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-3xs overflow-hidden">
+        <div className="overflow-x-auto">
           {loadingTable ? (
-            <div className="flex justify-center items-center py-24">
-              <span className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600" />
+            <div className="flex justify-center items-center py-20">
+              <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
             </div>
           ) : tableData.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 space-y-2 text-slate-400">
-              <BarChart3 className="w-8 h-8 stroke-[1.5]" />
-              <p className="text-sm font-medium text-slate-600">Manifes data pembukuan masih kosong</p>
+            <div className="flex flex-col items-center justify-center py-16 text-slate-450 gap-2">
+              <BarChart3 className="w-8 h-8 text-slate-350" />
+              <p className="text-xs font-bold text-slate-550">Manifes data pembukuan masih kosong</p>
             </div>
           ) : (
-            <table className="w-full border-collapse text-left text-sm text-slate-600">
+            <table className="w-full border-collapse text-left text-xs text-slate-655 font-semibold">
               {activeTab === 'sales' && (
                 <>
-                  <thead className="bg-slate-50 text-xs font-bold uppercase text-slate-500 border-b border-slate-100">
+                  <thead className="bg-slate-50/70 text-[9px] font-bold uppercase text-slate-400 border-b border-slate-200 tracking-wider">
                     <tr>
-                      <th className="px-6 py-4">Invoice</th>
-                      <th className="px-6 py-4">Waktu Transaksi</th>
-                      <th className="px-6 py-4">Operator Kasir</th>
-                      <th className="px-6 py-4">Member Pelanggan</th>
-                      <th className="px-6 py-4">Total Jual</th>
+                      <th className="p-4 pl-6">Invoice</th>
+                      <th className="p-4">Waktu Transaksi</th>
+                      <th className="p-4">Operator Kasir</th>
+                      <th className="p-4">Member Pelanggan</th>
+                      <th className="p-4 pr-6">Total Jual</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium">
+                  <tbody className="divide-y divide-slate-100">
                     {tableData.map((tx: any) => (
-                      <tr key={tx.id} className="hover:bg-slate-50/40">
-                        <td className="px-6 py-4 font-mono font-bold text-slate-900">{tx.invoiceNumber}</td>
-                        <td className="px-6 py-4 text-slate-500">{new Date(tx.createdAt).toLocaleString('id-ID')}</td>
-                        <td className="px-6 py-4 text-slate-800">{tx.cashier?.name}</td>
-                        <td className="px-6 py-4 text-slate-500">{tx.customer?.name || '-'}</td>
-                        <td className="px-6 py-4 font-bold text-slate-950 font-mono">Rp {tx.total.toLocaleString('id-ID')}</td>
+                      <tr key={tx.id} className="hover:bg-slate-50/45 transition-colors">
+                        <td className="p-4 pl-6 font-mono font-bold text-slate-900">{tx.invoiceNumber}</td>
+                        <td className="p-4 text-slate-500 font-medium">{new Date(tx.createdAt).toLocaleString('id-ID')}</td>
+                        <td className="p-4 text-slate-800">{tx.cashier?.name}</td>
+                        <td className="p-4 text-slate-500 font-medium">{tx.customer?.name || '-'}</td>
+                        <td className="p-4 pr-6 font-bold text-slate-950 font-mono">Rp {(tx.total ?? 0).toLocaleString('id-ID')}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -307,21 +442,25 @@ export default function ReportPage() {
 
               {activeTab === 'expenses' && (
                 <>
-                  <thead className="bg-slate-50 text-xs font-bold uppercase text-slate-500 border-b border-slate-100">
+                  <thead className="bg-slate-50/70 text-[9px] font-bold uppercase text-slate-400 border-b border-slate-200 tracking-wider">
                     <tr>
-                      <th className="px-6 py-4">Deskripsi / Judul</th>
-                      <th className="px-6 py-4">Kategori Pengeluaran</th>
-                      <th className="px-6 py-4">Waktu Catat</th>
-                      <th className="px-6 py-4">Biaya Dana Keluar</th>
+                      <th className="p-4 pl-6">Deskripsi / Judul</th>
+                      <th className="p-4">Kategori Pengeluaran</th>
+                      <th className="p-4">Waktu Catat</th>
+                      <th className="p-4 pr-6">Biaya Dana Keluar</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium">
+                  <tbody className="divide-y divide-slate-100">
                     {tableData.map((ex: any) => (
-                      <tr key={ex.id} className="hover:bg-slate-50/40">
-                        <td className="px-6 py-4 font-bold text-slate-900">{ex.title}</td>
-                        <td className="px-6 py-4"><span className="bg-slate-100 rounded-lg text-[11px] px-2 py-0.5 text-slate-700">{ex.category}</span></td>
-                        <td className="px-6 py-4 text-slate-500">{new Date(ex.createdAt).toLocaleString('id-ID')}</td>
-                        <td className="px-6 py-4 font-bold text-red-600 font-mono">Rp {ex.amount.toLocaleString('id-ID')}</td>
+                      <tr key={ex.id} className="hover:bg-slate-50/45 transition-colors">
+                        <td className="p-4 pl-6 font-bold text-slate-900">{ex.title}</td>
+                        <td className="p-4 whitespace-nowrap">
+                          <span className="bg-slate-100 border border-slate-200 text-[10px] px-2 py-0.5 rounded-full font-bold text-slate-605">
+                            {ex.category}
+                          </span>
+                        </td>
+                        <td className="p-4 text-slate-500 font-medium">{new Date(ex.createdAt).toLocaleString('id-ID')}</td>
+                        <td className="p-4 pr-6 font-bold text-rose-600 font-mono">Rp {(ex.amount ?? 0).toLocaleString('id-ID')}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -330,27 +469,27 @@ export default function ReportPage() {
 
               {activeTab === 'products' && (
                 <>
-                  <thead className="bg-slate-50 text-xs font-bold uppercase text-slate-500 border-b border-slate-100">
+                  <thead className="bg-slate-50/70 text-[9px] font-bold uppercase text-slate-400 border-b border-slate-200 tracking-wider">
                     <tr>
-                      <th className="px-6 py-4">Komoditas / Nama Barang</th>
-                      <th className="px-6 py-4">SKU Code</th>
-                      <th className="px-6 py-4">Harga Pokok (Modal)</th>
-                      <th className="px-6 py-4">Sisa Stok Fisik</th>
-                      <th className="px-6 py-4">Kondisi</th>
+                      <th className="p-4 pl-6">Komoditas / Nama Barang</th>
+                      <th className="p-4">SKU Code</th>
+                      <th className="p-4">Harga Pokok (Modal)</th>
+                      <th className="p-4">Sisa Stok Fisik</th>
+                      <th className="p-4 pr-6">Kondisi</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium">
+                  <tbody className="divide-y divide-slate-100">
                     {tableData.map((p: any) => (
-                      <tr key={p.id} className="hover:bg-slate-50/40">
-                        <td className="px-6 py-4 font-bold text-slate-900">{p.name}</td>
-                        <td className="px-6 py-4 font-mono text-slate-400">{p.sku || '-'}</td>
-                        <td className="px-6 py-4 font-mono">Rp {p.costPrice.toLocaleString('id-ID')}</td>
-                        <td className="px-6 py-4 font-bold font-mono text-slate-950">{p.stock} Item</td>
-                        <td className="px-6 py-4">
+                      <tr key={p.id} className="hover:bg-slate-50/45 transition-colors">
+                        <td className="p-4 pl-6 font-bold text-slate-900">{p.name}</td>
+                        <td className="p-4 font-mono text-slate-400">{p.sku || '-'}</td>
+                        <td className="p-4 font-mono">Rp {(p.costPrice ?? 0).toLocaleString('id-ID')}</td>
+                        <td className="p-4 font-bold font-mono text-slate-950">{p.stock} Item</td>
+                        <td className="p-4 pr-6">
                           {p.stock <= p.minimumStock ? (
-                            <span className="bg-red-50 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-red-200">Menipis / Amang Kritis</span>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 border border-rose-150 px-2 py-0.5 text-[9px] font-bold text-rose-700">Gawat</span>
                           ) : (
-                            <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-emerald-200">Aman</span>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-150 px-2 py-0.5 text-[9px] font-bold text-emerald-700">Aman</span>
                           )}
                         </td>
                       </tr>
@@ -361,21 +500,21 @@ export default function ReportPage() {
 
               {activeTab === 'purchases' && (
                 <>
-                  <thead className="bg-slate-50 text-xs font-bold uppercase text-slate-500 border-b border-slate-100">
+                  <thead className="bg-slate-50/70 text-[9px] font-bold uppercase text-slate-400 border-b border-slate-200 tracking-wider">
                     <tr>
-                      <th className="px-6 py-4">No Nota Kulakan</th>
-                      <th className="px-6 py-4">Waktu Masuk</th>
-                      <th className="px-6 py-4">Vendor Supplier</th>
-                      <th className="px-6 py-4">Total Pembayaran</th>
+                      <th className="p-4 pl-6">No Nota Kulakan</th>
+                      <th className="p-4">Waktu Masuk</th>
+                      <th className="p-4">Vendor Supplier</th>
+                      <th className="p-4 pr-6">Total Pembayaran</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium">
+                  <tbody className="divide-y divide-slate-100">
                     {tableData.map((pu: any) => (
-                      <tr key={pu.id} className="hover:bg-slate-50/40">
-                        <td className="px-6 py-4 font-mono font-bold text-slate-900">{pu.invoiceNumber}</td>
-                        <td className="px-6 py-4 text-slate-500">{new Date(pu.createdAt).toLocaleString('id-ID')}</td>
-                        <td className="px-6 py-4 text-slate-800">{pu.supplier?.name}</td>
-                        <td className="px-6 py-4 font-bold font-mono text-slate-950">Rp {pu.total.toLocaleString('id-ID')}</td>
+                      <tr key={pu.id} className="hover:bg-slate-50/45 transition-colors">
+                        <td className="p-4 pl-6 font-mono font-bold text-slate-900">{pu.invoiceNumber}</td>
+                        <td className="p-4 text-slate-500 font-medium">{new Date(pu.createdAt).toLocaleString('id-ID')}</td>
+                        <td className="p-4 text-slate-800">{pu.supplier?.name}</td>
+                        <td className="p-4 pr-6 font-bold font-mono text-slate-950">Rp {(pu.total ?? 0).toLocaleString('id-ID')}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -384,30 +523,30 @@ export default function ReportPage() {
 
               {activeTab === 'stock' && (
                 <>
-                  <thead className="bg-slate-50 text-xs font-bold uppercase text-slate-500 border-b border-slate-100">
+                  <thead className="bg-slate-50/70 text-[9px] font-bold uppercase text-slate-400 border-b border-slate-200 tracking-wider">
                     <tr>
-                      <th className="px-6 py-4">Barang / SKU</th>
-                      <th className="px-6 py-4">Waktu Koreksi</th>
-                      <th className="px-6 py-4">Jenis Perubahan</th>
-                      <th className="px-6 py-4">Kuantitas</th>
-                      <th className="px-6 py-4">Memo / Catatan</th>
+                      <th className="p-4 pl-6">Barang / SKU</th>
+                      <th className="p-4">Waktu Koreksi</th>
+                      <th className="p-4">Jenis Perubahan</th>
+                      <th className="p-4">Kuantitas</th>
+                      <th className="p-4 pr-6">Memo / Catatan</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium">
+                  <tbody className="divide-y divide-slate-100">
                     {tableData.map((st: any) => (
-                      <tr key={st.id} className="hover:bg-slate-50/40">
-                        <td className="px-6 py-4">
-                          <p className="font-bold text-slate-900">{st.product?.name}</p>
-                          <p className="text-[11px] font-mono text-slate-400">SKU: {st.product?.sku}</p>
+                      <tr key={st.id} className="hover:bg-slate-50/45 transition-colors">
+                        <td className="p-4 pl-6">
+                          <p className="font-extrabold text-slate-900">{st.product?.name}</p>
+                          <p className="text-[10px] font-mono text-slate-400 mt-0.5">SKU: {st.product?.sku}</p>
                         </td>
-                        <td className="px-6 py-4 text-slate-500">{new Date(st.createdAt).toLocaleString('id-ID')}</td>
-                        <td className="px-6 py-4">
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${st.type === 'IN' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : st.type === 'OUT' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
+                        <td className="p-4 text-slate-500 font-medium">{new Date(st.createdAt).toLocaleString('id-ID')}</td>
+                        <td className="p-4">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${st.type === 'IN' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : st.type === 'OUT' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
                             {st.type}
                           </span>
                         </td>
-                        <td className={`px-6 py-4 font-black font-mono ${st.type === 'IN' ? 'text-emerald-600' : 'text-slate-900'}`}>{st.type === 'IN' ? `+${st.qty}` : `-${st.qty}`} Pcs</td>
-                        <td className="px-6 py-4 text-slate-500 text-xs truncate max-w-xs">{st.note || '-'}</td>
+                        <td className={`p-4 font-black font-mono ${st.type === 'IN' ? 'text-emerald-600' : 'text-slate-900'}`}>{st.type === 'IN' ? `+${st.qty}` : `-${st.qty}`} Pcs</td>
+                        <td className="p-4 pr-6 text-slate-500 font-medium max-w-xs truncate">{st.note || '-'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -416,28 +555,28 @@ export default function ReportPage() {
 
               {activeTab === 'shifts' && (
                 <>
-                  <thead className="bg-slate-50 text-xs font-bold uppercase text-slate-500 border-b border-slate-100">
+                  <thead className="bg-slate-50/70 text-[9px] font-bold uppercase text-slate-400 border-b border-slate-200 tracking-wider">
                     <tr>
-                      <th className="px-6 py-4">Nama Personil</th>
-                      <th className="px-6 py-4">Waktu Buka Shift</th>
-                      <th className="px-6 py-4">Modal Awal Kas</th>
-                      <th className="px-6 py-4">Kas Akhir Aktual</th>
-                      <th className="px-6 py-4">Selisih Fisik Kas</th>
-                      <th className="px-6 py-4">Status Sesi</th>
+                      <th className="p-4 pl-6">Nama Personil</th>
+                      <th className="p-4">Waktu Buka Shift</th>
+                      <th className="p-4">Modal Awal Kas</th>
+                      <th className="p-4">Kas Akhir Aktual</th>
+                      <th className="p-4">Selisih Fisik Kas</th>
+                      <th className="p-4 pr-6">Status Sesi</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium">
+                  <tbody className="divide-y divide-slate-100">
                     {tableData.map((sh: any) => (
-                      <tr key={sh.id} className="hover:bg-slate-50/40">
-                        <td className="px-6 py-4 font-bold text-slate-900">{sh.user?.name}</td>
-                        <td className="px-6 py-4 text-slate-500">{new Date(sh.createdAt).toLocaleString('id-ID')}</td>
-                        <td className="px-6 py-4 font-mono">Rp {sh.openingCash.toLocaleString('id-ID')}</td>
-                        <td className="px-6 py-4 font-mono">{sh.closingCash ? `Rp ${sh.closingCash.toLocaleString('id-ID')}` : '-'}</td>
-                        <td className={`px-6 py-4 font-bold font-mono ${sh.difference < 0 ? 'text-red-600' : sh.difference > 0 ? 'text-emerald-600' : 'text-slate-500'}`}>
+                      <tr key={sh.id} className="hover:bg-slate-50/45 transition-colors">
+                        <td className="p-4 pl-6 font-bold text-slate-900">{sh.user?.name}</td>
+                        <td className="p-4 text-slate-500 font-medium">{new Date(sh.createdAt).toLocaleString('id-ID')}</td>
+                        <td className="p-4 font-mono">Rp {(sh.openingCash ?? 0).toLocaleString('id-ID')}</td>
+                        <td className="p-4 font-mono">{sh.closingCash ? `Rp ${(sh.closingCash ?? 0).toLocaleString('id-ID')}` : '-'}</td>
+                        <td className={`p-4 font-bold font-mono ${sh.difference < 0 ? 'text-rose-600' : sh.difference > 0 ? 'text-emerald-650' : 'text-slate-500'}`}>
                           Rp {sh.difference?.toLocaleString('id-ID') ?? 0}
                         </td>
-                        <td className="px-6 py-4">
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${sh.status === 'OPEN' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-700 border border-slate-200'}`}>
+                        <td className="p-4 pr-6">
+                          <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${sh.status === 'OPEN' ? 'bg-emerald-50 text-emerald-700 border-emerald-150' : 'bg-slate-100 text-slate-500 border-slate-250/70'}`}>
                             {sh.status}
                           </span>
                         </td>

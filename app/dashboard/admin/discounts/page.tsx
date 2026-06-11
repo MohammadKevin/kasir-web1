@@ -16,7 +16,9 @@ import {
   XCircle,
   Package,
   PlusCircle,
-  Sparkles
+  Sparkles,
+  Loader2,
+  ChevronDown
 } from 'lucide-react'
 
 type DiscountProduct = {
@@ -220,7 +222,6 @@ export default function DiscountPage() {
     setIsOpenManageProducts(true)
   }
 
-  // Menghubungkan satu produk
   async function handleAssignProduct(e: React.FormEvent) {
     e.preventDefault()
     if (!assignProductId || !selectedDiscount) return
@@ -236,14 +237,12 @@ export default function DiscountPage() {
     }
   }
 
-  // Menghubungkan semua produk sekaligus (Massal)
   async function handleAssignAllProducts() {
     if (!selectedDiscount || products.length === 0) return
     if (!confirm(`Apakah Anda yakin ingin menerapkan diskon ini ke seluruh produk (${products.length} item) yang ada di toko?`)) return
 
     const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` }
     try {
-      // Loop untuk mendaftarkan semua produk ke endpoint relasi diskon
       await Promise.all(
         products.map((p) =>
           api.post(`/discounts/${selectedDiscount.id}/products`, { productId: p.id }, { headers }).catch(() => null)
@@ -278,192 +277,218 @@ export default function DiscountPage() {
 
   if (loading && stores.length === 0) {
     return (
-      <div className="space-y-6 p-6">
-        <div className="h-12 w-1/3 animate-pulse rounded-xl bg-slate-200" />
-        <div className="h-96 w-full animate-pulse rounded-2xl bg-slate-50 border" />
+      <div className="space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-2">
+            <div className="h-9 w-44 animate-pulse rounded-xl bg-slate-200" />
+            <div className="h-4 w-72 animate-pulse rounded-lg bg-slate-100" />
+          </div>
+          <div className="h-11 w-36 animate-pulse rounded-xl bg-slate-200" />
+        </div>
+        <div className="h-12 w-full max-w-md animate-pulse rounded-xl bg-slate-100" />
+        <div className="h-96 w-full animate-pulse rounded-2xl bg-slate-50 border border-slate-100" />
       </div>
     )
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
+      
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Program Diskon</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Kelola potongan harga promosi penjualan, tipe potongan nominal/persen, serta relasi produk komoditas.</p>
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 bg-indigo-50 border border-indigo-100/55 rounded-xl flex items-center justify-center text-indigo-600 shrink-0">
+            <Percent size={20} />
+          </div>
+          <div>
+            <h1 className="text-xl font-black text-slate-900 tracking-tight">Program Diskon</h1>
+            <p className="text-xs font-semibold text-slate-450 mt-0.5">Kelola potongan harga promosi penjualan, tipe potongan nominal/persen, serta relasi produk komoditas.</p>
+          </div>
         </div>
 
         <button
           onClick={handleOpenCreate}
-          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700 shadow-sm shadow-blue-500/10 transition-all self-start sm:self-auto cursor-pointer"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white transition-all shadow-3xs hover:bg-indigo-700 active:scale-97 cursor-pointer shrink-0"
         >
-          <Plus className="w-3.5 h-3.5" />
+          <Plus className="w-4 h-4" />
           Tambah Program Diskon
         </button>
       </div>
 
+      {/* Toolbar / Filters */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full max-w-sm">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+        <div className="relative flex-1 max-w-md">
+          <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <input
             type="text"
             placeholder="Cari kampanye program promo..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-4 py-2 text-xs outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 shadow-3xs"
+            className="w-full rounded-xl border border-slate-250/70 bg-white pl-11 pr-11 py-3.5 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 transition-all shadow-3xs"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-655"
+            >
+              <X size={15} />
+            </button>
+          )}
         </div>
 
-        <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 shadow-3xs self-start sm:self-auto">
-          <Store className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Toko:</span>
+        <div className="relative shrink-0">
           <select
             value={selectedStoreId}
             onChange={(e) => {
               setSelectedStoreId(e.target.value)
               localStorage.setItem('storeId', e.target.value)
             }}
-            className="bg-transparent text-xs font-semibold text-slate-800 outline-none pr-1 cursor-pointer border-none p-0 focus:ring-0"
+            className="w-full sm:w-60 appearance-none bg-white border border-slate-250/70 pl-4 pr-10 py-3.5 rounded-xl text-xs font-bold text-slate-800 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 cursor-pointer transition-all shadow-3xs"
           >
             {stores.map((store) => (
               <option key={store.id} value={store.id}>{store.name}</option>
             ))}
           </select>
+          <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-3xs">
-        <div className="w-full overflow-x-auto">
-          <table className="w-full border-collapse text-left text-xs text-slate-600">
-            <thead className="bg-slate-50 text-slate-500 border-b border-slate-200 font-medium">
-              <tr>
-                <th scope="col" className="px-6 py-3">Nama Program Promosi</th>
-                <th scope="col" className="px-6 py-3">Besar Potongan</th>
-                <th scope="col" className="px-6 py-3">Periode Aktif</th>
-                <th scope="col" className="px-6 py-3">Produk Terikat</th>
-                <th scope="col" className="px-6 py-3">Status</th>
-                <th scope="col" className="px-6 py-3 text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center">
-                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-800" />
-                  </td>
-                </tr>
-              ) : filteredDiscounts.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
-                    <div className="flex flex-col items-center justify-center space-y-1">
-                      <Percent className="w-5 h-5 text-slate-300" />
-                      <p className="text-xs font-medium text-slate-500">Daftar program diskon masih kosong</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredDiscounts.map((discount) => (
-                  <tr key={discount.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-3.5 font-medium text-slate-900">{discount.name}</td>
-                    <td className="px-6 py-3.5 font-mono">
-                      {discount.type === 'PERCENTAGE' ? (
-                        <span className="inline-flex items-center rounded-md bg-blue-50 px-1.5 py-0.5 text-[11px] font-bold text-blue-700 border border-blue-100">
-                          {discount.value}% OFF
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center rounded-md bg-emerald-50 px-1.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-100">
-                          Rp {discount.value.toLocaleString('id-ID')} OFF
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-3.5 text-slate-500 font-medium">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                        <span>
-                          {discount.startDate ? new Date(discount.startDate).toLocaleDateString('id-ID', { dateStyle: 'short' }) : '∞'} 
-                          {' - '} 
-                          {discount.endDate ? new Date(discount.endDate).toLocaleDateString('id-ID', { dateStyle: 'short' }) : '∞'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-3.5">
+      {/* Grid Layout for Discounts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {loading ? (
+          <div className="col-span-full py-16 flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-slate-450" />
+          </div>
+        ) : filteredDiscounts.length === 0 ? (
+          <div className="col-span-full border-2 border-dashed border-slate-200 rounded-3xl p-16 text-center text-slate-400 bg-white">
+            <div className="w-12 h-12 bg-slate-50 border border-slate-150 rounded-2xl flex items-center justify-center text-slate-450 mx-auto mb-4">
+              <Percent className="w-6 h-6" />
+            </div>
+            <p className="text-xs font-bold text-slate-600">Daftar program diskon masih kosong</p>
+            <p className="text-[10px] text-slate-400 mt-1">Silakan tambahkan kampanye potongan diskon promosi toko.</p>
+          </div>
+        ) : (
+          filteredDiscounts.map((discount) => {
+            return (
+              <div 
+                key={discount.id} 
+                className="group relative bg-white border border-slate-200/80 rounded-2xl p-5 hover:shadow-sm transition-all hover:border-slate-300 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-3">
+                    {discount.type === 'PERCENTAGE' ? (
+                      <span className="inline-flex items-center rounded-lg bg-indigo-50 border border-indigo-100/60 px-2.5 py-1 text-[11px] font-extrabold text-indigo-700">
+                        {discount.value}% OFF
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-lg bg-emerald-50 border border-emerald-100/60 px-2.5 py-1 text-[11px] font-extrabold text-emerald-700">
+                        Rp {discount.value.toLocaleString('id-ID')} OFF
+                      </span>
+                    )}
+
+                    <div className="flex items-center gap-1">
                       <button
-                        onClick={() => handleOpenManageProducts(discount)}
-                        className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 hover:bg-slate-50 transition-all font-medium text-slate-700"
+                        onClick={() => handleOpenEdit(discount)}
+                        className="p-1.5 text-slate-400 hover:text-slate-750 hover:bg-slate-100 rounded-lg transition-all"
+                        title="Ubah Aturan Diskon"
                       >
-                        <Package className="w-3.5 h-3.5 text-slate-400" />
-                        {discount.products?.length ?? 0} Produk
+                        <Edit3 size={14} />
                       </button>
-                    </td>
-                    <td className="px-6 py-3.5">
-                      <button onClick={() => handleToggleActive(discount)} className="focus:outline-none transition-all">
-                        {discount.isActive ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 font-semibold text-emerald-700">
-                            <CheckCircle2 className="w-3 h-3" /> Aktif
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 border border-slate-200 px-2 py-0.5 font-semibold text-slate-600">
-                            <XCircle className="w-3 h-3" /> Off
-                          </span>
-                        )}
+                      <button
+                        onClick={() => remove(discount.id)}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                        title="Hapus Diskon"
+                      >
+                        <Trash2 size={14} />
                       </button>
-                    </td>
-                    <td className="px-6 py-3.5 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => handleOpenEdit(discount)} className="p-1 text-slate-400 hover:text-slate-900 rounded transition-all">
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => remove(discount.id)} className="p-1 text-slate-400 hover:text-red-600 rounded transition-all">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                    </div>
+                  </div>
+
+                  <h3 className="text-sm font-extrabold text-slate-900 mt-4 leading-tight group-hover:text-indigo-650 transition-colors">
+                    {discount.name}
+                  </h3>
+
+                  <div className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-450 mt-2">
+                    <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                    <span>
+                      {discount.startDate ? new Date(discount.startDate).toLocaleDateString('id-ID', { dateStyle: 'short' }) : '∞'} 
+                      {' - '} 
+                      {discount.endDate ? new Date(discount.endDate).toLocaleDateString('id-ID', { dateStyle: 'short' }) : '∞'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-100/80 pt-4 mt-5 flex items-center justify-between">
+                  <button
+                    onClick={() => handleOpenManageProducts(discount)}
+                    className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-extrabold text-slate-600 hover:bg-slate-50 transition-all"
+                  >
+                    <Package className="w-3 h-3 text-slate-400" />
+                    <span>{discount.products?.length ?? 0} Produk</span>
+                  </button>
+
+                  <button 
+                    onClick={() => handleToggleActive(discount)} 
+                    className="focus:outline-none transition-all"
+                  >
+                    {discount.isActive ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                        <CheckCircle2 className="w-3 h-3" /> Aktif
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 border border-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-500">
+                        <XCircle className="w-3 h-3" /> Off
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )
+          })
+        )}
       </div>
 
       {/* Modal Buat/Ubah Diskon */}
       {isOpenModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/20 backdrop-blur-xs">
-          <div className="w-full max-w-sm overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-xl">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-sm font-semibold text-slate-900">{editingId ? 'Ubah Aturan Diskon' : 'Tambah Aturan Diskon'}</h3>
-              <button onClick={() => setIsOpenModal(false)} className="rounded p-1 text-slate-400 hover:bg-slate-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-all">
+          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-150 bg-white p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div>
+                <h3 className="text-sm font-black text-slate-900">{editingId ? 'Ubah Aturan Diskon' : 'Tambah Aturan Diskon'}</h3>
+                <p className="text-[10px] font-semibold text-slate-450 mt-0.5">Atur detail kampanye promosi dan potongan harga POS.</p>
+              </div>
+              <button onClick={() => setIsOpenModal(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-655">
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+            <form onSubmit={handleSubmit} className="mt-5 space-y-4">
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Nama Kampanye Diskon</label>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Nama Kampanye Diskon</label>
                 <input
                   type="text"
                   required
                   placeholder="Contoh: Diskon Gajian, Promo Member"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs outline-none focus:bg-white focus:border-slate-400"
+                  className="w-full rounded-xl border border-slate-200/80 bg-slate-50/50 px-3 py-3 text-xs font-semibold outline-none transition-all focus:border-indigo-500 focus:bg-white"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Tipe</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Tipe</label>
                   <select
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value as 'PERCENTAGE' | 'FIXED' })}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-2 py-2 text-xs outline-none"
+                    className="w-full rounded-xl border border-slate-200/80 bg-slate-50/50 px-3 py-3 text-xs font-semibold outline-none focus:border-indigo-500 focus:bg-white"
                   >
                     <option value="PERCENTAGE">Persen (%)</option>
                     <option value="FIXED">Nominal (Rp)</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Nilai</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Nilai Potongan</label>
                   <input
                     type="number"
                     required
@@ -471,36 +496,36 @@ export default function DiscountPage() {
                     placeholder="Nilai diskon"
                     value={formData.value || ''}
                     onChange={(e) => setFormData({ ...formData, value: Number(e.target.value) })}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs outline-none focus:bg-white focus:border-slate-400"
+                    className="w-full rounded-xl border border-slate-200/80 bg-slate-50/50 px-3 py-3 text-xs font-semibold outline-none transition-all focus:border-indigo-500 focus:bg-white"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Mulai (Opsional)</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Mulai (Opsional)</label>
                   <input
                     type="date"
                     value={formData.startDate}
                     onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs outline-none focus:bg-white focus:border-slate-400"
+                    className="w-full rounded-xl border border-slate-200/80 bg-slate-50/50 px-3 py-3 text-xs font-semibold outline-none transition-all focus:border-indigo-500 focus:bg-white"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Selesai (Opsional)</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Selesai (Opsional)</label>
                   <input
                     type="date"
                     value={formData.endDate}
                     onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs outline-none focus:bg-white focus:border-slate-400"
+                    className="w-full rounded-xl border border-slate-200/80 bg-slate-50/50 px-3 py-3 text-xs font-semibold outline-none transition-all focus:border-indigo-500 focus:bg-white"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-3 mt-4">
-                <button type="button" disabled={isSubmitting} onClick={() => setIsOpenModal(false)} className="rounded-lg border px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50">Batal</button>
-                <button type="submit" disabled={isSubmitting} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700 shadow-md shadow-blue-500/10 cursor-pointer">
-                  {isSubmitting ? 'Menyimpan...' : 'Simpan'}
+              <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-4 mt-6">
+                <button type="button" disabled={isSubmitting} onClick={() => setIsOpenModal(false)} className="rounded-xl border border-slate-250/70 px-4 py-2.5 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all">Batal</button>
+                <button type="submit" disabled={isSubmitting} className="rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-750 shadow-indigo-500/10 transition-all cursor-pointer">
+                  {isSubmitting ? 'Menyimpan...' : 'Simpan Aturan'}
                 </button>
               </div>
             </form>
@@ -508,70 +533,73 @@ export default function DiscountPage() {
         </div>
       )}
 
-      {/* Modal Atokasi Hubungan Produk (Satu / Semua) */}
+      {/* Modal Produk Terikat */}
       {isOpenManageProducts && selectedDiscount && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/20 backdrop-blur-xs">
-          <div className="w-full max-w-sm overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-xl max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-all">
+          <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-slate-150 bg-white p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-150 max-h-[85vh] overflow-y-auto space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-2">
                 <Tag className="w-4 h-4 text-slate-400" />
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-900">Alokasi Produk Terikat</h3>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Diskon: <span className="font-semibold text-slate-600">{selectedDiscount.name}</span></p>
+                  <h3 className="text-sm font-black text-slate-900">Alokasi Produk Terikat</h3>
+                  <p className="text-[10px] font-semibold text-slate-450 mt-0.5">Diskon: <span className="font-bold text-slate-600">{selectedDiscount.name}</span></p>
                 </div>
               </div>
-              <button onClick={() => setIsOpenManageProducts(false)} className="rounded p-1 text-slate-400 hover:bg-slate-50"><X className="h-4 w-4" /></button>
+              <button onClick={() => setIsOpenManageProducts(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-655"><X className="h-4 w-4" /></button>
             </div>
 
-            {/* Opsi Alokasi Massal */}
-            <div className="mt-3 p-2.5 border border-slate-200 rounded-lg bg-slate-50/50 flex items-center justify-between gap-3">
+            {/* Mass allocation */}
+            <div className="p-3 border border-slate-200 rounded-xl bg-slate-50/50 flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold text-slate-900">Terapkan Massal</p>
-                <p className="text-[10px] text-slate-400 mt-0.5">Hubungkan ke seluruh produk toko sekaligus ({products.length} item)</p>
+                <p className="text-[11px] font-bold text-slate-900">Terapkan Massal</p>
+                <p className="text-[9.5px] font-semibold text-slate-450 mt-0.5">Hubungkan ke seluruh produk toko ({products.length} item)</p>
               </div>
               <button 
                 type="button" 
                 onClick={handleAssignAllProducts}
                 disabled={products.length === 0}
-                className="inline-flex items-center gap-1 rounded-md bg-white border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+                className="inline-flex items-center gap-1 rounded-lg bg-white border border-slate-200 px-2.5 py-1.5 text-[10px] font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 shadow-3xs cursor-pointer"
               >
-                <Sparkles size={12} className="text-blue-500" /> Semua
+                <Sparkles size={11} className="text-indigo-500" /> Semua
               </button>
             </div>
 
             <div className="relative flex items-center py-2">
               <div className="flex-grow border-t border-slate-200"></div>
-              <span className="flex-shrink mx-2 text-[10px] text-slate-400 font-bold uppercase tracking-wider">Atau Pilih Satuan</span>
+              <span className="flex-shrink mx-2 text-[9px] text-slate-400 font-bold uppercase tracking-wider">Atau Pilih Satuan</span>
               <div className="flex-grow border-t border-slate-200"></div>
             </div>
 
-            {/* Opsi Alokasi Satuan */}
+            {/* Single allocation */}
             <form onSubmit={handleAssignProduct} className="flex gap-2">
-              <select
-                value={assignProductId}
-                onChange={(e) => setAssignProductId(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-2 py-1.5 text-xs font-medium outline-none"
-              >
-                {products.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>)}
-              </select>
-              <button type="submit" className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-blue-700 shadow-sm shadow-blue-500/10 whitespace-nowrap cursor-pointer">
+              <div className="relative flex-1">
+                <select
+                  value={assignProductId}
+                  onChange={(e) => setAssignProductId(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200/80 bg-slate-50/50 pl-3 pr-8 py-2.5 text-xs font-semibold text-slate-800 outline-none cursor-pointer appearance-none focus:border-indigo-500 focus:bg-white"
+                >
+                  {products.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>)}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+              </div>
+              <button type="submit" className="inline-flex items-center gap-1 rounded-xl bg-indigo-600 px-3.5 py-2.5 text-xs font-bold text-white hover:bg-indigo-700 shadow-3xs active:scale-97 cursor-pointer">
                 <PlusCircle className="w-3.5 h-3.5" /> Ikat
               </button>
             </form>
 
-            {/* Daftar Produk Terhubung */}
-            <div className="mt-4 border border-slate-200 rounded-lg max-h-48 overflow-y-auto bg-slate-50/30 p-2 space-y-1.5">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1">Daftar Item Saat Ini :</p>
+            {/* Linked items */}
+            <div className="border border-slate-200 rounded-xl max-h-48 overflow-y-auto bg-slate-50/30 p-2 space-y-1.5 scrollbar-thin">
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1">Daftar Item Saat Ini :</p>
               {selectedDiscount.products?.length === 0 ? (
-                <p className="text-xs text-center py-6 text-slate-400 italic bg-white rounded-lg border border-dashed border-slate-200">Belum ada komoditas terikat.</p>
+                <p className="text-[10px] text-center py-6 text-slate-450 italic bg-white rounded-lg border border-dashed border-slate-200">Belum ada komoditas terikat.</p>
               ) : (
                 selectedDiscount.products?.map((dp) => (
-                  <div key={dp.productId} className="flex justify-between items-center bg-white p-2 rounded-lg border border-slate-200 shadow-3xs">
+                  <div key={dp.productId} className="flex justify-between items-center bg-white p-2 rounded-xl border border-slate-150 shadow-3xs">
                     <div className="min-w-0 flex-1 pr-2">
-                      <p className="text-xs font-medium text-slate-900 truncate">{dp.product?.name}</p>
-                      <p className="text-[10px] font-mono text-slate-400 truncate">SKU: {dp.product?.sku}</p>
+                      <p className="text-xs font-bold text-slate-900 truncate">{dp.product?.name}</p>
+                      <p className="text-[9.5px] font-mono text-slate-400 mt-0.5 truncate">SKU: {dp.product?.sku}</p>
                     </div>
-                    <button type="button" onClick={() => handleRemoveProduct(dp.productId)} className="text-slate-400 hover:text-rose-600 p-1 rounded transition-colors shrink-0">
+                    <button type="button" onClick={() => handleRemoveProduct(dp.productId)} className="text-slate-400 hover:text-rose-600 p-1 rounded-lg transition-colors shrink-0">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -581,7 +609,7 @@ export default function DiscountPage() {
 
             <button
               onClick={() => setIsOpenManageProducts(false)}
-              className="w-full mt-4 rounded-lg border border-slate-200 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+              className="w-full rounded-xl border border-slate-200 py-2.5 text-xs font-bold text-slate-500 hover:bg-slate-50 cursor-pointer"
             >
               Tutup
             </button>

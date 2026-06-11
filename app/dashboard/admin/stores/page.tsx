@@ -3,7 +3,17 @@
 import { useEffect, useState, useMemo } from 'react'
 import { api } from '@/lib/api'
 import {
-  Mail, Phone, MapPin, Plus, Search, X, Loader2, Trash2, Edit3, Building2, ChevronRight
+  Mail, 
+  Phone, 
+  MapPin, 
+  Plus, 
+  Search, 
+  X, 
+  Loader2, 
+  Trash2, 
+  Edit3, 
+  Building2, 
+  ChevronRight
 } from 'lucide-react'
 
 type StoreData = {
@@ -17,109 +27,6 @@ type StoreData = {
 
 const EMPTY = { name: '', email: '', password: '', phone: '', address: '' }
 
-function FloatingInput({
-  label, type = 'text', value, onChange, required, placeholder
-}: {
-  label: string; type?: string; value: string; onChange: (v: string) => void;
-  required?: boolean; placeholder?: string
-}) {
-  const [focused, setFocused] = useState(false)
-  const active = focused || value.length > 0
-  return (
-    <div className="relative">
-      <label
-        style={{
-          position: 'absolute',
-          left: '14px',
-          top: active ? '7px' : '50%',
-          transform: active ? 'none' : 'translateY(-50%)',
-          fontSize: active ? '10px' : '14px',
-          fontWeight: active ? '600' : '400',
-          color: focused ? '#2563EB' : active ? '#8B87A8' : '#9CA3AF',
-          transition: 'all 0.18s ease',
-          pointerEvents: 'none',
-          letterSpacing: active ? '0.05em' : '0',
-          textTransform: active ? 'uppercase' : 'none',
-          zIndex: 1,
-        }}
-      >
-        {label}{required && ' *'}
-      </label>
-      <input
-        type={type}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        required={required}
-        placeholder={focused ? placeholder : ''}
-        style={{
-          width: '100%',
-          padding: active ? '22px 14px 8px' : '14px',
-          border: `1.5px solid ${focused ? '#2563EB' : '#E5E3EF'}`,
-          borderRadius: '12px',
-          fontSize: '14px',
-          color: '#1A1A2E',
-          background: focused ? '#FDFCFF' : '#F9F8FC',
-          outline: 'none',
-          transition: 'all 0.18s ease',
-          boxShadow: focused ? '0 0 0 3px rgba(37,99,235,0.08)' : 'none',
-        }}
-      />
-    </div>
-  )
-}
-
-function FloatingTextarea({
-  label, value, onChange
-}: {
-  label: string; value: string; onChange: (v: string) => void
-}) {
-  const [focused, setFocused] = useState(false)
-  const active = focused || value.length > 0
-  return (
-    <div className="relative">
-      <label
-        style={{
-          position: 'absolute',
-          left: '14px',
-          top: active ? '10px' : '14px',
-          fontSize: active ? '10px' : '14px',
-          fontWeight: active ? '600' : '400',
-          color: focused ? '#2563EB' : active ? '#8B87A8' : '#9CA3AF',
-          transition: 'all 0.18s ease',
-          pointerEvents: 'none',
-          letterSpacing: active ? '0.05em' : '0',
-          textTransform: active ? 'uppercase' : 'none',
-          zIndex: 1,
-        }}
-      >
-        {label}
-      </label>
-      <textarea
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        rows={3}
-        style={{
-          width: '100%',
-          padding: active ? '26px 14px 10px' : '14px',
-          border: `1.5px solid ${focused ? '#2563EB' : '#E5E3EF'}`,
-          borderRadius: '12px',
-          fontSize: '14px',
-          color: '#1A1A2E',
-          background: focused ? '#FDFCFF' : '#F9F8FC',
-          outline: 'none',
-          resize: 'none',
-          transition: 'all 0.18s ease',
-          boxShadow: focused ? '0 0 0 3px rgba(37,99,235,0.08)' : 'none',
-        }}
-      />
-    </div>
-  )
-}
-
 export default function StorePage() {
   const [stores, setStores] = useState<StoreData[]>([])
   const [loading, setLoading] = useState(true)
@@ -130,14 +37,20 @@ export default function StorePage() {
   const [form, setForm] = useState(EMPTY)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+  }, [])
 
   async function load() {
     setLoading(true)
     try {
       const res = await api.get('/stores')
       setStores(res.data || [])
-    } finally { setLoading(false) }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function submit(e: React.FormEvent) {
@@ -146,354 +59,288 @@ export default function StorePage() {
     try {
       const payload = { ...form }
       if (!payload.password) delete (payload as any).password
-      if (editingId) await api.patch(`/stores/${editingId}`, payload)
-      else await api.post('/stores', payload)
+      if (editingId) {
+        await api.patch(`/stores/${editingId}`, payload)
+      } else {
+        await api.post('/stores', payload)
+      }
       setOpen(false)
       load()
-    } catch (e: any) { alert(e.response?.data?.message || 'Gagal menyimpan') }
-    finally { setSaving(false) }
+    } catch (e: any) {
+      alert(e.response?.data?.message || 'Gagal menyimpan')
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Hapus toko ini?')) return
+    if (!confirm('Hapus cabang toko ini?')) return
     setDeletingId(id)
     try {
       await api.delete(`/stores/${id}`)
       load()
-    } finally { setDeletingId(null) }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setDeletingId(null)
+    }
   }
 
-  const filtered = useMemo(() => stores.filter(s =>
-    s.name.toLowerCase().includes(search.toLowerCase()) ||
-    s.email.toLowerCase().includes(search.toLowerCase())
-  ), [stores, search])
+  const filtered = useMemo(() => {
+    return stores.filter(s =>
+      s.name.toLowerCase().includes(search.toLowerCase()) ||
+      s.email.toLowerCase().includes(search.toLowerCase())
+    )
+  }, [stores, search])
 
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        .store-root * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
-        .store-card {
-          background: #fff;
-          border: 1.5px solid #EEEDF5;
-          border-radius: 20px;
-          padding: 24px;
-          transition: all 0.22s ease;
-          position: relative;
-          overflow: hidden;
-          cursor: default;
-        }
-        .store-card::before {
-          content: '';
-          position: absolute;
-          left: 0; top: 0; bottom: 0;
-          width: 3px;
-          background: #2563EB;
-          transform: scaleY(0);
-          transform-origin: bottom;
-          transition: transform 0.25s ease;
-          border-radius: 0 2px 2px 0;
-        }
-        .store-card:hover {
-          border-color: #93C5FD;
-          box-shadow: 0 8px 32px rgba(37,99,235,0.08);
-          transform: translateY(-2px);
-        }
-        .store-card:hover::before { transform: scaleY(1); }
-        .store-card:hover .card-actions { opacity: 1; transform: translateY(0); }
-        .card-actions {
-          opacity: 0;
-          transform: translateY(4px);
-          transition: all 0.18s ease;
-          display: flex;
-          gap: 4px;
-        }
-        .btn-icon {
-          width: 32px; height: 32px;
-          border-radius: 8px;
-          border: none;
-          cursor: pointer;
-          display: flex; align-items: center; justify-content: center;
-          transition: background 0.15s;
-          background: transparent;
-        }
-        .btn-icon:hover { background: #F3F2FA; }
-        .btn-icon.danger:hover { background: #FFF0F0; color: #E53E3E; }
-        .search-wrap {
-          position: relative;
-        }
-        .search-wrap input {
-          width: 100%;
-          padding: 13px 16px 13px 46px;
-          border: 1.5px solid #EEEDF5;
-          border-radius: 14px;
-          font-size: 14px;
-          background: #fff;
-          color: #1A1A2E;
-          outline: none;
-          transition: border-color 0.18s, box-shadow 0.18s;
-        }
-        .search-wrap input:focus {
-          border-color: #2563EB;
-          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
-        }
-        .search-wrap input::placeholder { color: #B0AECB; }
-        .modal-overlay {
-          position: fixed; inset: 0;
-          background: rgba(26,26,46,0.45);
-          backdrop-filter: blur(6px);
-          display: flex; align-items: center; justify-content: center;
-          z-index: 50; padding: 16px;
-          animation: fadeIn 0.2s ease;
-        }
-        .modal-box {
-          width: 100%; max-width: 460px;
-          background: #fff;
-          border-radius: 24px;
-          box-shadow: 0 32px 80px rgba(26,26,46,0.18);
-          animation: slideUp 0.25s ease;
-          overflow: hidden;
-        }
-        .modal-header {
-          padding: 28px 28px 0;
-          display: flex; align-items: flex-start; justify-content: space-between;
-        }
-        .modal-body {
-          padding: 24px 28px 28px;
-          display: flex; flex-direction: column; gap: 14px;
-        }
-        .modal-title {
-          font-size: 20px; font-weight: 700;
-          color: #1A1A2E; line-height: 1.2;
-        }
-        .modal-sub {
-          font-size: 13px; color: #9C99B8; margin-top: 3px;
-        }
-        .btn-close {
-          width: 34px; height: 34px; border-radius: 10px;
-          border: 1.5px solid #EEEDF5; background: #F9F8FC;
-          cursor: pointer; display: flex; align-items: center; justify-content: center;
-          flex-shrink: 0; transition: background 0.15s;
-        }
-        .btn-close:hover { background: #EEEDF5; }
-        .btn-save {
-          width: 100%; padding: 14px;
-          background: #2563EB;
-          color: #fff; border: none; border-radius: 12px;
-          font-size: 14px; font-weight: 600; cursor: pointer;
-          display: flex; align-items: center; justify-content: center; gap: 8px;
-          transition: background 0.18s, transform 0.1s;
-          margin-top: 4px;
-        }
-        .btn-save:hover:not(:disabled) { background: #1D4ED8; }
-        .btn-save:active:not(:disabled) { transform: scale(0.99); }
-        .btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
-        .divider {
-          height: 1px; background: #F0EFF7;
-          margin: 0 28px;
-        }
-        .skeleton {
-          background: linear-gradient(90deg, #F3F2FA 25%, #EEEDF5 50%, #F3F2FA 75%);
-          background-size: 200% 100%;
-          animation: shimmer 1.4s infinite;
-          border-radius: 20px;
-        }
-        .add-btn {
-          background: #2563EB; color: #fff;
-          border: none; border-radius: 12px;
-          padding: 11px 20px;
-          font-size: 14px; font-weight: 600;
-          display: flex; align-items: center; gap: 8px;
-          cursor: pointer; transition: background 0.18s, transform 0.1s;
-          white-space: nowrap;
-        }
-        .add-btn:hover { background: #1D4ED8; }
-        .add-btn:active { transform: scale(0.98); }
-        .empty-state {
-          grid-column: 1 / -1;
-          text-align: center; padding: 64px 24px;
-          color: #B0AECB;
-        }
-        .badge-count {
-          display: inline-flex; align-items: center;
-          background: #E0F2FE; color: #0284C7;
-          font-size: 12px; font-weight: 600;
-          padding: 2px 10px; border-radius: 20px;
-          margin-left: 8px; vertical-align: middle;
-        }
-        @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: translateY(0) } }
-        @keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }
-
-        @media (max-width: 640px) {
-          .store-root-container { padding: 16px 12px !important; }
-          .store-header-row { flex-direction: column; align-items: stretch !important; gap: 16px !important; }
-          .store-header-row button { width: 100%; justify-content: center; }
-          .card-actions { opacity: 1 !important; transform: none !important; }
-        }
-      `}</style>
-
-      <div className="store-root store-root-container" style={{ padding: '32px 24px', maxWidth: '1100px', margin: '0 auto' }}>
-
-        <div className="store-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '32px' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-              <div style={{ width: '32px', height: '32px', background: '#E0F2FE', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Building2 size={16} color="#0284C7" />
-              </div>
-              <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#1A1A2E', margin: 0 }}>
-                Manajemen Toko
-                {!loading && <span className="badge-count">{stores.length}</span>}
-              </h1>
-            </div>
-            <p style={{ fontSize: '13px', color: '#9C99B8', margin: 0 }}>Kelola seluruh cabang operasional toko Anda</p>
+    <div className="space-y-6">
+      
+      {/* Header section */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 bg-blue-50 border border-blue-100/50 rounded-xl flex items-center justify-center text-blue-600 shrink-0">
+            <Building2 size={20} />
           </div>
-          <button className="add-btn" onClick={() => { setEditingId(null); setForm(EMPTY); setOpen(true) }}>
-            <Plus size={16} />
-            Tambah Toko
-          </button>
-        </div>
-
-        <div className="search-wrap" style={{ marginBottom: '24px' }}>
-          <Search size={16} color="#B0AECB" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Cari nama toko atau email…"
-          />
-          {search && (
-            <button onClick={() => setSearch('')} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#B0AECB', display: 'flex' }}>
-              <X size={16} />
-            </button>
-          )}
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
-          {loading ? (
-            [1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: '200px' }} />)
-          ) : filtered.length === 0 ? (
-            <div className="empty-state">
-              <Building2 size={36} style={{ margin: '0 auto 12px', opacity: 0.3 }} />
-              <p style={{ fontSize: '15px', fontWeight: '500', color: '#9C99B8', margin: '0 0 6px' }}>
-                {search ? 'Tidak ada toko yang cocok' : 'Belum ada toko'}
-              </p>
-              <p style={{ fontSize: '13px', margin: 0 }}>
-                {search ? 'Coba kata kunci lain' : 'Klik "Tambah Store" untuk memulai'}
-              </p>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-black text-slate-900">Manajemen Cabang Toko</h1>
+              {!loading && (
+                <span className="rounded-full bg-blue-50 border border-blue-100 text-blue-600 px-2 py-0.5 text-[10px] font-extrabold tracking-wide">
+                  {stores.length}
+                </span>
+              )}
             </div>
-          ) : (
-            filtered.map(s => (
-              <div key={s.id} className="store-card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Building2 size={20} color="#fff" />
-                  </div>
-                  <div className="card-actions">
-                    <button className="btn-icon" title="Edit" onClick={() => { setEditingId(s.id); setForm({ ...s, password: '' }); setOpen(true) }}>
-                      <Edit3 size={14} color="#2563EB" />
-                    </button>
-                    <button className="btn-icon danger" title="Hapus" onClick={() => handleDelete(s.id)} disabled={deletingId === s.id}>
-                      {deletingId === s.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                    </button>
-                  </div>
-                </div>
-
-                <div style={{ marginTop: '16px', marginBottom: '16px' }}>
-                  <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1A1A2E', margin: '0 0 2px' }}>{s.name}</h3>
-                  <p style={{ fontSize: '12px', color: '#B0AECB', margin: 0 }}>ID: {s.id.slice(0, 8)}…</p>
-                </div>
-
-                <div style={{ height: '1px', background: '#F3F2FA', marginBottom: '14px' }} />
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '28px', height: '28px', background: '#F3F2FA', borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Mail size={13} color="#2563EB" />
-                    </div>
-                    <span style={{ fontSize: '13px', color: '#5A5880', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.email}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '28px', height: '28px', background: '#F3F2FA', borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Phone size={13} color="#2563EB" />
-                    </div>
-                    <span style={{ fontSize: '13px', color: s.phone ? '#5A5880' : '#C5C3DC' }}>{s.phone || 'Belum diisi'}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                    <div style={{ width: '28px', height: '28px', background: '#F3F2FA', borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
-                      <MapPin size={13} color="#2563EB" />
-                    </div>
-                    <span style={{ fontSize: '13px', color: s.address ? '#5A5880' : '#C5C3DC', lineHeight: '1.4' }}>{s.address || 'Belum diisi'}</span>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
+            <p className="text-xs font-semibold text-slate-450 mt-0.5">Kelola seluruh cabang outlet aktif dan kredensial aksesnya</p>
+          </div>
         </div>
+
+        <button 
+          onClick={() => { setEditingId(null); setForm(EMPTY); setOpen(true) }}
+          className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2.5 text-xs font-bold text-white transition-all shadow-3xs active:scale-97 cursor-pointer"
+        >
+          <Plus size={15} />
+          <span>Tambah Cabang</span>
+        </button>
       </div>
 
-      {open && (
-        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setOpen(false) }}>
-          <form className="modal-box" onSubmit={submit}>
-            <div className="modal-header">
+      {/* Toolbar - Search */}
+      <div className="relative">
+        <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Cari cabang toko berdasarkan nama atau email..."
+          className="w-full rounded-xl border border-slate-200/80 pl-11 pr-11 py-3.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold"
+        />
+        {search && (
+          <button 
+            onClick={() => setSearch('')}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+          >
+            <X size={15} />
+          </button>
+        )}
+      </div>
+
+      {/* Grid List */}
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {loading ? (
+          [1, 2, 3].map(i => (
+            <div key={i} className="h-52 animate-pulse rounded-2xl border border-slate-200/60 bg-white" />
+          ))
+        ) : filtered.length === 0 ? (
+          <div className="col-span-full flex flex-col items-center justify-center py-16 text-center border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+            <Building2 size={36} className="text-slate-350 opacity-60 mb-3" />
+            <p className="text-xs font-bold text-slate-500">
+              {search ? 'Tidak ada cabang toko yang cocok' : 'Belum ada cabang toko terdaftar'}
+            </p>
+            <p className="text-[10px] text-slate-400 mt-1">
+              {search ? 'Coba ubah kata kunci pencarian Anda' : 'Klik "Tambah Cabang" untuk mendaftarkan toko baru'}
+            </p>
+          </div>
+        ) : (
+          filtered.map(s => (
+            <div 
+              key={s.id} 
+              className="group relative bg-white border border-slate-200/70 rounded-2xl p-5 hover:border-blue-350 hover:shadow-md hover:shadow-blue-500/5 transition-all duration-300 flex flex-col justify-between min-h-[200px]"
+            >
               <div>
-                <p className="modal-title">{editingId ? 'Edit Toko' : 'Tambah Toko Baru'}</p>
-                <p className="modal-sub">{editingId ? 'Perbarui informasi cabang' : 'Isi detail cabang baru Anda'}</p>
+                <div className="flex justify-between items-start">
+                  <div className="h-10 w-10 bg-gradient-to-tr from-blue-600 to-indigo-650 rounded-xl flex items-center justify-center text-white shadow-sm shadow-blue-500/10">
+                    <Building2 size={18} />
+                  </div>
+                  
+                  {/* Actions */}
+                  <div className="flex gap-1.5 opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-all duration-200">
+                    <button 
+                      onClick={() => { setEditingId(s.id); setForm({ ...s, password: '' }); setOpen(true) }}
+                      className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-slate-50 text-blue-600 hover:text-blue-700 transition-colors"
+                      title="Edit Cabang"
+                    >
+                      <Edit3 size={14} />
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(s.id)}
+                      disabled={deletingId === s.id}
+                      className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-red-50 text-slate-400 hover:text-red-650 transition-colors disabled:opacity-50"
+                      title="Hapus Cabang"
+                    >
+                      {deletingId === s.id ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={14} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-4 mb-4">
+                  <h3 className="text-sm font-extrabold text-slate-900 leading-snug">{s.name}</h3>
+                  <p className="text-[9.5px] font-bold text-slate-400 font-mono mt-0.5 uppercase tracking-wider">ID: {s.id.slice(0, 8)}...</p>
+                </div>
               </div>
-              <button type="button" className="btn-close" onClick={() => setOpen(false)}>
-                <X size={16} color="#9C99B8" />
+
+              <div className="border-t border-slate-100 pt-4 space-y-2.5">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="h-7 w-7 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 shrink-0 border border-slate-100">
+                    <Mail size={12} className="text-blue-500" />
+                  </div>
+                  <span className="text-xs font-semibold text-slate-600 truncate">{s.email}</span>
+                </div>
+                
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="h-7 w-7 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 shrink-0 border border-slate-100">
+                    <Phone size={12} className="text-blue-500" />
+                  </div>
+                  <span className={`text-xs font-semibold ${s.phone ? 'text-slate-600' : 'text-slate-350 italic'}`}>
+                    {s.phone || 'Telepon belum diatur'}
+                  </span>
+                </div>
+
+                <div className="flex items-start gap-2.5 min-w-0">
+                  <div className="h-7 w-7 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 shrink-0 border border-slate-100 mt-0.5">
+                    <MapPin size={12} className="text-blue-500" />
+                  </div>
+                  <span className={`text-xs font-semibold leading-relaxed line-clamp-2 ${s.address ? 'text-slate-600' : 'text-slate-350 italic'}`}>
+                    {s.address || 'Alamat belum diatur'}
+                  </span>
+                </div>
+              </div>
+
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Modal Dialog */}
+      {open && (
+        <div 
+          className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={e => { if (e.target === e.currentTarget) setOpen(false) }}
+        >
+          <form 
+            className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200/80 animate-in slide-in-from-bottom-3 duration-250 flex flex-col"
+            onSubmit={submit}
+          >
+            <div className="p-6 pb-0 flex items-start justify-between">
+              <div>
+                <h3 className="text-base font-black text-slate-950">{editingId ? 'Edit Detail Cabang' : 'Daftarkan Cabang Baru'}</h3>
+                <p className="text-[10.5px] font-semibold text-slate-400 mt-0.5">
+                  {editingId ? 'Perbarui informasi operasional toko terpilih' : 'Lengkapi detail berikut untuk mendaftarkan outlet baru'}
+                </p>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setOpen(false)}
+                className="h-8 w-8 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-650 hover:bg-slate-100 transition-colors"
+              >
+                <X size={15} />
               </button>
             </div>
 
-            <div className="divider" style={{ marginTop: '20px' }} />
+            <div className="h-px bg-slate-100 my-4 mx-6" />
 
-            <div className="modal-body">
-              <FloatingInput
-                label="Nama Toko"
-                value={form.name}
-                onChange={v => setForm({ ...form, name: v })}
-                required
-                placeholder="Contoh: Cabang Jakarta Pusat"
-              />
-              <FloatingInput
-                label="Email"
-                type="email"
-                value={form.email}
-                onChange={v => setForm({ ...form, email: v })}
-                required
-                placeholder="email@toko.com"
-              />
-              <FloatingInput
-                label={editingId ? 'Password Baru (opsional)' : 'Password'}
-                type="password"
-                value={form.password}
-                onChange={v => setForm({ ...form, password: v })}
-                required={!editingId}
-                placeholder="Min. 8 karakter"
-              />
-              <FloatingInput
-                label="Nomor Telepon"
-                type="tel"
-                value={form.phone}
-                onChange={v => setForm({ ...form, phone: v })}
-                placeholder="+62 812 0000 0000"
-              />
-              <FloatingTextarea
-                label="Alamat Lengkap"
-                value={form.address}
-                onChange={v => setForm({ ...form, address: v })}
-              />
+            <div className="p-6 pt-0 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Nama Cabang Toko *</label>
+                <input
+                  type="text"
+                  required
+                  value={form.name}
+                  onChange={e => setForm({ ...form, name: e.target.value })}
+                  placeholder="Contoh: Cabang Jakarta Pusat"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-xs text-slate-900 placeholder:text-slate-450 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 transition-all font-semibold"
+                />
+              </div>
 
-              <button type="submit" className="btn-save" disabled={saving}>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Email Login Cabang *</label>
+                <input
+                  type="email"
+                  required
+                  value={form.email}
+                  onChange={e => setForm({ ...form, email: e.target.value })}
+                  placeholder="nama.cabang@lailacollections.com"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-xs text-slate-900 placeholder:text-slate-455 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 transition-all font-semibold"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+                  {editingId ? 'Password Baru (opsional)' : 'Password Kredensial *'}
+                </label>
+                <input
+                  type="password"
+                  required={!editingId}
+                  value={form.password}
+                  onChange={e => setForm({ ...form, password: e.target.value })}
+                  placeholder="Min. 8 karakter"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-xs text-slate-900 placeholder:text-slate-455 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 transition-all font-semibold"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Nomor Telepon</label>
+                <input
+                  type="tel"
+                  value={form.phone}
+                  onChange={e => setForm({ ...form, phone: e.target.value })}
+                  placeholder="Contoh: 081234567890"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-xs text-slate-900 placeholder:text-slate-455 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 transition-all font-semibold"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Alamat Lengkap</label>
+                <textarea
+                  value={form.address}
+                  onChange={e => setForm({ ...form, address: e.target.value })}
+                  placeholder="Alamat lengkap outlet cabang..."
+                  rows={3}
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-xs text-slate-900 placeholder:text-slate-455 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 transition-all resize-none font-semibold"
+                />
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={saving}
+                className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 py-3.5 px-4 text-xs font-bold text-white shadow-md shadow-blue-600/15 transition-all active:scale-98 disabled:pointer-events-none disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer mt-6"
+              >
                 {saving ? (
-                  <><Loader2 size={16} className="animate-spin" /> Menyimpan…</>
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>Menyimpan...</span>
+                  </>
                 ) : (
-                  <>{editingId ? 'Simpan Perubahan' : 'Tambah Toko'} <ChevronRight size={16} /></>
+                  <>
+                    <span>{editingId ? 'Simpan Perubahan' : 'Daftarkan Toko'}</span>
+                    <ChevronRight size={14} />
+                  </>
                 )}
               </button>
             </div>
           </form>
         </div>
       )}
-    </>
+
+    </div>
   )
 }

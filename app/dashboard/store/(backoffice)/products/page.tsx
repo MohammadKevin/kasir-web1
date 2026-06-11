@@ -7,7 +7,9 @@ import {
   Package,
   Printer,
   Boxes,
-  ArrowLeft
+  ArrowLeft,
+  Loader2,
+  ChevronDown
 } from 'lucide-react'
 import BarcodeRender from 'react-barcode'
 import { api } from '@/lib/api'
@@ -177,59 +179,61 @@ export default function ProductsPage() {
   const formatIDR = (num: number) => `Rp ${num.toLocaleString('id-ID')}`
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
 
-      {/* HEADER SECTION */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200/80 pb-4">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => router.push('/dashboard/store')}
-            className="p-1.5 border border-slate-200 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-3xs bg-white"
+            className="p-1.5 border border-slate-200 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-all shadow-3xs bg-white cursor-pointer"
             title="Kembali ke Dashboard"
           >
             <ArrowLeft size={14} />
           </button>
           <div>
-            <h1 className="text-xl font-semibold text-slate-900">Daftar Produk</h1>
-            <p className="text-xs text-slate-500 mt-0.5">Lihat ketersediaan stok aktual gudang, nilai jual, dan manifestasi label barcode</p>
+            <h1 className="text-xl font-black text-slate-900 tracking-tight">Katalog Produk</h1>
+            <p className="text-xs font-semibold text-slate-450 mt-0.5">Lihat ketersediaan stok aktual gudang, nilai jual, dan manifestasi label barcode.</p>
           </div>
         </div>
+
         <button
           onClick={handlePrintAllBarcodes}
           disabled={loading || filtered.length === 0}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-3xs disabled:opacity-40 transition-all"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 shadow-3xs disabled:opacity-40 transition-all cursor-pointer"
         >
-          <Printer size={13} className="text-blue-600" />
+          <Printer size={13} className="text-indigo-600" />
           Cetak Semua Barcode ({filtered.filter(p => p.barcode).length})
         </button>
       </div>
 
-      {/* KONTROL PENCARIAN */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="relative w-full max-w-sm">
-          <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
+      {/* Control Bar */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative flex-1 max-w-md">
+          <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari produk berdasarkan nama, SKU, atau kode barcode..."
-            className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-4 py-2 text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-3xs"
+            className="w-full rounded-xl border border-slate-250/70 bg-white pl-11 pr-4 py-3.5 text-xs font-semibold text-slate-900 placeholder:text-slate-450 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 transition-all shadow-3xs"
           />
         </div>
-        <div className="text-xs text-slate-500 font-medium bg-slate-100 px-2.5 py-1 rounded-md">
-          Ditemukan: <span className="font-bold text-slate-900 font-mono">{filtered.length}</span> Item
+
+        <div className="text-[10px] font-bold text-slate-400 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg shrink-0">
+          Ditemukan: <span className="font-extrabold text-slate-900 font-mono">{filtered.length}</span> Item
         </div>
       </div>
 
-      {/* TAB FILTER KATEGORI */}
+      {/* Category Tabs */}
       <div className="flex flex-wrap gap-1.5">
         {categories.map((cat) => (
           <button
             key={cat.id}
             onClick={() => setSelectedCategoryId(cat.id)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${selectedCategoryId === cat.id
-                ? 'bg-blue-600 text-white border-blue-600 font-semibold shadow-3xs'
-                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer active:scale-[0.98] ${selectedCategoryId === cat.id
+                ? 'bg-indigo-600 text-white border-indigo-650 shadow-3xs'
+                : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
               }`}
           >
             {cat.name}
@@ -237,32 +241,35 @@ export default function ProductsPage() {
         ))}
       </div>
 
-      {/* TABEL DATA UTAMA */}
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-3xs">
-        <div className="w-full overflow-x-auto">
-          <table className="w-full border-collapse text-left text-xs text-slate-600">
-            <thead className="bg-slate-50 text-slate-500 border-b border-slate-200 font-medium">
-              <tr>
-                <th scope="col" className="px-6 py-3">Nama Barang / SKU</th>
-                <th scope="col" className="px-6 py-3">Stok Aktual</th>
-                <th scope="col" className="px-6 py-3">Harga Jual</th>
-                <th scope="col" className="px-6 py-3">Kode Barcode</th>
-                <th scope="col" className="px-6 py-3 text-right">Aksi</th>
+      {/* Main Table */}
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-3xs overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[700px] text-left border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-400 font-bold uppercase tracking-wider text-[9px]">
+                <th className="p-4 pl-6">Nama Barang / SKU</th>
+                <th className="p-4">Stok Aktual</th>
+                <th className="p-4">Harga Jual</th>
+                <th className="p-4">Kode Barcode</th>
+                <th className="p-4 pr-6 text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+
+            <tbody className="divide-y divide-slate-100 text-slate-655 font-semibold">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center">
-                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-800" />
+                  <td colSpan={5} className="p-10 text-center">
+                    <Loader2 className="w-5 h-5 animate-spin text-slate-400 mx-auto" />
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-16 text-center text-slate-400">
-                    <div className="flex flex-col items-center justify-center space-y-1">
-                      <Boxes size={20} className="text-slate-300" />
-                      <p className="text-xs font-medium text-slate-500">Produk tidak ditemukan</p>
+                  <td colSpan={5} className="p-16 text-center text-slate-450">
+                    <div className="flex flex-col items-center justify-center space-y-2">
+                      <div className="p-3 bg-slate-50 border border-slate-150 rounded-2xl text-slate-400">
+                        <Boxes className="w-6 h-6" />
+                      </div>
+                      <p className="text-xs font-bold text-slate-600">Produk tidak ditemukan</p>
                     </div>
                   </td>
                 </tr>
@@ -270,11 +277,10 @@ export default function ProductsPage() {
                 filtered.map((product) => {
                   const isLowStock = product.stock <= product.minimumStock
                   return (
-                    <tr key={product.id} className="hover:bg-slate-50/40 transition-colors">
-
-                      <td className="px-6 py-3.5">
+                    <tr key={product.id} className="group hover:bg-slate-50/45 transition-colors">
+                      <td className="p-4 pl-6">
                         <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-lg border border-slate-100 bg-slate-50 overflow-hidden flex items-center justify-center shrink-0 text-slate-300">
+                          <div className="h-9 w-9 rounded-xl border border-slate-150 bg-slate-50 overflow-hidden flex items-center justify-center shrink-0 text-slate-400">
                             {product.image ? (
                               <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
                             ) : (
@@ -282,40 +288,40 @@ export default function ProductsPage() {
                             )}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-semibold text-slate-900 truncate max-w-[200px]">{product.name}</p>
+                            <p className="font-extrabold text-slate-900 truncate max-w-[200px]">{product.name}</p>
                             <p className="text-[10px] font-mono text-slate-400 mt-0.5">SKU: {product.sku || '-'}</p>
                           </div>
                         </div>
                       </td>
 
-                      <td className="px-6 py-3.5 font-mono">
-                        <span className={`font-bold text-sm ${isLowStock ? 'text-rose-600' : 'text-slate-900'}`}>
+                      <td className="p-4 font-mono">
+                        <span className={`font-black text-sm ${isLowStock ? 'text-rose-600' : 'text-slate-900'}`}>
                           {product.stock}
                         </span>
-                        <span className="text-slate-400 text-[11px] ml-1">Pcs</span>
+                        <span className="text-slate-400 text-[10px] ml-1 font-semibold">Pcs</span>
                       </td>
 
-                      <td className="px-6 py-3.5 font-mono font-bold text-slate-900">
+                      <td className="p-4 font-mono font-bold text-slate-900">
                         {formatIDR(product.sellingPrice)}
                       </td>
 
-                      <td className="px-6 py-3.5">
+                      <td className="p-4">
                         {product.barcode ? (
-                          <div className="flex flex-col gap-0.5 max-w-[100px] overflow-hidden opacity-80">
-                            <BarcodeRender value={product.barcode} height={16} width={1.2} displayValue={false} margin={0} />
-                            <span className="text-[9px] font-mono text-slate-400 truncate">{product.barcode}</span>
+                          <div className="flex flex-col gap-1 max-w-[100px] overflow-hidden opacity-90 bg-white border border-slate-150 rounded-lg p-1.5 items-center">
+                            <BarcodeRender value={product.barcode} height={15} width={1.1} displayValue={false} margin={0} />
+                            <span className="text-[8.5px] font-mono text-slate-450 truncate mt-0.5">{product.barcode}</span>
                           </div>
                         ) : (
-                          <span className="text-slate-400 italic text-[11px]">Belum diatur</span>
+                          <span className="text-slate-300 italic text-[10px] font-semibold">Belum diatur</span>
                         )}
                       </td>
 
-                      <td className="px-6 py-3.5 text-right">
+                      <td className="p-4 pr-6 text-right" onClick={(e) => e.stopPropagation()}>
                         {product.barcode ? (
                           <button
                             type="button"
                             onClick={() => handlePrintSingleBarcode(product.barcode!, product.name)}
-                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="p-1.5 text-slate-405 hover:text-indigo-650 hover:bg-slate-100 rounded-lg transition-all cursor-pointer"
                             title="Cetak Label Item Ini"
                           >
                             <Printer size={14} />
@@ -324,7 +330,6 @@ export default function ProductsPage() {
                           <span className="text-slate-300">-</span>
                         )}
                       </td>
-
                     </tr>
                   )
                 })

@@ -14,8 +14,9 @@ import {
   FolderPlus,
   Layers,
   Package,
-  ImageIcon,
-  Loader2
+  Loader2,
+  ChevronDown,
+  Info
 } from 'lucide-react'
 
 type Category = {
@@ -143,7 +144,6 @@ export default function CategoryPage() {
 
     const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` }
 
-    // Payload yang disesuaikan dengan CreateCategoryDto
     const payload = {
       storeId: formData.storeId,
       name: formData.name.trim(),
@@ -205,7 +205,7 @@ export default function CategoryPage() {
 
   if (loading && stores.length === 0) {
     return (
-      <div className="space-y-6 p-6">
+      <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-2">
             <div className="h-9 w-44 animate-pulse rounded-xl bg-slate-200" />
@@ -220,37 +220,51 @@ export default function CategoryPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
+      
+      {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Kategori Produk</h1>
-          <p className="text-sm text-slate-500 mt-1">Kelola kelompok atau pengelompokan produk komoditas untuk mempermudah navigasi pada kasir POS.</p>
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 bg-indigo-50 border border-indigo-100/55 rounded-xl flex items-center justify-center text-indigo-600 shrink-0">
+            <Folder size={20} />
+          </div>
+          <div>
+            <h1 className="text-xl font-black text-slate-900 tracking-tight">Kategori Produk</h1>
+            <p className="text-xs font-semibold text-slate-450 mt-0.5">Kelola kelompok atau pengelompokan produk komoditas untuk mempermudah navigasi pada kasir POS.</p>
+          </div>
         </div>
 
         <button
           onClick={handleOpenCreate}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 shadow-blue-500/10 transition-all active:scale-98 self-start sm:self-auto cursor-pointer"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white transition-all shadow-3xs hover:bg-indigo-750 active:scale-97 cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
           Tambah Kategori
         </button>
       </div>
 
+      {/* Filter Toolbar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
+        <div className="relative flex-1 max-w-md">
+          <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <input
             type="text"
             placeholder="Cari nama kategori atau deskripsi..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 py-3 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-50 shadow-sm"
+            className="w-full rounded-xl border border-slate-250/70 bg-white pl-11 pr-11 py-3.5 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 transition-all shadow-3xs"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-650"
+            >
+              <X size={15} />
+            </button>
+          )}
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm">
-          <Store className="w-4 h-4 text-slate-400" />
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Toko:</span>
+        <div className="relative shrink-0">
           <select
             value={selectedStoreId}
             onChange={(e) => {
@@ -258,7 +272,7 @@ export default function CategoryPage() {
               setFormData({ storeId: e.target.value, name: '', description: '' })
               localStorage.setItem('storeId', e.target.value)
             }}
-            className="bg-transparent text-sm font-semibold text-slate-800 outline-none pr-2 cursor-pointer"
+            className="w-full sm:w-60 appearance-none bg-white border border-slate-250/70 pl-4 pr-10 py-3.5 rounded-xl text-xs font-bold text-slate-800 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 cursor-pointer transition-all shadow-3xs"
           >
             {stores.map((store) => (
               <option key={store.id} value={store.id}>
@@ -266,130 +280,114 @@ export default function CategoryPage() {
               </option>
             ))}
           </select>
+          <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
-        <div className="w-full overflow-x-auto">
-          <table className="w-full border-collapse text-left text-sm text-slate-600">
-            <thead className="bg-slate-50/70 text-xs font-semibold uppercase tracking-wider text-slate-500 border-b border-slate-100">
-              <tr>
-                <th scope="col" className="px-6 py-4">Nama Kategori</th>
-                <th scope="col" className="px-6 py-4">Deskripsi / Keterangan</th>
-                <th scope="col" className="px-6 py-4">Jumlah Produk Terkait</th>
-                <th scope="col" className="px-6 py-4 text-right">Aksi</th>
-              </tr>
-            </thead>
-
-            <tbody className="divide-y divide-slate-100">
-              {loading ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-slate-400">
-                    <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-800" />
-                  </td>
-                </tr>
-              ) : filteredCategories.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-16 text-center text-slate-400">
-                    <div className="flex flex-col items-center justify-center space-y-2">
-                      <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400">
-                        <Folder className="w-6 h-6" />
-                      </div>
-                      <p className="text-sm font-medium text-slate-600">Kategori produk masih kosong</p>
-                      <p className="text-xs text-slate-400">Silakan tambahkan kelompok kategori baru pada cabang toko ini.</p>
+      {/* Grid Layout of Categories */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {loading ? (
+          <div className="col-span-full py-16 flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+          </div>
+        ) : filteredCategories.length === 0 ? (
+          <div className="col-span-full border-2 border-dashed border-slate-200 rounded-3xl p-16 text-center text-slate-400 bg-white">
+            <div className="w-12 h-12 bg-slate-50 border border-slate-150 rounded-2xl flex items-center justify-center text-slate-400 mx-auto mb-4">
+              <Folder className="w-6 h-6" />
+            </div>
+            <p className="text-xs font-bold text-slate-600">Kategori produk masih kosong</p>
+            <p className="text-[10px] text-slate-400 mt-1">Silakan tambahkan kelompok kategori baru pada cabang toko ini.</p>
+          </div>
+        ) : (
+          filteredCategories.map((category) => {
+            const count = category._count?.products ?? 0
+            return (
+              <div 
+                key={category.id} 
+                className="group relative bg-white border border-slate-200/80 rounded-2xl p-5 hover:shadow-sm transition-all hover:border-slate-300 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="w-9 h-9 bg-indigo-50/70 text-indigo-650 rounded-xl flex items-center justify-center border border-indigo-100/50 group-hover:bg-indigo-600 group-hover:text-white transition-all shrink-0">
+                      <Folder className="w-4 h-4" />
                     </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredCategories.map((category) => (
-                  <tr key={category.id} className="transition-colors hover:bg-slate-50/50 group">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-100/50 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                          <Folder className="w-4 h-4" />
-                        </div>
-                        <span className="font-bold text-slate-900 text-base">{category.name}</span>
-                      </div>
-                    </td>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleOpenEdit(category)}
+                        className="p-1.5 text-slate-400 hover:text-slate-750 hover:bg-slate-100 rounded-lg transition-all"
+                        title="Ubah Kategori"
+                      >
+                        <Edit3 size={14} />
+                      </button>
+                      <button
+                        onClick={() => remove(category.id)}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                        title="Hapus Kategori"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
 
-                    <td className="px-6 py-4 text-slate-500 max-w-sm truncate font-medium">
-                      {category.description || <span className="text-slate-300 italic font-normal">Tidak ada deskripsi</span>}
-                    </td>
+                  <h3 className="text-sm font-extrabold text-slate-900 mt-4 leading-tight group-hover:text-indigo-650 transition-colors">
+                    {category.name}
+                  </h3>
+                  <p className="text-[11px] font-semibold text-slate-450 mt-1.5 line-clamp-2 min-h-[2rem]">
+                    {category.description || 'Tidak ada deskripsi rincian untuk kategori ini.'}
+                  </p>
+                </div>
 
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-1.5">
-                        {((category._count?.products ?? 0) > 0) ? (
-                          <button
-                            onClick={() => handleViewProducts(category)}
-                            className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800 transition-all cursor-pointer border-none outline-none"
-                            title="Lihat Daftar Produk"
-                          >
-                            <Layers className="w-3.5 h-3.5" />
-                            {category._count?.products ?? 0} Produk
-                          </button>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-semibold bg-slate-50 text-slate-500">
-                            <Layers className="w-3.5 h-3.5" />
-                            0 Produk
-                          </span>
-                        )}
-                      </div>
-                    </td>
-
-                    <td className="px-6 py-4 text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          onClick={() => handleOpenEdit(category)}
-                          className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all"
-                          title="Ubah Rincian Kategori"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => remove(category.id)}
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                          title="Hapus Kategori"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                <div className="border-t border-slate-100/80 pt-4 mt-4 flex items-center justify-between">
+                  <div className="text-[10px] font-bold text-slate-400">Total Komoditas</div>
+                  {count > 0 ? (
+                    <button
+                      onClick={() => handleViewProducts(category)}
+                      className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-extrabold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-800 transition-all cursor-pointer"
+                    >
+                      <Layers className="w-3 h-3" />
+                      <span>{count} Produk</span>
+                    </button>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-bold bg-slate-50 text-slate-500 border border-slate-200/50">
+                      <Layers className="w-3 h-3 text-slate-400" />
+                      <span>{count} Produk</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            )
+          })
+        )}
       </div>
 
+      {/* Category Modal (Create / Edit) */}
       {isOpenModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
-          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-100 bg-white p-6 shadow-xl transition-all">
-
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-all">
+          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-150 bg-white p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
-                <h3 className="text-lg font-bold text-slate-900">{editingId ? 'Ubah Rincian Kategori' : 'Tambah Kategori Baru'}</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Konfigurasi nama pengelompokan komoditas serta deskripsi klasifikasinya.</p>
+                <h3 className="text-sm font-black text-slate-900">{editingId ? 'Ubah Rincian Kategori' : 'Tambah Kategori Baru'}</h3>
+                <p className="text-[10px] font-semibold text-slate-450 mt-0.5">Atur pengelompokan produk komoditas pada POS.</p>
               </div>
               <button
                 onClick={() => setIsOpenModal(false)}
-                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-650 transition-colors"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="mt-5 space-y-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Penempatan Cabang Toko</label>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Penempatan Cabang Toko</label>
                 <div className="relative">
-                  <Store className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+                  <Store className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                   <select
                     required
                     disabled={!!editingId}
                     value={formData.storeId}
                     onChange={(e) => setFormData({ ...formData, storeId: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-4 py-2.5 text-sm font-medium outline-none transition-all appearance-none cursor-pointer focus:border-slate-400 focus:bg-white disabled:opacity-60"
+                    className="w-full rounded-xl border border-slate-200/80 bg-slate-50/50 pl-10 pr-10 py-3 text-xs font-semibold text-slate-800 outline-none transition-all appearance-none cursor-pointer focus:border-indigo-500 focus:bg-white disabled:opacity-60"
                   >
                     {stores.map((store) => (
                       <option key={store.id} value={store.id}>
@@ -397,35 +395,35 @@ export default function CategoryPage() {
                       </option>
                     ))}
                   </select>
-                  <div className="absolute right-3.5 top-3.5 pointer-events-none border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-500" />
+                  <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Nama Kategori</label>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Nama Kategori</label>
                 <div className="relative">
-                  <FolderPlus className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+                  <FolderPlus className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                   <input
                     type="text"
                     required
-                    placeholder="Contoh: Pakaian Pria, Makanan Ringan"
+                    placeholder="Contoh: Pakaian Pria, Aksesoris"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-4 py-2.5 text-sm outline-none transition-all focus:border-slate-400 focus:bg-white"
+                    className="w-full rounded-xl border border-slate-200/80 bg-slate-50/50 pl-10 pr-4 py-3 text-xs font-semibold outline-none transition-all focus:border-indigo-500 focus:bg-white"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Keterangan / Deskripsi (Opsional)</label>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Keterangan / Deskripsi (Opsional)</label>
                 <div className="relative">
-                  <FileText className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+                  <FileText className="absolute left-3.5 top-3.5 h-3.5 w-3.5 text-slate-400" />
                   <textarea
                     rows={3}
                     placeholder="Deskripsi singkat cakupan produk dalam kategori ini..."
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-4 py-2.5 text-sm outline-none transition-all resize-none focus:border-slate-400 focus:bg-white"
+                    className="w-full rounded-xl border border-slate-200/80 bg-slate-50/50 pl-10 pr-4 py-3 text-xs font-semibold outline-none transition-all resize-none focus:border-indigo-500 focus:bg-white"
                   />
                 </div>
               </div>
@@ -435,18 +433,18 @@ export default function CategoryPage() {
                   type="button"
                   disabled={isSubmitting}
                   onClick={() => setIsOpenModal(false)}
-                  className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-50"
+                  className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all disabled:opacity-50"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-blue-500/10 transition-all disabled:opacity-40 cursor-pointer"
+                  className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-755 shadow-indigo-500/10 transition-all disabled:opacity-40 cursor-pointer"
                 >
                   {isSubmitting ? (
-                    <div className="flex items-center gap-2">
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    <div className="flex items-center gap-1.5">
+                      <Loader2 className="h-3 w-3 animate-spin" />
                       <span>Menyimpan...</span>
                     </div>
                   ) : editingId ? (
@@ -457,44 +455,44 @@ export default function CategoryPage() {
                 </button>
               </div>
             </form>
-
           </div>
         </div>
       )}
 
+      {/* Category Products Modal */}
       {selectedCategoryForProducts && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
-          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-100 bg-white p-6 shadow-xl transition-all flex flex-col max-h-[85vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-all">
+          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-150 bg-white p-6 shadow-xl flex flex-col max-h-[85vh] relative animate-in fade-in zoom-in-95 duration-150">
             
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
-                <h3 className="text-lg font-bold text-slate-900">
+                <h3 className="text-sm font-black text-slate-900">
                   Produk Kategori: {selectedCategoryForProducts.name}
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-[10px] font-semibold text-slate-450 mt-0.5">
                   Daftar produk komoditas yang terdaftar dalam kategori ini.
                 </p>
               </div>
               <button
                 onClick={() => setSelectedCategoryForProducts(null)}
-                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-655 transition-colors"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto mt-4 pr-1 scrollbar-thin">
               {loadingProducts ? (
                 <div className="flex flex-col items-center justify-center py-12 text-slate-400 gap-2">
-                  <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                  <p className="text-sm font-medium text-slate-600">Memuat daftar produk...</p>
+                  <Loader2 className="w-6 h-6 animate-spin text-indigo-650" />
+                  <p className="text-xs font-bold text-slate-650">Memuat daftar produk...</p>
                 </div>
               ) : categoryProducts.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-                  <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 mb-2">
-                    <Package className="w-6 h-6" />
+                <div className="flex flex-col items-center justify-center py-12 text-slate-450">
+                  <div className="w-10 h-10 bg-slate-50 border border-slate-150 rounded-xl flex items-center justify-center text-slate-400 mb-2">
+                    <Package className="w-5 h-5" />
                   </div>
-                  <p className="text-sm font-medium text-slate-600">Tidak ada produk aktif</p>
+                  <p className="text-xs font-bold text-slate-650">Tidak ada produk aktif</p>
                 </div>
               ) : (
                 <div className="divide-y divide-slate-100">
@@ -508,24 +506,24 @@ export default function CategoryPage() {
                             className="w-11 h-11 rounded-xl object-cover border border-slate-100 flex-shrink-0"
                           />
                         ) : (
-                          <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 flex-shrink-0">
+                          <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-150 flex items-center justify-center text-slate-400 flex-shrink-0">
                             <Package className="w-5 h-5" />
                           </div>
                         )}
                         <div className="min-w-0">
-                          <p className="font-semibold text-slate-900 text-sm truncate">{product.name}</p>
-                          <p className="text-xs font-mono text-slate-400 mt-0.5 truncate">
+                          <p className="font-extrabold text-slate-900 text-xs truncate">{product.name}</p>
+                          <p className="text-[10px] font-mono text-slate-400 mt-0.5 truncate">
                             {product.sku || 'Tanpa SKU'}
                           </p>
                         </div>
                       </div>
                       
                       <div className="text-right flex-shrink-0">
-                        <p className="font-bold text-slate-950 text-sm">
+                        <p className="font-extrabold text-slate-900 text-xs">
                           Rp {product.sellingPrice.toLocaleString('id-ID')}
                         </p>
                         <div className="flex items-center justify-end gap-1.5 mt-0.5">
-                          <span className={`text-xs font-medium ${product.stock <= product.minimumStock ? 'text-amber-600' : 'text-slate-500'}`}>
+                          <span className={`text-[10px] font-bold ${product.stock <= product.minimumStock ? 'text-amber-600' : 'text-slate-450'}`}>
                             Stok: {product.stock}
                           </span>
                           <span className={`inline-block w-1.5 h-1.5 rounded-full ${product.isActive ? 'bg-emerald-500' : 'bg-slate-300'}`} title={product.isActive ? 'Aktif' : 'Nonaktif'} />
@@ -541,12 +539,11 @@ export default function CategoryPage() {
               <button
                 type="button"
                 onClick={() => setSelectedCategoryForProducts(null)}
-                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all cursor-pointer"
+                className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all cursor-pointer"
               >
                 Tutup
               </button>
             </div>
-
           </div>
         </div>
       )}

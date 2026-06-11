@@ -12,7 +12,8 @@ import {
   LogOut, 
   ShieldCheck, 
   Loader2,
-  AlertCircle
+  AlertCircle,
+  ChevronDown
 } from 'lucide-react'
 
 type Cashier = {
@@ -75,11 +76,9 @@ export default function CashierPage() {
         pin,
       })
 
-      // Simpan data kredensial verifikasi ke dalam local storage
       localStorage.setItem('cashier', JSON.stringify(res.data.cashier))
       localStorage.setItem('cashierActive', 'true')
       
-      // Pengalihan halaman penuh (Bypass Layout Store dan beralih ke layout mandiri POS)
       router.push('/dashboard/store/pos')
     } catch (err: any) {
       alert(err.response?.data?.message || 'Kode PIN otentikasi salah!')
@@ -102,15 +101,15 @@ export default function CashierPage() {
     <div className="space-y-6">
       
       {/* Header Panel */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200/80 pb-4">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Terminal Otentikasi POS</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Pilih personel aktif dan masukkan PIN akses laci kasir pintar</p>
+          <h1 className="text-xl font-black text-slate-900 tracking-tight">Terminal Otentikasi POS</h1>
+          <p className="text-xs font-semibold text-slate-450 mt-0.5">Pilih personel aktif dan masukkan PIN akses laci kasir pintar.</p>
         </div>
         {activeCashier && (
           <button
             onClick={logout}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-3xs transition-all self-start sm:self-auto"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all cursor-pointer active:scale-97"
           >
             <LogOut size={13} />
             Tutup Sesi Aktif
@@ -120,42 +119,42 @@ export default function CashierPage() {
 
       {/* Banner Sesi Aktif */}
       {activeCashier && (
-        <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-emerald-800 flex items-start gap-3 shadow-3xs animate-in fade-in duration-200">
+        <div className="rounded-2xl bg-emerald-50 border border-emerald-150 p-5 text-emerald-800 flex items-start gap-3 shadow-3xs animate-in fade-in duration-200">
           <CheckCircle2 className="text-emerald-600 shrink-0 mt-0.5" size={16} />
-          <div>
-            <h3 className="text-xs font-bold">Terminal POS Siap Digunakan</h3>
-            <p className="text-xs text-emerald-700/90 mt-1">Petugas Berjaga: <span className="font-semibold text-slate-900">{activeCashier.name}</span></p>
+          <div className="space-y-1">
+            <h3 className="text-xs font-black">Terminal POS Siap Digunakan</h3>
+            <p className="text-xs font-semibold text-emerald-700/95">Petugas Berjaga: <span className="font-bold text-slate-900">{activeCashier.name}</span></p>
             <button 
               onClick={() => router.push('/dashboard/store/pos')}
-              className="mt-3 inline-flex items-center gap-1 text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 rounded-lg shadow-3xs transition-colors"
+              className="mt-3 inline-flex items-center gap-1 text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-4.5 py-2 rounded-xl shadow-3xs transition-colors cursor-pointer"
             >
-              Kembali ke Layar POS <ArrowRight size={12} />
+              Buka Layar Kasir POS <ArrowRight size={12} />
             </button>
           </div>
         </div>
       )}
 
-      {/* Kontrol Pencarian Staff */}
+      {/* Search Bar */}
       <div className="relative w-full max-w-sm">
-        <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
+        <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cari nama personil kasir outlet..."
-          className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-4 py-2 text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-3xs"
+          className="w-full rounded-xl border border-slate-250/70 bg-white pl-11 pr-4 py-3.5 text-xs font-semibold text-slate-900 placeholder:text-slate-450 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 transition-all shadow-3xs"
         />
       </div>
 
-      {/* Grid Personel Kasir */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      {/* Grid Personel */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
         {loading ? (
           Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-28 animate-pulse rounded-xl bg-slate-100 border border-slate-200" />
+            <div key={i} className="h-28 animate-pulse rounded-2xl bg-slate-100 border border-slate-150" />
           ))
         ) : filtered.length === 0 ? (
-          <div className="col-span-full py-12 text-center text-slate-400 border border-dashed border-slate-200 rounded-xl bg-white text-xs flex flex-col items-center justify-center space-y-1">
-            <AlertCircle size={16} className="text-slate-300" />
-            <p>Tidak ada data petugas kasir yang terdaftar di outlet ini</p>
+          <div className="col-span-full py-16 text-center text-slate-400 border border-dashed border-slate-200 rounded-3xl bg-white text-xs flex flex-col items-center justify-center gap-2">
+            <AlertCircle size={20} className="text-slate-300" />
+            <p className="font-bold">Tidak ada data petugas kasir yang terdaftar</p>
           </div>
         ) : (
           filtered.map((cashier) => {
@@ -165,20 +164,20 @@ export default function CashierPage() {
                 key={cashier.id}
                 onClick={() => cashier.isActive && setSelected(cashier)}
                 disabled={!cashier.isActive}
-                className={`rounded-xl border p-4 text-left transition-all relative flex flex-col justify-between h-28 bg-white ${
+                className={`rounded-2xl border p-5 text-left transition-all relative flex flex-col justify-between h-28 bg-white cursor-pointer ${
                   isSelected 
-                    ? 'border-blue-600 bg-blue-50/30 shadow-3xs ring-1 ring-blue-500/20' 
+                    ? 'border-indigo-600 bg-indigo-50/10 shadow-3xs ring-1 ring-indigo-500/20' 
                     : 'border-slate-200 hover:bg-slate-50/50'
                 } ${!cashier.isActive ? 'opacity-40 cursor-not-allowed bg-slate-50' : ''}`}
               >
                 <div className="flex w-full items-center justify-between text-slate-400">
-                  <Users size={16} className={isSelected ? 'text-blue-600' : 'text-slate-400'} />
-                  {isSelected && <ShieldCheck size={16} className="text-blue-600 animate-in zoom-in-75 duration-150" />}
+                  <Users size={16} className={isSelected ? 'text-indigo-600' : 'text-slate-450'} />
+                  {isSelected && <ShieldCheck size={16} className="text-indigo-600 animate-in zoom-in-75 duration-150" />}
                 </div>
                 <div>
-                  <div className="flex items-center justify-between gap-2">
-                    <h2 className="font-semibold text-slate-900 text-xs truncate">{cashier.name}</h2>
-                    <span className={`inline-block shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold border ${
+                  <div className="flex items-center justify-between gap-2 mt-2">
+                    <h2 className="font-extrabold text-slate-900 text-xs sm:text-sm truncate">{cashier.name}</h2>
+                    <span className={`inline-block shrink-0 rounded-md px-1.5 py-0.5 text-[8.5px] font-bold border ${
                       cashier.isActive 
                         ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
                         : 'bg-slate-100 text-slate-500 border-slate-200'
@@ -186,7 +185,7 @@ export default function CashierPage() {
                       {cashier.isActive ? 'Ready' : 'Off'}
                     </span>
                   </div>
-                  <p className="text-[10px] font-mono text-slate-400 mt-0.5">{cashier.phone || 'No Phone'}</p>
+                  <p className="text-[10px] font-mono font-semibold text-slate-400 mt-1">{cashier.phone || 'No Phone'}</p>
                 </div>
               </button>
             )
@@ -194,22 +193,22 @@ export default function CashierPage() {
         )}
       </div>
 
-      {/* Laci Keamanan Masuk Terminal PIN */}
+      {/* Password verification drawer */}
       {selected && (
-        <div className="rounded-xl bg-white border border-slate-200 p-5 max-w-sm shadow-3xs space-y-4 animate-in slide-in-from-bottom-2 duration-200">
+        <div className="rounded-2xl bg-white border border-slate-200 p-5 max-w-sm shadow-3xs space-y-4 animate-in slide-in-from-bottom-2 duration-200">
           <div>
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Verifikasi Laci Kasir</h3>
-            <p className="text-xs font-semibold text-slate-800 mt-1">Petugas Shift: <span className="text-blue-600 font-bold">{selected.name}</span></p>
+            <h3 className="text-[10px] font-bold text-slate-450 uppercase tracking-wider">Verifikasi Laci Kasir</h3>
+            <p className="text-xs font-semibold text-slate-800 mt-1">Petugas Shift: <span className="text-indigo-600 font-bold">{selected.name}</span></p>
           </div>
 
           <div className="relative">
-            <Lock size={14} className="absolute left-3 top-2.5 text-slate-400" />
+            <Lock size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="password"
               value={pin}
               maxLength={6}
               onChange={(e) => setPin(e.target.value)}
-              className="w-full border border-slate-200 bg-slate-50/40 rounded-lg pl-9 pr-4 py-2 text-xs outline-none focus:bg-white focus:border-blue-500 font-mono tracking-widest text-slate-900 placeholder:text-slate-300 placeholder:font-sans"
+              className="w-full border border-slate-200/80 bg-slate-50/40 rounded-xl pl-10 pr-4 py-3 text-xs font-mono tracking-widest text-slate-900 placeholder:text-slate-350 focus:bg-white focus:border-indigo-550 focus:outline-none"
               placeholder="Masukkan 6 digit PIN"
             />
           </div>
@@ -217,7 +216,7 @@ export default function CashierPage() {
           <button
             onClick={activate}
             disabled={submitting || !pin}
-            className="w-full rounded-lg bg-blue-600 text-white py-2.5 text-xs font-semibold flex justify-center items-center gap-1.5 hover:bg-blue-700 disabled:opacity-40 transition-all shadow-3xs"
+            className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white py-3 text-xs font-bold flex justify-center items-center gap-1.5 disabled:opacity-40 transition-all shadow-3xs cursor-pointer active:scale-97"
           >
             {submitting ? (
               <Loader2 className="animate-spin" size={14} />

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { api } from '@/lib/api'
 import { 
   Receipt, 
@@ -15,7 +15,9 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  User
+  ChevronDown,
+  Loader2,
+  Filter
 } from 'lucide-react'
 
 type TransactionItem = {
@@ -40,7 +42,7 @@ type Transaction = {
   total: number
   paidAmount: number
   changeAmount: number
-  paymentMethod: 'CASH' | 'QRIS' | 'TRANSFER' | 'DEBIT' | 'CREDIT'
+  paymentMethod: 'CASH' | 'QRIS' | 'DEBIT'
   status: 'PENDING' | 'PAID' | 'CANCELLED' | 'REFUNDED'
   voidReason?: string
   cashier: {
@@ -61,9 +63,7 @@ type StoreType = {
 const PAYMENT_METHOD_MAP: Record<string, string> = {
   CASH: 'Tunai',
   QRIS: 'QRIS',
-  TRANSFER: 'Transfer',
-  DEBIT: 'Debit',
-  CREDIT: 'Kredit'
+  DEBIT: 'Debit'
 }
 
 export default function TransactionAdminPage() {
@@ -76,7 +76,6 @@ export default function TransactionAdminPage() {
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('ALL')
   const [dateFilter, setDateFilter] = useState('')
 
-  // State Detail Modal & Void Modal
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
   const [isOpenDetail, setIsOpenDetail] = useState(false)
   const [isOpenVoidModal, setIsOpenVoidModal] = useState(false)
@@ -147,7 +146,7 @@ export default function TransactionAdminPage() {
   }
 
   function handleOpenVoid(id: string, e: React.MouseEvent) {
-    e.stopPropagation() // Mencegah modal detail terbuka otomatis
+    e.stopPropagation()
     setVoidId(id)
     setVoidReason('')
     setIsOpenVoidModal(true)
@@ -204,34 +203,31 @@ export default function TransactionAdminPage() {
   function getStatusBadge(status: string) {
     switch (status) {
       case 'PAID':
-        return <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-semibold text-emerald-700"><CheckCircle2 className="w-3 h-3"/>Lunas</span>
+        return <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-150 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700"><CheckCircle2 className="w-3 h-3"/>Lunas</span>
       case 'CANCELLED':
-        return <span className="inline-flex items-center gap-1 rounded-full bg-red-50 border border-red-200 px-2.5 py-0.5 text-xs font-semibold text-red-700"><XCircle className="w-3 h-3"/>Void (Batal)</span>
+        return <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 border border-rose-150 px-2.5 py-0.5 text-[10px] font-bold text-rose-700"><XCircle className="w-3 h-3"/>Void</span>
       case 'PENDING':
-        return <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-xs font-semibold text-amber-700"><Clock className="w-3 h-3"/>Pending</span>
+        return <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-150 px-2.5 py-0.5 text-[10px] font-bold text-amber-700"><Clock className="w-3 h-3"/>Pending</span>
       default:
-        return <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 border border-slate-200 px-2.5 py-0.5 text-xs font-semibold text-slate-700">{status}</span>
+        return <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 border border-slate-200 px-2.5 py-0.5 text-[10px] font-bold text-slate-700">{status}</span>
     }
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
+      
       <style>{`
         @media print {
-          /* Hapus margins default browser */
           @page {
             size: auto;
             margin: 0mm;
           }
-          /* Sembunyikan seluruh isi body secara visual */
           body * {
             visibility: hidden;
           }
-          /* Hanya tampilkan struk kasir */
           #receipt-print-content, #receipt-print-content * {
             visibility: visible;
           }
-          /* Posisikan struk kasir dengan rapi di pojok kiri atas halaman print */
           #receipt-print-content {
             position: absolute;
             left: 0;
@@ -249,19 +245,16 @@ export default function TransactionAdminPage() {
             background: transparent !important;
             border-color: black !important;
           }
-          /* Pastikan daftar item tidak terpotong (menghapus scroll) */
           #receipt-print-items {
             max-height: none !important;
             overflow: visible !important;
           }
-          /* Sembunyikan total layout luar dari aliran cetak */
           aside, 
           header, 
           .print-hidden, 
           .print\\:hidden {
             display: none !important;
           }
-          /* Atur container utama agar tidak menyisakan space tinggi */
           main, 
           .flex-1 {
             padding: 0 !important;
@@ -273,51 +266,64 @@ export default function TransactionAdminPage() {
         }
       `}</style>
 
-      <div className="space-y-6 print-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Riwayat Transaksi POS</h1>
-          <p className="text-sm text-slate-500 mt-1">Audit manifes penjualan, cetak ulang nota kasir digital, serta kontrol penuh pembatalan (Void) nota cabang.</p>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 print-hidden">
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 bg-indigo-50 border border-indigo-100/55 rounded-xl flex items-center justify-center text-indigo-600 shrink-0">
+            <Receipt size={20} />
+          </div>
+          <div>
+            <h1 className="text-xl font-black text-slate-900 tracking-tight">Riwayat Transaksi POS</h1>
+            <p className="text-xs font-semibold text-slate-450 mt-0.5">Audit manifes penjualan, cetak ulang nota kasir digital, serta kontrol penuh pembatalan (Void) nota cabang.</p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm self-start sm:self-auto">
-          <Store className="w-4 h-4 text-slate-400" />
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Toko:</span>
+        <div className="relative shrink-0">
           <select
             value={selectedStoreId}
             onChange={(e) => {
               setSelectedStoreId(e.target.value)
               localStorage.setItem('storeId', e.target.value)
             }}
-            className="bg-transparent text-sm font-semibold text-slate-800 outline-none pr-2 cursor-pointer"
+            className="w-full sm:w-60 appearance-none bg-white border border-slate-250/70 pl-4 pr-10 py-3.5 rounded-xl text-xs font-bold text-slate-800 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 cursor-pointer transition-all shadow-3xs"
           >
             {stores.map((store) => (
               <option key={store.id} value={store.id}>{store.name}</option>
             ))}
           </select>
+          <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
+      {/* Toolbar */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between print-hidden">
+        <div className="relative flex-1 max-w-md">
+          <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <input
             type="text"
             placeholder="Cari nomor invoice nota atau nama kasir..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 py-3 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 shadow-sm"
+            className="w-full rounded-xl border border-slate-250/70 bg-white pl-11 pr-11 py-3.5 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 transition-all shadow-3xs"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-650"
+            >
+              <X size={15} />
+            </button>
+          )}
         </div>
 
-        <div className="flex border border-slate-200 rounded-xl p-1 bg-slate-50 self-start sm:self-auto shadow-sm">
+        <div className="flex border border-slate-200/80 rounded-xl p-1 bg-slate-50/50 shrink-0">
           {['ALL', 'PAID', 'CANCELLED', 'PENDING'].map((status) => (
             <button
               key={status}
               onClick={() => setStatusFilter(status)}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+              className={`px-3 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                 statusFilter === status 
-                  ? 'bg-blue-600 text-white shadow-xs border border-blue-600' 
+                  ? 'bg-indigo-600 text-white shadow-3xs' 
                   : 'text-slate-500 hover:text-slate-900'
               }`}
             >
@@ -327,36 +333,35 @@ export default function TransactionAdminPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100/80">
+      {/* Filters Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50/60 p-4 rounded-2xl border border-slate-200/60 print-hidden">
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Metode Pembayaran</label>
+          <label className="text-[10px] font-bold text-slate-450 uppercase tracking-wider">Metode Pembayaran</label>
           <div className="relative">
-            <CreditCard className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+            <CreditCard className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <select
               value={paymentMethodFilter}
               onChange={(e) => setPaymentMethodFilter(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-4 py-2.5 text-sm font-semibold text-slate-800 outline-none cursor-pointer appearance-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-10 py-2.5 text-xs font-semibold text-slate-800 outline-none cursor-pointer appearance-none focus:border-indigo-500 transition-all"
             >
               <option value="ALL">Semua Metode</option>
               <option value="CASH">Cash / Tunai</option>
               <option value="QRIS">QRIS</option>
-              <option value="TRANSFER">Transfer Bank</option>
               <option value="DEBIT">Kartu Debit</option>
-              <option value="CREDIT">Kartu Kredit</option>
             </select>
-            <div className="absolute right-3.5 top-4 pointer-events-none border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-500" />
+            <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
           </div>
         </div>
 
         <div className="flex flex-col gap-1.5 md:col-span-2">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Waktu Transaksi</label>
+          <label className="text-[10px] font-bold text-slate-455 uppercase tracking-wider">Waktu Transaksi</label>
           <div className="relative">
-            <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
+            <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
             <input
               type="date"
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-4 py-2 text-sm font-semibold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-indigo-500 transition-all"
             />
           </div>
         </div>
@@ -369,81 +374,78 @@ export default function TransactionAdminPage() {
               setSearchQuery('')
               setStatusFilter('ALL')
             }}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-all cursor-pointer shadow-sm active:scale-98"
+            className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-4 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-all cursor-pointer shadow-3xs"
           >
-            <X className="w-4 h-4 text-slate-400" />
+            <X className="w-3.5 h-3.5" />
             Reset Filter
           </button>
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
-        <div className="w-full overflow-x-auto">
-          <table className="w-full border-collapse text-left text-sm text-slate-600">
-            <thead className="bg-slate-50/70 text-xs font-semibold uppercase tracking-wider text-slate-500 border-b border-slate-100">
-              <tr>
-                <th scope="col" className="px-6 py-4">Nomor Invoice</th>
-                <th scope="col" className="px-6 py-4">Waktu Transaksi</th>
-                <th scope="col" className="px-6 py-4">Operator Kasir</th>
-                <th scope="col" className="px-6 py-4">Metode Bayar</th>
-                <th scope="col" className="px-6 py-4">Total Belanja</th>
-                <th scope="col" className="px-6 py-4">Status</th>
-                <th scope="col" className="px-6 py-4 text-right">Opsi</th>
+      {/* Main Table */}
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-3xs overflow-hidden print-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[800px] text-left border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-400 font-bold uppercase tracking-wider text-[9px]">
+                <th className="p-4 pl-6">Nomor Invoice</th>
+                <th className="p-4">Waktu Transaksi</th>
+                <th className="p-4">Operator Kasir</th>
+                <th className="p-4">Metode Bayar</th>
+                <th className="p-4">Total Belanja</th>
+                <th className="p-4">Status</th>
+                <th className="p-4 pr-6 text-right">Opsi</th>
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 text-slate-655 font-semibold">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center">
-                    <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" />
+                  <td colSpan={7} className="p-10 text-center">
+                    <Loader2 className="w-5 h-5 animate-spin text-slate-400 mx-auto" />
                   </td>
                 </tr>
               ) : filteredTransactions.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-16 text-center text-slate-400">
+                  <td colSpan={7} className="p-16 text-center text-slate-450">
                     <div className="flex flex-col items-center justify-center space-y-2">
-                      <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400">
+                      <div className="p-3 bg-slate-50 border border-slate-150 rounded-2xl text-slate-400">
                         <Receipt className="w-6 h-6" />
                       </div>
-                      <p className="text-sm font-medium text-slate-600">Manifes transaksi tidak ditemukan</p>
+                      <p className="text-xs font-bold text-slate-550">Manifes transaksi tidak ditemukan</p>
                     </div>
                   </td>
                 </tr>
               ) : (
                 filteredTransactions.map((tx) => (
-                  <tr key={tx.id} className="transition-colors hover:bg-slate-50/50 group cursor-pointer" onClick={() => handleOpenDetail(tx.id)}>
-                    <td className="px-6 py-4 font-mono font-bold text-slate-900">{tx.invoiceNumber}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-slate-500">
-                      <div className="flex items-center gap-1.5 font-medium">
-                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                        {new Date(tx.createdAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
-                      </div>
+                  <tr key={tx.id} className="group hover:bg-slate-50/45 transition-colors cursor-pointer" onClick={() => handleOpenDetail(tx.id)}>
+                    <td className="p-4 pl-6 font-mono font-bold text-slate-900">{tx.invoiceNumber}</td>
+                    <td className="p-4 whitespace-nowrap text-slate-500 font-medium">
+                      {new Date(tx.createdAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-700">{tx.cashier?.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-1.5 font-bold text-xs text-slate-500">
-                        <CreditCard className="w-3.5 h-3.5 text-slate-400" />
+                    <td className="p-4 whitespace-nowrap text-slate-700">{tx.cashier?.name}</td>
+                    <td className="p-4 whitespace-nowrap">
+                      <span className="font-extrabold text-[10px] text-slate-500 uppercase tracking-wide">
                         {PAYMENT_METHOD_MAP[tx.paymentMethod] || tx.paymentMethod}
-                      </div>
+                      </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap font-bold text-slate-900">
+                    <td className="p-4 whitespace-nowrap font-bold text-slate-900">
                       Rp {tx.total.toLocaleString('id-ID')}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(tx.status)}</td>
-                    <td className="px-6 py-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-1.5">
+                    <td className="p-4 whitespace-nowrap">{getStatusBadge(tx.status)}</td>
+                    <td className="p-4 pr-6 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => handleOpenDetail(tx.id)}
-                          className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all"
-                          title="Lihat Struktur Nota"
+                          className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all"
+                          title="Lihat Rincian Faktur"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
                         {tx.status === 'PAID' && (
                           <button
                             onClick={(e) => handleOpenVoid(tx.id, e)}
-                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
                             title="Batalkan Transaksi (Void)"
                           >
                             <AlertTriangle className="w-4 h-4" />
@@ -459,67 +461,66 @@ export default function TransactionAdminPage() {
         </div>
       </div>
 
-      </div>
-
+      {/* Invoice Detail Modal */}
       {isOpenDetail && selectedTransaction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
-          <div className="w-full max-w-md overflow-hidden rounded-3xl border border-slate-100 bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-all">
+          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-150 bg-white p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-2">
-                <Receipt className="w-5 h-5 text-slate-500" />
-                <h3 className="text-base font-bold text-slate-900">Rincian Faktur Nota Kasir</h3>
+                <Receipt className="w-4 h-4 text-slate-500" />
+                <h3 className="text-sm font-black text-slate-900">Rincian Faktur Nota</h3>
               </div>
-              <button onClick={() => setIsOpenDetail(false)} className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-600">
-                <X className="h-5 w-5" />
+              <button onClick={() => setIsOpenDetail(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-655">
+                <X className="h-4 w-4" />
               </button>
             </div>
 
-            <div id="receipt-print-content" className="mt-4 p-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 font-mono text-xs text-slate-700 space-y-3">
+            <div id="receipt-print-content" className="mt-4 p-4 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 font-mono text-xs text-slate-700 space-y-3">
               <div className="text-center border-b border-dashed border-slate-200 pb-2">
-                <p className="font-bold text-sm text-slate-900 uppercase">{activeStoreName}</p>
-                <p className="text-[10px] text-slate-400 mt-0.5">ID: {selectedTransaction.invoiceNumber}</p>
+                <p className="font-bold text-xs text-slate-900 uppercase">{activeStoreName}</p>
+                <p className="text-[9px] text-slate-400 mt-0.5">Invoice: {selectedTransaction.invoiceNumber}</p>
               </div>
 
-              <div className="space-y-1 text-slate-500">
-                <p><span className="font-semibold text-slate-700">Waktu :</span> {new Date(selectedTransaction.createdAt).toLocaleString('id-ID')}</p>
-                <p><span className="font-semibold text-slate-700">Kasir :</span> {selectedTransaction.cashier?.name}</p>
-                <p><span className="font-semibold text-slate-700">Member:</span> {selectedTransaction.customer?.name || 'Pelanggan Umum'}</p>
+              <div className="space-y-1 text-slate-500 text-[10px]">
+                <p><span className="font-semibold text-slate-750">Waktu :</span> {new Date(selectedTransaction.createdAt).toLocaleString('id-ID')}</p>
+                <p><span className="font-semibold text-slate-755">Kasir :</span> {selectedTransaction.cashier?.name}</p>
+                <p><span className="font-semibold text-slate-755">Member:</span> {selectedTransaction.customer?.name || 'Pelanggan Umum'}</p>
               </div>
 
-              <div id="receipt-print-items" className="border-t border-b border-dashed border-slate-200 py-2.5 space-y-2.5 max-h-[200px] overflow-y-auto pr-1">
+              <div id="receipt-print-items" className="border-t border-b border-dashed border-slate-200 py-2 space-y-2 max-h-[200px] overflow-y-auto pr-1">
                 {selectedTransaction.items?.map((item) => {
                   const itemDiscount = ((item.masterDiscount || 0) + (item.cashierDiscount || 0)) * item.quantity
                   return (
                     <div key={item.id} className="space-y-0.5">
                       <div className="flex justify-between items-start gap-4">
-                        <span className="font-bold text-slate-850 dark:text-slate-200 text-[11px]">{item.product?.name}</span>
-                        <span className="font-bold text-slate-850 dark:text-slate-200 shrink-0">Rp {(item.originalPrice * item.quantity).toLocaleString('id-ID')}</span>
+                        <span className="font-bold text-slate-800 text-[10.5px]">{item.product?.name}</span>
+                        <span className="font-bold text-slate-900 shrink-0">Rp {(item.originalPrice * item.quantity).toLocaleString('id-ID')}</span>
                       </div>
-                      <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500 pl-3">
+                      <div className="flex justify-between text-[9.5px] text-slate-400 pl-3">
                         <span>{item.quantity} x Rp {item.originalPrice.toLocaleString('id-ID')}</span>
-                        {itemDiscount > 0 && <span className="text-red-500 font-medium">- Rp {itemDiscount.toLocaleString('id-ID')}</span>}
+                        {itemDiscount > 0 && <span className="text-rose-500 font-semibold">- Rp {itemDiscount.toLocaleString('id-ID')}</span>}
                       </div>
                     </div>
                   )
                 })}
               </div>
 
-              <div className="space-y-1.5 text-slate-600">
+              <div className="space-y-1 text-slate-600 text-[10px]">
                 <div className="flex justify-between"><span>Subtotal:</span><span>Rp {selectedTransaction.subtotal.toLocaleString('id-ID')}</span></div>
-                <div className="flex justify-between text-red-600"><span>Diskon:</span><span>-Rp {selectedTransaction.totalDiscount.toLocaleString('id-ID')}</span></div>
-                <div className="flex justify-between font-bold text-slate-900 text-sm border-t border-dashed border-slate-200 pt-1.5">
+                <div className="flex justify-between text-rose-600"><span>Diskon:</span><span>-Rp {selectedTransaction.totalDiscount.toLocaleString('id-ID')}</span></div>
+                <div className="flex justify-between font-extrabold text-slate-900 text-xs border-t border-dashed border-slate-200 pt-1.5">
                   <span>TOTAL JUAL:</span><span>Rp {selectedTransaction.total.toLocaleString('id-ID')}</span>
                 </div>
-                <div className="flex justify-between"><span>Tunai/Bayar:</span><span>Rp {selectedTransaction.paidAmount.toLocaleString('id-ID')}</span></div>
+                <div className="flex justify-between"><span>Bayar / Cash:</span><span>Rp {selectedTransaction.paidAmount.toLocaleString('id-ID')}</span></div>
                 <div className="flex justify-between font-bold text-slate-900"><span>Kembalian:</span><span>Rp {selectedTransaction.changeAmount.toLocaleString('id-ID')}</span></div>
               </div>
 
               <div className="text-center pt-2 border-t border-dashed border-slate-200">
-                <p className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Metode: {PAYMENT_METHOD_MAP[selectedTransaction.paymentMethod]?.toUpperCase() || selectedTransaction.paymentMethod}</p>
+                <p className="font-extrabold text-slate-450 uppercase tracking-wider text-[9px]">Metode: {PAYMENT_METHOD_MAP[selectedTransaction.paymentMethod]?.toUpperCase() || selectedTransaction.paymentMethod}</p>
                 {selectedTransaction.status === 'CANCELLED' && (
-                  <div className="mt-2 p-2 bg-red-50 rounded-xl border border-red-200 text-red-700 text-[10px] font-sans text-left">
-                    <p className="font-bold uppercase">🚨 DATA VOID / DIBATALKAN</p>
-                    <p className="mt-0.5"><span className="font-semibold">Alasan:</span> {selectedTransaction.voidReason}</p>
+                  <div className="mt-2 p-2 bg-rose-50 rounded-xl border border-rose-150 text-rose-700 text-[9.5px] font-sans text-left">
+                    <p className="font-black uppercase tracking-wide">🚨 STATUS VOID / DIBATALKAN</p>
+                    <p className="mt-0.5"><span className="font-semibold text-rose-800">Alasan:</span> {selectedTransaction.voidReason}</p>
                   </div>
                 )}
               </div>
@@ -528,14 +529,14 @@ export default function TransactionAdminPage() {
             <div className="flex items-center gap-2 mt-5">
               <button 
                 onClick={() => window.print()}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-500 hover:bg-slate-50 cursor-pointer transition-all active:scale-97"
               >
-                <Printer className="w-4 h-4" /> Cetak Ulang
+                <Printer className="w-3.5 h-3.5" /> Cetak Ulang
               </button>
               {selectedTransaction.status === 'PAID' && (
                 <button 
                   onClick={(e) => handleOpenVoid(selectedTransaction.id, e)}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-500"
+                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-rose-700 cursor-pointer transition-all active:scale-97"
                 >
                   Void Nota
                 </button>
@@ -545,29 +546,30 @@ export default function TransactionAdminPage() {
         </div>
       )}
 
+      {/* Void Reason Modal */}
       {isOpenVoidModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
-          <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-slate-100 bg-white p-6 shadow-xl">
-            <div className="flex items-center gap-3 text-red-600">
-              <div className="p-2 bg-red-50 rounded-xl border border-red-200">
-                <AlertTriangle className="w-5 h-5" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-all">
+          <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-slate-150 bg-white p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3 text-rose-600">
+              <div className="p-2 bg-rose-50 rounded-xl border border-rose-100 flex items-center justify-center">
+                <AlertTriangle className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-900">Otorisasi Void Transaksi</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Konfirmasi pembatalan nota invoice kasir.</p>
+                <h3 className="text-sm font-black text-slate-900">Otorisasi Void Transaksi</h3>
+                <p className="text-[10px] font-semibold text-slate-450 mt-0.5">Konfirmasi pembatalan nota invoice kasir.</p>
               </div>
             </div>
 
             <form onSubmit={handleConfirmVoid} className="mt-4 space-y-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Alasan Pembatalan Nota</label>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Alasan Pembatalan Nota</label>
                 <textarea
                   required
                   rows={3}
-                  placeholder="Contoh: Salah input kuantitas barang oleh kasir / Konsumen melakukan refund barang."
+                  placeholder="Contoh: Salah input kuantitas barang / Konsumen membatalkan transaksi belanja."
                   value={voidReason}
                   onChange={(e) => setVoidReason(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm outline-none transition-all resize-none focus:border-slate-400 focus:bg-white"
+                  className="w-full rounded-xl border border-slate-200/80 bg-slate-50/50 px-3 py-2 text-xs font-semibold outline-none transition-all resize-none focus:border-rose-500 focus:bg-white"
                 />
               </div>
 
@@ -576,14 +578,14 @@ export default function TransactionAdminPage() {
                   type="button"
                   disabled={isSubmittingVoid}
                   onClick={() => setIsOpenVoidModal(false)}
-                  className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all"
+                  className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmittingVoid}
-                  className="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-500 transition-all disabled:opacity-40"
+                  className="rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-rose-700 transition-all disabled:opacity-40 cursor-pointer"
                 >
                   {isSubmittingVoid ? 'Memproses...' : 'Ya, Void Nota'}
                 </button>
