@@ -161,7 +161,7 @@ export default function StoreLayout({
               <Menu size={20} />
             </button>
             <h2 className="text-sm font-semibold text-slate-900 tracking-tight ml-2 lg:ml-0">
-              {menus.find((x) => x.path === pathname)?.name || 'Store Panel'}
+              {menus.find((x) => x.path === pathname)?.name || 'Panel Toko'}
             </h2>
           </div>
           <span className="text-sm font-bold tracking-tight text-slate-900 lg:hidden block">

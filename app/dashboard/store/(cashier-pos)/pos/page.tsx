@@ -63,6 +63,14 @@ type CartItem = Product & {
 
 type PaymentMethod = 'CASH' | 'QRIS' | 'DEBIT' | 'TRANSFER' | 'CREDIT'
 
+const PAYMENT_METHOD_MAP: Record<string, string> = {
+  CASH: 'Tunai',
+  QRIS: 'QRIS',
+  DEBIT: 'Debit',
+  TRANSFER: 'Transfer',
+  CREDIT: 'Kredit'
+}
+
 export default function PosPage() {
  const [products, setProducts] = useState<Product[]>([])
  const [categories, setCategories] = useState<Category[]>([])
@@ -313,7 +321,7 @@ export default function PosPage() {
  <div class="row"><span>Waktu</span><span>${new Date(data.createdAt).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</span></div>
  <div class="row"><span>No.Nota</span><span class="b">${data.invoice}</span></div>
  <div class="row"><span>Kasir</span><span>${data.cashier}</span></div>
- <div class="row"><span>Pelanggan</span><span>${data.customer || '-'}</span></div>
+ <div class="row"><span>Pelanggan</span><span>${data.customer || 'Pelanggan Umum'}</span></div>
  </div>
  <div class="hr"></div>
  ${data.items.map((item: any, i: number) => {
@@ -344,7 +352,7 @@ export default function PosPage() {
  <div class="total-row"><span>TOTAL</span><span>Rp ${data.total.toLocaleString('id-ID')}</span></div>
  <div class="hr"></div>
  <div class="meta">
- <div class="row"><span>Bayar (${paymentMethod})</span><span>Rp ${data.paidAmount.toLocaleString('id-ID')}</span></div>
+ <div class="row"><span>Bayar (${PAYMENT_METHOD_MAP[paymentMethod] || paymentMethod})</span><span>Rp ${data.paidAmount.toLocaleString('id-ID')}</span></div>
  <div class="row b"><span>Kembalian</span><span>Rp ${data.changeAmount.toLocaleString('id-ID')}</span></div>
  </div>
  <div class="hr"></div>
@@ -855,7 +863,7 @@ export default function PosPage() {
  <div className="space-y-1 text-slate-600 text-[10px]">
  <div className="flex justify-between"><span>Waktu:</span><span>{new Date(receiptData.createdAt).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</span></div>
  <div className="flex justify-between"><span>Kasir:</span><span className="truncate max-w-[150px]">{receiptData.cashier}</span></div>
- <div className="flex justify-between"><span>Pelanggan:</span><span>{receiptData.customer || '-'}</span></div>
+ <div className="flex justify-between"><span>Pelanggan:</span><span>{receiptData.customer || 'Pelanggan Umum'}</span></div>
  </div>
 
  <div className="border-t border-b border-dashed border-slate-300 py-2.5 space-y-2.5 max-h-[140px] overflow-y-auto pr-1">
@@ -882,7 +890,7 @@ export default function PosPage() {
  <div className="flex justify-between font-bold text-slate-900 text-xs border-t border-dashed border-slate-300 pt-2">
  <span>GRAND TOTAL:</span><span>{fmt(receiptData.total)}</span>
  </div>
- <div className="flex justify-between text-slate-600 text-[10px] pt-1"><span>Bayar ({payment}):</span><span>{fmt(receiptData.paidAmount)}</span></div>
+ <div className="flex justify-between text-slate-600 text-[10px] pt-1"><span>Bayar ({PAYMENT_METHOD_MAP[payment] || payment}):</span><span>{fmt(receiptData.paidAmount)}</span></div>
  <div className="flex justify-between font-bold text-emerald-600 "><span>Kembalian:</span><span>{fmt(receiptData.changeAmount)}</span></div>
  </div>
  </div>

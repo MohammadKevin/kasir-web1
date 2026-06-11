@@ -162,7 +162,7 @@ export default function ReportPage() {
     <div className="space-y-6 p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Manajemen Laporan store</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Manajemen Laporan Toko</h1>
           <p className="text-sm text-slate-500 mt-1">Audit finansial komprehensif, tracking performa inventori gudang, log shift, serta download berkas pembukuan kasir.</p>
         </div>
 
@@ -236,15 +236,15 @@ export default function ReportPage() {
               className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 transition-all disabled:opacity-50"
             >
               {downloading === 'excel' ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />}
-              Excel Report
+              Laporan Excel
             </button>
             <button
               onClick={() => handleExport('pdf')}
               disabled={downloading !== null}
               className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 transition-all disabled:opacity-50"
             >
-              {downloading === 'pdf' ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <FileText className="w-3.5 h-3.5 text-red-600" />}
-              PDF Document
+              {downloading === 'pdf' ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <FileText className="w-3.5 h-3.5 text-red-650" />}
+              Dokumen PDF
             </button>
           </div>
         )}
@@ -270,7 +270,7 @@ export default function ReportPage() {
                       <th className="px-6 py-4">Invoice</th>
                       <th className="px-6 py-4">Waktu Transaksi</th>
                       <th className="px-6 py-4">Operator Kasir</th>
-                      <th className="px-6 py-4">Customer Member</th>
+                      <th className="px-6 py-4">Member Pelanggan</th>
                       <th className="px-6 py-4">Total Jual</th>
                     </tr>
                   </thead>

@@ -58,6 +58,14 @@ type StoreType = {
   name: string
 }
 
+const PAYMENT_METHOD_MAP: Record<string, string> = {
+  CASH: 'Tunai',
+  QRIS: 'QRIS',
+  TRANSFER: 'Transfer',
+  DEBIT: 'Debit',
+  CREDIT: 'Kredit'
+}
+
 export default function TransactionAdminPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [stores, setStores] = useState<StoreType[]>([])
@@ -65,6 +73,8 @@ export default function TransactionAdminPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('ALL')
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState('ALL')
+  const [dateFilter, setDateFilter] = useState('')
 
   // State Detail Modal & Void Modal
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
@@ -171,8 +181,25 @@ export default function TransactionAdminPage() {
     const matchesSearch = t.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           t.cashier?.name.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus = statusFilter === 'ALL' || t.status === statusFilter
-    return matchesSearch && matchesStatus
+    const matchesPayment = paymentMethodFilter === 'ALL' || t.paymentMethod === paymentMethodFilter
+    
+    let matchesDate = true
+    if (dateFilter) {
+      const txLocalDate = new Date(t.createdAt)
+      const yyyy = txLocalDate.getFullYear()
+      const mm = String(txLocalDate.getMonth() + 1).padStart(2, '0')
+      const dd = String(txLocalDate.getDate()).padStart(2, '0')
+      const txDateStr = `${yyyy}-${mm}-${dd}`
+      
+      if (txDateStr !== dateFilter) {
+        matchesDate = false
+      }
+    }
+    
+    return matchesSearch && matchesStatus && matchesPayment && matchesDate
   })
+
+  const activeStoreName = stores.find((s) => s.id === selectedStoreId)?.name || 'Laila Collections'
 
   function getStatusBadge(status: string) {
     switch (status) {
@@ -189,7 +216,65 @@ export default function TransactionAdminPage() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <style>{`
+        @media print {
+          /* Hapus margins default browser */
+          @page {
+            size: auto;
+            margin: 0mm;
+          }
+          /* Sembunyikan seluruh isi body secara visual */
+          body * {
+            visibility: hidden;
+          }
+          /* Hanya tampilkan struk kasir */
+          #receipt-print-content, #receipt-print-content * {
+            visibility: visible;
+          }
+          /* Posisikan struk kasir dengan rapi di pojok kiri atas halaman print */
+          #receipt-print-content {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            max-width: 100%;
+            padding: 24px;
+            margin: 0;
+            background: white !important;
+            border: none !important;
+            box-shadow: none !important;
+          }
+          #receipt-print-content * {
+            color: black !important;
+            background: transparent !important;
+            border-color: black !important;
+          }
+          /* Pastikan daftar item tidak terpotong (menghapus scroll) */
+          #receipt-print-items {
+            max-height: none !important;
+            overflow: visible !important;
+          }
+          /* Sembunyikan total layout luar dari aliran cetak */
+          aside, 
+          header, 
+          .print-hidden, 
+          .print\\:hidden {
+            display: none !important;
+          }
+          /* Atur container utama agar tidak menyisakan space tinggi */
+          main, 
+          .flex-1 {
+            padding: 0 !important;
+            margin: 0 !important;
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+          }
+        }
+      `}</style>
+
+      <div className="space-y-6 print-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Riwayat Transaksi POS</h1>
           <p className="text-sm text-slate-500 mt-1">Audit manifes penjualan, cetak ulang nota kasir digital, serta kontrol penuh pembatalan (Void) nota cabang.</p>
@@ -242,6 +327,56 @@ export default function TransactionAdminPage() {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100/80">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Metode Pembayaran</label>
+          <div className="relative">
+            <CreditCard className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+            <select
+              value={paymentMethodFilter}
+              onChange={(e) => setPaymentMethodFilter(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-4 py-2.5 text-sm font-semibold text-slate-800 outline-none cursor-pointer appearance-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            >
+              <option value="ALL">Semua Metode</option>
+              <option value="CASH">Cash / Tunai</option>
+              <option value="QRIS">QRIS</option>
+              <option value="TRANSFER">Transfer Bank</option>
+              <option value="DEBIT">Kartu Debit</option>
+              <option value="CREDIT">Kartu Kredit</option>
+            </select>
+            <div className="absolute right-3.5 top-4 pointer-events-none border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-500" />
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1.5 md:col-span-2">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Waktu Transaksi</label>
+          <div className="relative">
+            <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-4 py-2 text-sm font-semibold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-end">
+          <button
+            onClick={() => {
+              setPaymentMethodFilter('ALL')
+              setDateFilter('')
+              setSearchQuery('')
+              setStatusFilter('ALL')
+            }}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-all cursor-pointer shadow-sm active:scale-98"
+          >
+            <X className="w-4 h-4 text-slate-400" />
+            Reset Filter
+          </button>
+        </div>
+      </div>
+
       <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
         <div className="w-full overflow-x-auto">
           <table className="w-full border-collapse text-left text-sm text-slate-600">
@@ -289,7 +424,7 @@ export default function TransactionAdminPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-1.5 font-bold text-xs text-slate-500">
                         <CreditCard className="w-3.5 h-3.5 text-slate-400" />
-                        {tx.paymentMethod}
+                        {PAYMENT_METHOD_MAP[tx.paymentMethod] || tx.paymentMethod}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap font-bold text-slate-900">
@@ -324,6 +459,8 @@ export default function TransactionAdminPage() {
         </div>
       </div>
 
+      </div>
+
       {isOpenDetail && selectedTransaction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
           <div className="w-full max-w-md overflow-hidden rounded-3xl border border-slate-100 bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto">
@@ -337,19 +474,19 @@ export default function TransactionAdminPage() {
               </button>
             </div>
 
-            <div className="mt-4 p-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 font-mono text-xs text-slate-700 space-y-3">
+            <div id="receipt-print-content" className="mt-4 p-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 font-mono text-xs text-slate-700 space-y-3">
               <div className="text-center border-b border-dashed border-slate-200 pb-2">
-                <p className="font-bold text-sm text-slate-900 uppercase">NOTA DIGITAL POS</p>
+                <p className="font-bold text-sm text-slate-900 uppercase">{activeStoreName}</p>
                 <p className="text-[10px] text-slate-400 mt-0.5">ID: {selectedTransaction.invoiceNumber}</p>
               </div>
 
               <div className="space-y-1 text-slate-500">
                 <p><span className="font-semibold text-slate-700">Waktu :</span> {new Date(selectedTransaction.createdAt).toLocaleString('id-ID')}</p>
                 <p><span className="font-semibold text-slate-700">Kasir :</span> {selectedTransaction.cashier?.name}</p>
-                <p><span className="font-semibold text-slate-700">Member:</span> {selectedTransaction.customer?.name || 'Non-Member'}</p>
+                <p><span className="font-semibold text-slate-700">Member:</span> {selectedTransaction.customer?.name || 'Pelanggan Umum'}</p>
               </div>
 
-              <div className="border-t border-b border-dashed border-slate-200 py-2.5 space-y-2.5 max-h-[200px] overflow-y-auto pr-1">
+              <div id="receipt-print-items" className="border-t border-b border-dashed border-slate-200 py-2.5 space-y-2.5 max-h-[200px] overflow-y-auto pr-1">
                 {selectedTransaction.items?.map((item) => {
                   const itemDiscount = ((item.masterDiscount || 0) + (item.cashierDiscount || 0)) * item.quantity
                   return (
@@ -378,7 +515,7 @@ export default function TransactionAdminPage() {
               </div>
 
               <div className="text-center pt-2 border-t border-dashed border-slate-200">
-                <p className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Metode: {selectedTransaction.paymentMethod}</p>
+                <p className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Metode: {PAYMENT_METHOD_MAP[selectedTransaction.paymentMethod]?.toUpperCase() || selectedTransaction.paymentMethod}</p>
                 {selectedTransaction.status === 'CANCELLED' && (
                   <div className="mt-2 p-2 bg-red-50 rounded-xl border border-red-200 text-red-700 text-[10px] font-sans text-left">
                     <p className="font-bold uppercase">🚨 DATA VOID / DIBATALKAN</p>

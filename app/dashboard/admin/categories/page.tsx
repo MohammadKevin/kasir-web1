@@ -12,7 +12,10 @@ import {
   Store,
   FileText,
   FolderPlus,
-  Layers
+  Layers,
+  Package,
+  ImageIcon,
+  Loader2
 } from 'lucide-react'
 
 type Category = {
@@ -28,6 +31,20 @@ type Category = {
 type StoreType = {
   id: string
   name: string
+}
+
+type Product = {
+  id: string
+  storeId: string
+  categoryId: string
+  name: string
+  image?: string
+  sku?: string
+  barcode?: string
+  sellingPrice: number
+  stock: number
+  minimumStock: number
+  isActive: boolean
 }
 
 export default function CategoryPage() {
@@ -46,6 +63,10 @@ export default function CategoryPage() {
     name: '',
     description: '',
   })
+
+  const [selectedCategoryForProducts, setSelectedCategoryForProducts] = useState<Category | null>(null)
+  const [categoryProducts, setCategoryProducts] = useState<Product[]>([])
+  const [loadingProducts, setLoadingProducts] = useState(false)
 
   useEffect(() => {
     initPage()
@@ -157,6 +178,23 @@ export default function CategoryPage() {
       loadCategories(selectedStoreId)
     } catch (error) {
       console.error('Gagal menghapus kategori:', error)
+    }
+  }
+
+  async function handleViewProducts(category: Category) {
+    if (!category._count?.products) return
+
+    setSelectedCategoryForProducts(category)
+    setLoadingProducts(true)
+    try {
+      const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      const res = await api.get(`/products/store/${category.storeId}`, { headers })
+      const filtered = res.data.filter((p: any) => p.categoryId === category.id)
+      setCategoryProducts(filtered)
+    } catch (error) {
+      console.error('Gagal memuat produk kategori:', error)
+    } finally {
+      setLoadingProducts(false)
     }
   }
 
@@ -280,11 +318,21 @@ export default function CategoryPage() {
 
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
-                        <span className={`inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-semibold 
-      ${(category._count?.products ?? 0) > 0 ? 'bg-blue-50 text-blue-700' : 'bg-slate-50 text-slate-500'}`}>
-                          <Layers className="w-3.5 h-3.5" />
-                          {category._count?.products ?? 0} Produk
-                        </span>
+                        {((category._count?.products ?? 0) > 0) ? (
+                          <button
+                            onClick={() => handleViewProducts(category)}
+                            className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800 transition-all cursor-pointer border-none outline-none"
+                            title="Lihat Daftar Produk"
+                          >
+                            <Layers className="w-3.5 h-3.5" />
+                            {category._count?.products ?? 0} Produk
+                          </button>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-semibold bg-slate-50 text-slate-500">
+                            <Layers className="w-3.5 h-3.5" />
+                            0 Produk
+                          </span>
+                        )}
                       </div>
                     </td>
 
@@ -409,6 +457,95 @@ export default function CategoryPage() {
                 </button>
               </div>
             </form>
+
+          </div>
+        </div>
+      )}
+
+      {selectedCategoryForProducts && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
+          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-100 bg-white p-6 shadow-xl transition-all flex flex-col max-h-[85vh]">
+            
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">
+                  Produk Kategori: {selectedCategoryForProducts.name}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Daftar produk komoditas yang terdaftar dalam kategori ini.
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedCategoryForProducts(null)}
+                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto mt-4 pr-1 scrollbar-thin">
+              {loadingProducts ? (
+                <div className="flex flex-col items-center justify-center py-12 text-slate-400 gap-2">
+                  <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                  <p className="text-sm font-medium text-slate-600">Memuat daftar produk...</p>
+                </div>
+              ) : categoryProducts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                  <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 mb-2">
+                    <Package className="w-6 h-6" />
+                  </div>
+                  <p className="text-sm font-medium text-slate-600">Tidak ada produk aktif</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {categoryProducts.map((product) => (
+                    <div key={product.id} className="flex items-center justify-between py-3 gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {product.image ? (
+                          <img
+                            src={product.image}
+                            alt={product.name}
+                            className="w-11 h-11 rounded-xl object-cover border border-slate-100 flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 flex-shrink-0">
+                            <Package className="w-5 h-5" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="font-semibold text-slate-900 text-sm truncate">{product.name}</p>
+                          <p className="text-xs font-mono text-slate-400 mt-0.5 truncate">
+                            {product.sku || 'Tanpa SKU'}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="text-right flex-shrink-0">
+                        <p className="font-bold text-slate-950 text-sm">
+                          Rp {product.sellingPrice.toLocaleString('id-ID')}
+                        </p>
+                        <div className="flex items-center justify-end gap-1.5 mt-0.5">
+                          <span className={`text-xs font-medium ${product.stock <= product.minimumStock ? 'text-amber-600' : 'text-slate-500'}`}>
+                            Stok: {product.stock}
+                          </span>
+                          <span className={`inline-block w-1.5 h-1.5 rounded-full ${product.isActive ? 'bg-emerald-500' : 'bg-slate-300'}`} title={product.isActive ? 'Aktif' : 'Nonaktif'} />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end border-t border-slate-100 pt-4 mt-4">
+              <button
+                type="button"
+                onClick={() => setSelectedCategoryForProducts(null)}
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
 
           </div>
         </div>

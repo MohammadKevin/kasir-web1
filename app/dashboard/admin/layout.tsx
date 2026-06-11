@@ -6,30 +6,30 @@ import { usePathname } from 'next/navigation'
 import { Menu, X } from 'lucide-react'
 
 const managementMenus = [
-  { name: 'Store', path: '/dashboard/admin/stores' },
-  { name: 'Cashier', path: '/dashboard/admin/cashier' },
-  { name: 'Product', path: '/dashboard/admin/products' },
-  { name: 'barcode', path: '/dashboard/admin/barcode' },
-  { name: 'Category', path: '/dashboard/admin/categories' },
-  { name: 'Customer', path: '/dashboard/admin/customers' },
+  { name: 'Cabang Toko', path: '/dashboard/admin/stores' },
+  { name: 'Kasir', path: '/dashboard/admin/cashier' },
+  { name: 'Produk', path: '/dashboard/admin/products' },
+  { name: 'Barcode', path: '/dashboard/admin/barcode' },
+  { name: 'Kategori', path: '/dashboard/admin/categories' },
+  { name: 'Pelanggan', path: '/dashboard/admin/customers' },
   { name: 'Supplier', path: '/dashboard/admin/suppliers' },
 ]
 
 const menus = [
   {
-    title: 'Sales',
+    title: 'Penjualan',
     items: [
-      { name: 'Transaction', path: '/dashboard/admin/transactions' },
-      { name: 'Purchase', path: '/dashboard/admin/purchases' },
-      { name: 'Discount', path: '/dashboard/admin/discounts' },
-      { name: 'Stock', path: '/dashboard/admin/stock' },
+      { name: 'Riwayat Transaksi', path: '/dashboard/admin/transactions' },
+      { name: 'Kulakan / Pembelian', path: '/dashboard/admin/purchases' },
+      { name: 'Diskon / Promo', path: '/dashboard/admin/discounts' },
+      { name: 'Stok Barang', path: '/dashboard/admin/stock' },
     ],
   },
   {
-    title: 'Finance',
+    title: 'Keuangan',
     items: [
-      { name: 'Expense', path: '/dashboard/admin/expenses' },
-      { name: 'Report', path: '/dashboard/admin/reports' },
+      { name: 'Pengeluaran', path: '/dashboard/admin/expenses' },
+      { name: 'Laporan', path: '/dashboard/admin/reports' },
     ],
   },
 ]
@@ -109,13 +109,13 @@ export default function AdminLayout({
                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                 }`}
               >
-                Dashboard Overview
+                Ringkasan Dashboard
               </Link>
             </div>
 
             <div>
               <div className="mb-2 px-3 text-xs font-bold uppercase tracking-wider text-slate-400">
-                Management
+                Manajemen
               </div>
               <div className="space-y-0.5">
                 {managementMenus.map((item) => {

@@ -342,7 +342,7 @@ export default function StorePage() {
                 <Building2 size={16} color="#0284C7" />
               </div>
               <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#1A1A2E', margin: 0 }}>
-                Manajemen Store
+                Manajemen Toko
                 {!loading && <span className="badge-count">{stores.length}</span>}
               </h1>
             </div>
@@ -350,7 +350,7 @@ export default function StorePage() {
           </div>
           <button className="add-btn" onClick={() => { setEditingId(null); setForm(EMPTY); setOpen(true) }}>
             <Plus size={16} />
-            Tambah Store
+            Tambah Toko
           </button>
         </div>
 
