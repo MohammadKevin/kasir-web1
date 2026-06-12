@@ -36,8 +36,9 @@ export default function StoreLayout({
     setSidebarOpen(false)
 
     try {
+      const hasCookieToken = document.cookie.split('; ').some((row) => row.startsWith('token='))
       const userToken = localStorage.getItem('token')
-      if (!userToken) {
+      if (!hasCookieToken || !userToken) {
         localStorage.clear()
         document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
         document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'

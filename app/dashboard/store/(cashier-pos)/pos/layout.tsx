@@ -25,13 +25,18 @@ export default function PosLayout({
   const [isOpeningShift, setIsOpeningShift] = useState(false)
 
   useEffect(() => {
+    const hasCookieToken = typeof document !== 'undefined' ? document.cookie.split('; ').some((row) => row.startsWith('token=')) : false
     const isCashierActive = localStorage.getItem('cashierActive') === 'true'
     const cachedCashier = localStorage.getItem('cashier')
     const cachedStoreId = localStorage.getItem('storeId')
     const token = localStorage.getItem('token')
 
-    if (!isCashierActive || !cachedCashier || !token) {
-      router.replace('/dashboard/store/cashier')
+    if (!hasCookieToken || !isCashierActive || !cachedCashier || !token) {
+      localStorage.clear()
+      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      router.replace('/login')
       return
     }
 

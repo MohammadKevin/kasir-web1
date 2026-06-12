@@ -65,10 +65,11 @@ export default function AdminLayout({
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      const hasCookieToken = document.cookie.split('; ').some((row) => row.startsWith('token='))
       const storedToken = localStorage.getItem('token')
       const storedUser = localStorage.getItem('user')
 
-      if (!storedToken || !storedUser) {
+      if (!hasCookieToken || !storedToken || !storedUser) {
         localStorage.clear()
         document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
         document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'

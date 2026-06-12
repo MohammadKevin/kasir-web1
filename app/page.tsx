@@ -31,8 +31,14 @@ export default function Home() {
 
   // Check login state
   useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-    setIsLoggedIn(!!token)
+    if (typeof window !== 'undefined') {
+      const hasCookieToken = document.cookie.split('; ').some((row) => row.startsWith('token='))
+      if (!hasCookieToken) {
+        localStorage.clear()
+      }
+      const token = localStorage.getItem('token')
+      setIsLoggedIn(!!token)
+    }
   }, [])
 
   // Logout function
