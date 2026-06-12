@@ -43,7 +43,7 @@ export default function StoreLayout({
         document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
         document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
         document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-        router.replace('/login')
+        window.location.href = '/login'
         return
       }
 
@@ -80,7 +80,7 @@ export default function StoreLayout({
       document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
       document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
       document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-      router.replace('/login')
+      window.location.href = '/login'
     }
   }, [pathname, router])
 
@@ -94,7 +94,7 @@ export default function StoreLayout({
       document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
       document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
       document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-      router.replace('/login')
+      window.location.href = '/login'
     }
   }
 

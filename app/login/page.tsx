@@ -43,13 +43,13 @@ export default function LoginPage() {
 
       switch (user.type) {
         case 'ADMIN':
-          router.replace('/dashboard/admin')
+          window.location.href = '/dashboard/admin'
           break
         case 'STORE':
-          router.replace('/dashboard/store')
+          window.location.href = '/dashboard/store'
           break
         default:
-          router.replace('/dashboard')
+          window.location.href = '/dashboard'
       }
     } catch (e: any) {
       const msg = e.response?.data?.message
