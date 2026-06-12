@@ -102,31 +102,65 @@ export default function BarcodePage() {
     <html>
       <head>
         <style>
-          @page { size: auto; margin: 5mm; }
-          body { font-family: 'Courier New', monospace; margin: 0; padding: 10px; }
+          @page { 
+            size: 5cm 2cm; 
+            margin: 0; 
+          }
+          * {
+            box-sizing: border-box;
+          }
+          body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            width: 5cm; 
+            height: 2cm;
+            background-color: #fff;
+          }
           .label { 
-            width: 300px; 
-            border: 1px solid #000; 
-            padding: 10px; 
-            margin-bottom: 10px;
+            width: 5cm; 
+            height: 2cm; 
+            padding: 1.5mm 2mm 1mm 2mm; 
             display: flex; 
             flex-direction: column; 
             align-items: center;
-            box-sizing: border-box;
+            justify-content: space-between;
             overflow: hidden;
+            page-break-after: always;
+            page-break-inside: avoid;
           }
-          .name { font-size: 14px; font-weight: bold; margin-bottom: 8px; text-transform: uppercase; text-align: center; }
+          .name { 
+            font-size: 7.5pt; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            text-align: center; 
+            white-space: nowrap; 
+            text-overflow: ellipsis; 
+            overflow: hidden; 
+            width: 100%;
+            line-height: 1.2;
+          }
           .barcode-container { 
             width: 100%;
+            height: 9mm;
             display: flex;
             justify-content: center;
+            align-items: center;
             overflow: hidden;
           }
           .barcode-container svg {
+            height: 9mm;
             max-width: 100%;
-            height: auto;
+            display: block;
           }
-          .code-text { font-size: 10px; margin-top: 5px; word-break: break-all; font-weight: bold; }
+          .code-text { 
+            font-size: 6.5pt; 
+            font-weight: bold; 
+            font-family: monospace;
+            text-align: center; 
+            line-height: 1;
+            letter-spacing: 0.5px;
+          }
         </style>
       </head>
       <body>
@@ -150,8 +184,8 @@ export default function BarcodePage() {
         const barcodeValue = el.getAttribute('data-barcode')!;
         (win as any).JsBarcode(el, barcodeValue, {
           format: "CODE128",
-          width: 1.5,
-          height: 40,
+          width: 1.2,
+          height: 30,
           displayValue: false,
           margin: 0,
           fitContent: true
