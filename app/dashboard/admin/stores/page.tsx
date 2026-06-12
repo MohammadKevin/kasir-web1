@@ -57,8 +57,15 @@ export default function StorePage() {
     e.preventDefault()
     setSaving(true)
     try {
-      const payload = { ...form }
-      if (!payload.password) delete (payload as any).password
+      const payload: any = {
+        name: form.name,
+        email: form.email,
+        phone: form.phone || '',
+        address: form.address || '',
+      }
+      if (form.password) {
+        payload.password = form.password
+      }
       if (editingId) {
         await api.patch(`/stores/${editingId}`, payload)
       } else {
@@ -72,6 +79,7 @@ export default function StorePage() {
       setSaving(false)
     }
   }
+
 
   async function handleDelete(id: string) {
     if (!confirm('Hapus cabang toko ini?')) return
