@@ -29,6 +29,7 @@ export default function BarcodePage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [printQty, setPrintQty] = useState<Record<string, number>>({})
+  const [paperType, setPaperType] = useState<'a4' | 'thermal'>('thermal')
 
   useEffect(() => { 
     initStores() 
@@ -93,17 +94,20 @@ export default function BarcodePage() {
     }
   }
 
-  function printLabels(items: { barcode: string; name: string }[]) {
+  function printLabels(items: { barcode: string; name: string }[], type: 'a4' | 'thermal' = 'thermal') {
     if (items.length === 0) return
 
     const win = window.open('', '_blank', 'width=800,height=600')
     if (!win) return
+
+    const isThermal = type === 'thermal'
 
     win.document.write(`
     <html>
       <head>
         <style>
           @page { 
+            ${isThermal ? 'size: 5cm 2cm;' : 'size: auto;'}
             margin: 0; 
           }
           * {
@@ -116,8 +120,9 @@ export default function BarcodePage() {
             background-color: #fff;
             display: flex;
             flex-wrap: wrap;
-            justify-content: flex-start;
+            justify-content: center;
             align-content: flex-start;
+            ${isThermal ? 'width: 5cm; height: 2cm;' : 'padding: 8mm; gap: 1.5mm 1.5mm;'}
           }
           .label { 
             width: 5cm; 
@@ -130,6 +135,7 @@ export default function BarcodePage() {
             overflow: hidden;
             box-sizing: border-box;
             page-break-inside: avoid;
+            ${isThermal ? 'page-break-after: always; border: none;' : 'border: 0.15mm dashed #bbb; border-radius: 1mm;'}
           }
           .name { 
             font-size: 7.5pt; 
@@ -162,33 +168,6 @@ export default function BarcodePage() {
             text-align: center; 
             line-height: 1;
             letter-spacing: 0.5px;
-          }
-
-          /* A4 Grid Printing (Paper width > 10cm) */
-          @media (min-width: 10cm) {
-            body {
-              padding: 8mm;
-              gap: 1.5mm 1.5mm;
-              justify-content: center;
-            }
-            .label {
-              border: 0.15mm dashed #bbb;
-              border-radius: 1mm;
-            }
-          }
-
-          /* Thermal Roll Printing (Paper width <= 9.9cm) */
-          @media (max-width: 9.9cm) {
-            body {
-              width: 5cm;
-              height: 2cm;
-              padding: 0;
-              justify-content: center;
-            }
-            .label {
-              border: none;
-              page-break-after: always;
-            }
           }
         </style>
       </head>
@@ -318,7 +297,7 @@ export default function BarcodePage() {
                     }
                   }
                 })
-                printLabels(labelItems)
+                printLabels(labelItems, paperType)
               }}
               className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2.5 text-xs font-bold text-white transition-all shadow-3xs active:scale-97 cursor-pointer"
             >
@@ -326,6 +305,18 @@ export default function BarcodePage() {
               <span>Cetak Terpilih ({selectedIds.length})</span>
             </button>
           )}
+
+          <div className="relative shrink-0">
+            <select
+              value={paperType}
+              onChange={(e) => setPaperType(e.target.value as 'a4' | 'thermal')}
+              className="w-full sm:w-52 appearance-none bg-white border border-slate-200/80 pl-4 pr-10 py-3.5 rounded-xl text-xs font-bold text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 cursor-pointer transition-all"
+            >
+              <option value="thermal">Roll Thermal (5x2 cm)</option>
+              <option value="a4">Kertas A4 (Grid/Lembar)</option>
+            </select>
+            <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          </div>
 
           <div className="relative shrink-0">
             <select
@@ -427,7 +418,7 @@ export default function BarcodePage() {
                             onClick={() => {
                               const qty = printQty[p.id] || 1
                               const labelItems = Array.from({ length: qty }).map(() => ({ barcode: p.barcode!, name: p.name }))
-                              printLabels(labelItems)
+                              printLabels(labelItems, paperType)
                             }} 
                             className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-750 transition-colors bg-white border border-slate-200 hover:bg-slate-50 px-3.5 py-2 rounded-xl shadow-3xs"
                           >
