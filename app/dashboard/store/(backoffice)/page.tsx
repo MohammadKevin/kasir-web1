@@ -84,7 +84,7 @@ export default function StoreDashboard() {
       <div className="flex items-center justify-between border-b border-slate-200/80 pb-4">
         <div>
           <h1 className="text-xl font-black text-slate-900 tracking-tight">Ringkasan Outlet</h1>
-          <p className="text-xs font-semibold text-slate-450 mt-0.5">
+          <p className="text-xs font-semibold text-slate-400 mt-0.5">
             Selamat datang kembali, <span className="text-indigo-600 font-bold">{user?.name || 'Owner'}</span>
           </p>
         </div>
@@ -134,12 +134,12 @@ export default function StoreDashboard() {
         >
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <ShieldCheck size={16} className="text-indigo-650" />
-              <h2 className="text-xs font-black text-slate-900 group-hover:text-indigo-650 transition-colors uppercase tracking-wider">Terminal Kasir</h2>
+              <ShieldCheck size={16} className="text-indigo-600" />
+              <h2 className="text-xs font-black text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-wider">Terminal Kasir</h2>
             </div>
-            <p className="text-[11px] font-semibold text-slate-450 leading-relaxed">Buka sesi kerja, pilih personil, dan verifikasi PIN laci POS.</p>
+            <p className="text-[11px] font-semibold text-slate-400 leading-relaxed">Buka sesi kerja, pilih personil, dan verifikasi PIN laci POS.</p>
           </div>
-          <ArrowUpRight size={14} className="text-slate-400 group-hover:text-indigo-650 transition-colors shrink-0" />
+          <ArrowUpRight size={14} className="text-slate-400 group-hover:text-indigo-600 transition-colors shrink-0" />
         </Link>
 
         <Link
@@ -148,12 +148,12 @@ export default function StoreDashboard() {
         >
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Package size={16} className="text-indigo-650" />
-              <h2 className="text-xs font-black text-slate-900 group-hover:text-indigo-650 transition-colors uppercase tracking-wider">Katalog Produk</h2>
+              <Package size={16} className="text-indigo-600" />
+              <h2 className="text-xs font-black text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-wider">Katalog Produk</h2>
             </div>
-            <p className="text-[11px] font-semibold text-slate-450 leading-relaxed">Pantau ketersediaan stok barang dan penataan master list data.</p>
+            <p className="text-[11px] font-semibold text-slate-400 leading-relaxed">Pantau ketersediaan stok barang dan penataan master list data.</p>
           </div>
-          <ArrowUpRight size={14} className="text-slate-400 group-hover:text-indigo-650 transition-colors shrink-0" />
+          <ArrowUpRight size={14} className="text-slate-400 group-hover:text-indigo-600 transition-colors shrink-0" />
         </Link>
 
         <div className="border border-slate-200 bg-white p-5 rounded-2xl flex justify-between items-start shadow-3xs">
@@ -162,7 +162,7 @@ export default function StoreDashboard() {
               <AlertTriangle size={16} className={summary.lowStockProducts > 0 ? 'text-rose-500 animate-pulse' : 'text-slate-400'} />
               <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider">Peringatan Stok</h2>
             </div>
-            <p className="text-[11px] font-semibold text-slate-450 leading-relaxed">
+            <p className="text-[11px] font-semibold text-slate-400 leading-relaxed">
               {summary.lowStockProducts > 0 ? (
                 <span>Ada <span className="font-extrabold text-rose-600">{summary.lowStockProducts} produk</span> dengan stok sangat tipis (di bawah 5 pcs).</span>
               ) : (
@@ -180,7 +180,7 @@ export default function StoreDashboard() {
         </div>
         <div>
           <h3 className="text-xs font-black text-indigo-600 uppercase tracking-wider leading-none">SOP Penjualan Harian</h3>
-          <p className="text-xs text-slate-655 mt-2.5 leading-relaxed font-semibold">
+          <p className="text-xs text-slate-600 mt-2.5 leading-relaxed font-semibold">
             Pilih Personel Kasir <span className="text-slate-350">→</span> Masukkan PIN <span className="text-slate-350">→</span> Input Modal Kas Kecil <span className="text-slate-350">→</span> Buka POS Scan Penjualan.
           </p>
         </div>
@@ -194,7 +194,7 @@ function Card({ icon: Icon, title, value, isMono = false, highlight = false }: a
   return (
     <div className="border border-slate-200 rounded-2xl p-5 bg-white flex flex-col justify-between h-28 shadow-3xs relative overflow-hidden group hover:border-slate-300 transition-all">
       {highlight && (
-        <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-650" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-600" />
       )}
       <div className={highlight ? 'text-indigo-600' : 'text-slate-400'}>
         <Icon size={18} />

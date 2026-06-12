@@ -274,7 +274,7 @@ export default function TransactionAdminPage() {
           </div>
           <div>
             <h1 className="text-xl font-black text-slate-900 tracking-tight">Riwayat Transaksi POS</h1>
-            <p className="text-xs font-semibold text-slate-450 mt-0.5">Audit manifes penjualan, cetak ulang nota kasir digital, serta kontrol penuh pembatalan (Void) nota cabang.</p>
+            <p className="text-xs font-semibold text-slate-400 mt-0.5">Audit manifes penjualan, cetak ulang nota kasir digital, serta kontrol penuh pembatalan (Void) nota cabang.</p>
           </div>
         </div>
 
@@ -285,7 +285,7 @@ export default function TransactionAdminPage() {
               setSelectedStoreId(e.target.value)
               localStorage.setItem('storeId', e.target.value)
             }}
-            className="w-full sm:w-60 appearance-none bg-white border border-slate-250/70 pl-4 pr-10 py-3.5 rounded-xl text-xs font-bold text-slate-800 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 cursor-pointer transition-all shadow-3xs"
+            className="w-full sm:w-60 appearance-none bg-white border border-slate-250/70 pl-4 pr-10 py-3.5 rounded-xl text-xs font-bold text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 cursor-pointer transition-all shadow-3xs"
           >
             {stores.map((store) => (
               <option key={store.id} value={store.id}>{store.name}</option>
@@ -304,12 +304,12 @@ export default function TransactionAdminPage() {
             placeholder="Cari nomor invoice nota atau nama kasir..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-slate-250/70 bg-white pl-11 pr-11 py-3.5 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 transition-all shadow-3xs"
+            className="w-full rounded-xl border border-slate-250/70 bg-white pl-11 pr-11 py-3.5 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-3xs"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-650"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
             >
               <X size={15} />
             </button>
@@ -336,7 +336,7 @@ export default function TransactionAdminPage() {
       {/* Filters Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50/60 p-4 rounded-2xl border border-slate-200/60 print-hidden">
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold text-slate-450 uppercase tracking-wider">Metode Pembayaran</label>
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Metode Pembayaran</label>
           <div className="relative">
             <CreditCard className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <select
@@ -354,7 +354,7 @@ export default function TransactionAdminPage() {
         </div>
 
         <div className="flex flex-col gap-1.5 md:col-span-2">
-          <label className="text-[10px] font-bold text-slate-455 uppercase tracking-wider">Waktu Transaksi</label>
+          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Waktu Transaksi</label>
           <div className="relative">
             <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
             <input
@@ -398,7 +398,7 @@ export default function TransactionAdminPage() {
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-slate-100 text-slate-655 font-semibold">
+            <tbody className="divide-y divide-slate-100 text-slate-600 font-semibold">
               {loading ? (
                 <tr>
                   <td colSpan={7} className="p-10 text-center">
@@ -407,12 +407,12 @@ export default function TransactionAdminPage() {
                 </tr>
               ) : filteredTransactions.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-16 text-center text-slate-450">
+                  <td colSpan={7} className="p-16 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center space-y-2">
                       <div className="p-3 bg-slate-50 border border-slate-150 rounded-2xl text-slate-400">
                         <Receipt className="w-6 h-6" />
                       </div>
-                      <p className="text-xs font-bold text-slate-550">Manifes transaksi tidak ditemukan</p>
+                      <p className="text-xs font-bold text-slate-500">Manifes transaksi tidak ditemukan</p>
                     </div>
                   </td>
                 </tr>
@@ -470,7 +470,7 @@ export default function TransactionAdminPage() {
                 <Receipt className="w-4 h-4 text-slate-500" />
                 <h3 className="text-sm font-black text-slate-900">Rincian Faktur Nota</h3>
               </div>
-              <button onClick={() => setIsOpenDetail(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-655">
+              <button onClick={() => setIsOpenDetail(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-600">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -516,7 +516,7 @@ export default function TransactionAdminPage() {
               </div>
 
               <div className="text-center pt-2 border-t border-dashed border-slate-200">
-                <p className="font-extrabold text-slate-450 uppercase tracking-wider text-[9px]">Metode: {PAYMENT_METHOD_MAP[selectedTransaction.paymentMethod]?.toUpperCase() || selectedTransaction.paymentMethod}</p>
+                <p className="font-extrabold text-slate-400 uppercase tracking-wider text-[9px]">Metode: {PAYMENT_METHOD_MAP[selectedTransaction.paymentMethod]?.toUpperCase() || selectedTransaction.paymentMethod}</p>
                 {selectedTransaction.status === 'CANCELLED' && (
                   <div className="mt-2 p-2 bg-rose-50 rounded-xl border border-rose-150 text-rose-700 text-[9.5px] font-sans text-left">
                     <p className="font-black uppercase tracking-wide">🚨 STATUS VOID / DIBATALKAN</p>
@@ -556,7 +556,7 @@ export default function TransactionAdminPage() {
               </div>
               <div>
                 <h3 className="text-sm font-black text-slate-900">Otorisasi Void Transaksi</h3>
-                <p className="text-[10px] font-semibold text-slate-450 mt-0.5">Konfirmasi pembatalan nota invoice kasir.</p>
+                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Konfirmasi pembatalan nota invoice kasir.</p>
               </div>
             </div>
 

@@ -302,7 +302,7 @@ export default function DiscountPage() {
           </div>
           <div>
             <h1 className="text-xl font-black text-slate-900 tracking-tight">Program Diskon</h1>
-            <p className="text-xs font-semibold text-slate-450 mt-0.5">Kelola potongan harga promosi penjualan, tipe potongan nominal/persen, serta relasi produk komoditas.</p>
+            <p className="text-xs font-semibold text-slate-400 mt-0.5">Kelola potongan harga promosi penjualan, tipe potongan nominal/persen, serta relasi produk komoditas.</p>
           </div>
         </div>
 
@@ -324,12 +324,12 @@ export default function DiscountPage() {
             placeholder="Cari kampanye program promo..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-slate-250/70 bg-white pl-11 pr-11 py-3.5 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 transition-all shadow-3xs"
+            className="w-full rounded-xl border border-slate-250/70 bg-white pl-11 pr-11 py-3.5 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-3xs"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-655"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
             >
               <X size={15} />
             </button>
@@ -343,7 +343,7 @@ export default function DiscountPage() {
               setSelectedStoreId(e.target.value)
               localStorage.setItem('storeId', e.target.value)
             }}
-            className="w-full sm:w-60 appearance-none bg-white border border-slate-250/70 pl-4 pr-10 py-3.5 rounded-xl text-xs font-bold text-slate-800 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 cursor-pointer transition-all shadow-3xs"
+            className="w-full sm:w-60 appearance-none bg-white border border-slate-250/70 pl-4 pr-10 py-3.5 rounded-xl text-xs font-bold text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 cursor-pointer transition-all shadow-3xs"
           >
             {stores.map((store) => (
               <option key={store.id} value={store.id}>{store.name}</option>
@@ -357,11 +357,11 @@ export default function DiscountPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {loading ? (
           <div className="col-span-full py-16 flex items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-slate-450" />
+            <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
           </div>
         ) : filteredDiscounts.length === 0 ? (
           <div className="col-span-full border-2 border-dashed border-slate-200 rounded-3xl p-16 text-center text-slate-400 bg-white">
-            <div className="w-12 h-12 bg-slate-50 border border-slate-150 rounded-2xl flex items-center justify-center text-slate-450 mx-auto mb-4">
+            <div className="w-12 h-12 bg-slate-50 border border-slate-150 rounded-2xl flex items-center justify-center text-slate-400 mx-auto mb-4">
               <Percent className="w-6 h-6" />
             </div>
             <p className="text-xs font-bold text-slate-600">Daftar program diskon masih kosong</p>
@@ -404,11 +404,11 @@ export default function DiscountPage() {
                     </div>
                   </div>
 
-                  <h3 className="text-sm font-extrabold text-slate-900 mt-4 leading-tight group-hover:text-indigo-650 transition-colors">
+                  <h3 className="text-sm font-extrabold text-slate-900 mt-4 leading-tight group-hover:text-indigo-600 transition-colors">
                     {discount.name}
                   </h3>
 
-                  <div className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-450 mt-2">
+                  <div className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-400 mt-2">
                     <Calendar className="w-3.5 h-3.5 text-slate-400" />
                     <span>
                       {discount.startDate ? new Date(discount.startDate).toLocaleDateString('id-ID', { dateStyle: 'short' }) : '∞'} 
@@ -455,9 +455,9 @@ export default function DiscountPage() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
                 <h3 className="text-sm font-black text-slate-900">{editingId ? 'Ubah Aturan Diskon' : 'Tambah Aturan Diskon'}</h3>
-                <p className="text-[10px] font-semibold text-slate-450 mt-0.5">Atur detail kampanye promosi dan potongan harga POS.</p>
+                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Atur detail kampanye promosi dan potongan harga POS.</p>
               </div>
-              <button onClick={() => setIsOpenModal(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-655">
+              <button onClick={() => setIsOpenModal(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-600">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -524,7 +524,7 @@ export default function DiscountPage() {
 
               <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-4 mt-6">
                 <button type="button" disabled={isSubmitting} onClick={() => setIsOpenModal(false)} className="rounded-xl border border-slate-250/70 px-4 py-2.5 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all">Batal</button>
-                <button type="submit" disabled={isSubmitting} className="rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-750 shadow-indigo-500/10 transition-all cursor-pointer">
+                <button type="submit" disabled={isSubmitting} className="rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-700 shadow-indigo-500/10 transition-all cursor-pointer">
                   {isSubmitting ? 'Menyimpan...' : 'Simpan Aturan'}
                 </button>
               </div>
@@ -542,17 +542,17 @@ export default function DiscountPage() {
                 <Tag className="w-4 h-4 text-slate-400" />
                 <div>
                   <h3 className="text-sm font-black text-slate-900">Alokasi Produk Terikat</h3>
-                  <p className="text-[10px] font-semibold text-slate-450 mt-0.5">Diskon: <span className="font-bold text-slate-600">{selectedDiscount.name}</span></p>
+                  <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Diskon: <span className="font-bold text-slate-600">{selectedDiscount.name}</span></p>
                 </div>
               </div>
-              <button onClick={() => setIsOpenManageProducts(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-655"><X className="h-4 w-4" /></button>
+              <button onClick={() => setIsOpenManageProducts(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-600"><X className="h-4 w-4" /></button>
             </div>
 
             {/* Mass allocation */}
             <div className="p-3 border border-slate-200 rounded-xl bg-slate-50/50 flex items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] font-bold text-slate-900">Terapkan Massal</p>
-                <p className="text-[9.5px] font-semibold text-slate-450 mt-0.5">Hubungkan ke seluruh produk toko ({products.length} item)</p>
+                <p className="text-[9.5px] font-semibold text-slate-400 mt-0.5">Hubungkan ke seluruh produk toko ({products.length} item)</p>
               </div>
               <button 
                 type="button" 
@@ -591,7 +591,7 @@ export default function DiscountPage() {
             <div className="border border-slate-200 rounded-xl max-h-48 overflow-y-auto bg-slate-50/30 p-2 space-y-1.5 scrollbar-thin">
               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1">Daftar Item Saat Ini :</p>
               {selectedDiscount.products?.length === 0 ? (
-                <p className="text-[10px] text-center py-6 text-slate-450 italic bg-white rounded-lg border border-dashed border-slate-200">Belum ada komoditas terikat.</p>
+                <p className="text-[10px] text-center py-6 text-slate-400 italic bg-white rounded-lg border border-dashed border-slate-200">Belum ada komoditas terikat.</p>
               ) : (
                 selectedDiscount.products?.map((dp) => (
                   <div key={dp.productId} className="flex justify-between items-center bg-white p-2 rounded-xl border border-slate-150 shadow-3xs">

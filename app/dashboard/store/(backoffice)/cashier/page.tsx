@@ -104,7 +104,7 @@ export default function CashierPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200/80 pb-4">
         <div>
           <h1 className="text-xl font-black text-slate-900 tracking-tight">Terminal Otentikasi POS</h1>
-          <p className="text-xs font-semibold text-slate-450 mt-0.5">Pilih personel aktif dan masukkan PIN akses laci kasir pintar.</p>
+          <p className="text-xs font-semibold text-slate-400 mt-0.5">Pilih personel aktif dan masukkan PIN akses laci kasir pintar.</p>
         </div>
         {activeCashier && (
           <button
@@ -141,7 +141,7 @@ export default function CashierPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cari nama personil kasir outlet..."
-          className="w-full rounded-xl border border-slate-250/70 bg-white pl-11 pr-4 py-3.5 text-xs font-semibold text-slate-900 placeholder:text-slate-450 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 transition-all shadow-3xs"
+          className="w-full rounded-xl border border-slate-250/70 bg-white pl-11 pr-4 py-3.5 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-3xs"
         />
       </div>
 
@@ -171,7 +171,7 @@ export default function CashierPage() {
                 } ${!cashier.isActive ? 'opacity-40 cursor-not-allowed bg-slate-50' : ''}`}
               >
                 <div className="flex w-full items-center justify-between text-slate-400">
-                  <Users size={16} className={isSelected ? 'text-indigo-600' : 'text-slate-450'} />
+                  <Users size={16} className={isSelected ? 'text-indigo-600' : 'text-slate-400'} />
                   {isSelected && <ShieldCheck size={16} className="text-indigo-600 animate-in zoom-in-75 duration-150" />}
                 </div>
                 <div>
@@ -197,7 +197,7 @@ export default function CashierPage() {
       {selected && (
         <div className="rounded-2xl bg-white border border-slate-200 p-5 max-w-sm shadow-3xs space-y-4 animate-in slide-in-from-bottom-2 duration-200">
           <div>
-            <h3 className="text-[10px] font-bold text-slate-450 uppercase tracking-wider">Verifikasi Laci Kasir</h3>
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Verifikasi Laci Kasir</h3>
             <p className="text-xs font-semibold text-slate-800 mt-1">Petugas Shift: <span className="text-indigo-600 font-bold">{selected.name}</span></p>
           </div>
 
@@ -208,7 +208,7 @@ export default function CashierPage() {
               value={pin}
               maxLength={6}
               onChange={(e) => setPin(e.target.value)}
-              className="w-full border border-slate-200/80 bg-slate-50/40 rounded-xl pl-10 pr-4 py-3 text-xs font-mono tracking-widest text-slate-900 placeholder:text-slate-350 focus:bg-white focus:border-indigo-550 focus:outline-none"
+              className="w-full border border-slate-200/80 bg-slate-50/40 rounded-xl pl-10 pr-4 py-3 text-xs font-mono tracking-widest text-slate-900 placeholder:text-slate-350 focus:bg-white focus:border-indigo-500 focus:outline-none"
               placeholder="Masukkan 6 digit PIN"
             />
           </div>

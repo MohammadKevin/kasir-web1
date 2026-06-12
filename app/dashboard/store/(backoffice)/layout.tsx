@@ -113,7 +113,7 @@ export default function StoreLayout({
             
             <div className="flex items-center justify-between px-1">
               <div className="flex gap-2 items-center">
-                <div className="h-5 w-5 rounded bg-indigo-650 shadow-3xs" />
+                <div className="h-5 w-5 rounded bg-indigo-600 shadow-3xs" />
                 <span className="font-extrabold text-slate-900 tracking-tight text-sm">
                   laila<span className="text-indigo-600">collections</span>
                 </span>
@@ -149,7 +149,7 @@ export default function StoreLayout({
               <div className="absolute -right-4 -bottom-4 h-12 w-12 rounded-full bg-indigo-500/5 blur-xl group-hover:bg-indigo-500/10 transition-colors" />
               <div className="flex items-center gap-2 text-slate-500">
                 <Store size={13} className="text-slate-400 shrink-0" />
-                <span className="text-[9px] font-bold uppercase tracking-widest text-slate-450">Outlet Terikat</span>
+                <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Outlet Terikat</span>
               </div>
               <p className="mt-2 text-xs font-black text-slate-900 leading-normal">
                 {storeName || 'Memuat...'}
@@ -186,7 +186,7 @@ export default function StoreLayout({
             </h2>
           </div>
           <span className="text-xs font-extrabold tracking-tight text-slate-900 lg:hidden block">
-            laila<span className="text-indigo-650">collections</span>
+            laila<span className="text-indigo-600">collections</span>
           </span>
         </header>
 

@@ -204,7 +204,7 @@ export default function BarcodePage() {
           </div>
           <div>
             <h1 className="text-xl font-black text-slate-900">Manajemen Barcode SKU</h1>
-            <p className="text-xs font-semibold text-slate-450 mt-0.5">Generate kode barcode baru untuk produk dan cetak tag label thermal</p>
+            <p className="text-xs font-semibold text-slate-400 mt-0.5">Generate kode barcode baru untuk produk dan cetak tag label thermal</p>
           </div>
         </div>
 
@@ -287,9 +287,9 @@ export default function BarcodePage() {
                 <th className="p-4 pl-6 w-12 text-center">
                   <button 
                     onClick={() => setSelectedIds(isAllSelected ? [] : filtered.map(p => p.id))}
-                    className="text-slate-400 hover:text-slate-655 transition-colors flex items-center justify-center mx-auto"
+                    className="text-slate-400 hover:text-slate-600 transition-colors flex items-center justify-center mx-auto"
                   >
-                    {isAllSelected ? <CheckSquare className="w-5 h-5 text-blue-650" /> : <Square className="w-5 h-5" />}
+                    {isAllSelected ? <CheckSquare className="w-5 h-5 text-blue-600" /> : <Square className="w-5 h-5" />}
                   </button>
                 </th>
                 <th className="p-4">Nama Produk / SKU</th>
@@ -298,7 +298,7 @@ export default function BarcodePage() {
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-slate-100 text-slate-655 font-semibold">
+            <tbody className="divide-y divide-slate-100 text-slate-600 font-semibold">
               {loading ? (
                 <tr>
                   <td colSpan={4} className="p-10 text-center">
@@ -319,7 +319,7 @@ export default function BarcodePage() {
                     <td className="p-4 pl-6 text-center">
                       <button 
                         onClick={() => setSelectedIds(prev => prev.includes(p.id) ? prev.filter(i => i !== p.id) : [...prev, p.id])}
-                        className="text-slate-400 hover:text-slate-655 transition-colors flex items-center justify-center mx-auto"
+                        className="text-slate-400 hover:text-slate-600 transition-colors flex items-center justify-center mx-auto"
                       >
                         {selectedIds.includes(p.id) ? <CheckSquare className="w-5 h-5 text-blue-600" /> : <Square className="w-5 h-5" />}
                       </button>

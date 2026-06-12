@@ -30,7 +30,7 @@ function getCategoryBadgeClass(category: string) {
     case 'RENT': return 'bg-rose-50 border border-rose-150 text-rose-700'
     case 'TRANSPORT': return 'bg-violet-50 border border-violet-150 text-violet-700'
     case 'OTHER': return 'bg-slate-50 border border-slate-200 text-slate-600'
-    default: return 'bg-slate-50 border border-slate-200 text-slate-655'
+    default: return 'bg-slate-50 border border-slate-200 text-slate-600'
   }
 }
 
@@ -225,12 +225,12 @@ export default function ExpensePage() {
           <Store className="w-8 h-8" />
         </div>
         <h3 className="text-sm font-black text-slate-900 mb-2">Belum Ada Toko Terdaftar</h3>
-        <p className="text-xs text-slate-450 max-w-sm mb-6">
+        <p className="text-xs text-slate-400 max-w-sm mb-6">
           Anda perlu mendaftarkan setidaknya satu cabang toko terlebih dahulu sebelum dapat mencatat pengeluaran di halaman ini.
         </p>
         <a
           href="/dashboard/admin/stores"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-650 px-5 py-3 text-xs font-bold text-white shadow-3xs hover:bg-indigo-700 transition-all active:scale-98 cursor-pointer"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-xs font-bold text-white shadow-3xs hover:bg-indigo-700 transition-all active:scale-98 cursor-pointer"
         >
           Kelola Toko Sekarang
         </a>
@@ -249,7 +249,7 @@ export default function ExpensePage() {
           </div>
           <div>
             <h1 className="text-xl font-black text-slate-900 tracking-tight">Pengeluaran Toko</h1>
-            <p className="text-xs font-semibold text-slate-455 mt-0.5">Pencatatan biaya pengeluaran operasional cabang toko dan audit cashflow keuangan keluar.</p>
+            <p className="text-xs font-semibold text-slate-500 mt-0.5">Pencatatan biaya pengeluaran operasional cabang toko dan audit cashflow keuangan keluar.</p>
           </div>
         </div>
 
@@ -274,7 +274,7 @@ export default function ExpensePage() {
         </div>
 
         <div className="border border-slate-200 rounded-2xl p-5 bg-white shadow-3xs flex items-center gap-4">
-          <div className="p-3 bg-indigo-50 rounded-xl border border-indigo-100/50 text-indigo-650 shrink-0">
+          <div className="p-3 bg-indigo-50 rounded-xl border border-indigo-100/50 text-indigo-600 shrink-0">
             <Wallet className="w-6 h-6" />
           </div>
           <div>
@@ -293,7 +293,7 @@ export default function ExpensePage() {
             placeholder="Cari deskripsi pengeluaran..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-slate-250/70 bg-white pl-11 pr-11 py-3.5 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 transition-all shadow-3xs"
+            className="w-full rounded-xl border border-slate-250/70 bg-white pl-11 pr-11 py-3.5 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-3xs"
           />
         </div>
 
@@ -302,7 +302,7 @@ export default function ExpensePage() {
             <select 
               value={categoryFilter} 
               onChange={(e) => setCategoryFilter(e.target.value)} 
-              className="w-full sm:w-48 appearance-none bg-white border border-slate-250/70 pl-4 pr-10 py-3.5 rounded-xl text-xs font-bold text-slate-800 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 cursor-pointer transition-all shadow-3xs"
+              className="w-full sm:w-48 appearance-none bg-white border border-slate-250/70 pl-4 pr-10 py-3.5 rounded-xl text-xs font-bold text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 cursor-pointer transition-all shadow-3xs"
             >
               <option value="ALL">Semua Kategori</option>
               <option value="OPERATIONAL">Operasional</option>
@@ -323,7 +323,7 @@ export default function ExpensePage() {
                 setSelectedStoreId(e.target.value)
                 localStorage.setItem('storeId', e.target.value)
               }}
-              className="w-full sm:w-56 appearance-none bg-white border border-slate-250/70 pl-4 pr-10 py-3.5 rounded-xl text-xs font-bold text-slate-800 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 cursor-pointer transition-all shadow-3xs"
+              className="w-full sm:w-56 appearance-none bg-white border border-slate-250/70 pl-4 pr-10 py-3.5 rounded-xl text-xs font-bold text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 cursor-pointer transition-all shadow-3xs"
             >
               {stores.map((store) => (
                 <option key={store.id} value={store.id}>{store.name}</option>
@@ -348,7 +348,7 @@ export default function ExpensePage() {
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-slate-100 text-slate-655 font-semibold">
+            <tbody className="divide-y divide-slate-100 text-slate-600 font-semibold">
               {loading ? (
                 <tr>
                   <td colSpan={5} className="p-10 text-center">
@@ -357,7 +357,7 @@ export default function ExpensePage() {
                 </tr>
               ) : filteredExpenses.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-16 text-center text-slate-450">
+                  <td colSpan={5} className="p-16 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center space-y-2">
                       <div className="p-3 bg-slate-50 border border-slate-150 rounded-2xl text-slate-400">
                         <Wallet className="w-6 h-6" />
@@ -414,11 +414,11 @@ export default function ExpensePage() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
                 <h3 className="text-sm font-black text-slate-900">{editingId ? 'Ubah Rincian Biaya' : 'Catat Biaya Operasional'}</h3>
-                <p className="text-[10px] font-semibold text-slate-450 mt-0.5">Pencatatan pengeluaran dana kas keluar operasional outlet toko.</p>
+                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Pencatatan pengeluaran dana kas keluar operasional outlet toko.</p>
               </div>
               <button 
                 onClick={() => setIsOpenModal(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-655"
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -511,7 +511,7 @@ export default function ExpensePage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-750 shadow-indigo-500/10 transition-all cursor-pointer"
+                  className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-700 shadow-indigo-500/10 transition-all cursor-pointer"
                 >
                   {isSubmitting ? (
                     <div className="flex items-center gap-1.5">

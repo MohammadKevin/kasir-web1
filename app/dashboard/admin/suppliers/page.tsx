@@ -210,12 +210,12 @@ export default function SupplierPage() {
           <Store className="w-8 h-8" />
         </div>
         <h3 className="text-sm font-black text-slate-900 mb-2">Belum Ada Toko Terdaftar</h3>
-        <p className="text-xs text-slate-450 max-w-sm mb-6">
+        <p className="text-xs text-slate-400 max-w-sm mb-6">
           Anda perlu mendaftarkan setidaknya satu cabang toko terlebih dahulu sebelum dapat mengelola data supplier di halaman ini.
         </p>
         <a
           href="/dashboard/admin/stores"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-650 px-5 py-3 text-xs font-bold text-white shadow-3xs hover:bg-indigo-700 transition-all cursor-pointer"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-xs font-bold text-white shadow-3xs hover:bg-indigo-700 transition-all cursor-pointer"
         >
           Kelola Toko Sekarang
         </a>
@@ -234,13 +234,13 @@ export default function SupplierPage() {
           </div>
           <div>
             <h1 className="text-xl font-black text-slate-900 tracking-tight">Manajemen Supplier</h1>
-            <p className="text-xs font-semibold text-slate-450 mt-0.5">Kelola direktori mitra vendor pasokan barang dagangan, kontak operasional, serta monitoring pasokan stok.</p>
+            <p className="text-xs font-semibold text-slate-400 mt-0.5">Kelola direktori mitra vendor pasokan barang dagangan, kontak operasional, serta monitoring pasokan stok.</p>
           </div>
         </div>
 
         <button
           onClick={handleOpenCreate}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white transition-all shadow-3xs hover:bg-indigo-750 active:scale-97 cursor-pointer shrink-0"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white transition-all shadow-3xs hover:bg-indigo-700 active:scale-97 cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
           Tambahkan Supplier
@@ -279,12 +279,12 @@ export default function SupplierPage() {
             placeholder="Cari nama vendor supplier atau nomor kontak..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-slate-250/70 bg-white pl-11 pr-11 py-3.5 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 transition-all shadow-3xs"
+            className="w-full rounded-xl border border-slate-250/70 bg-white pl-11 pr-11 py-3.5 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-3xs"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-650"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
             >
               <X size={15} />
             </button>
@@ -299,7 +299,7 @@ export default function SupplierPage() {
               setFormData((prev) => ({ ...prev, storeId: e.target.value }))
               localStorage.setItem('storeId', e.target.value)
             }}
-            className="w-full sm:w-60 appearance-none bg-white border border-slate-250/70 pl-4 pr-10 py-3.5 rounded-xl text-xs font-bold text-slate-800 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 cursor-pointer transition-all shadow-3xs"
+            className="w-full sm:w-60 appearance-none bg-white border border-slate-250/70 pl-4 pr-10 py-3.5 rounded-xl text-xs font-bold text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 cursor-pointer transition-all shadow-3xs"
           >
             {stores.map((store) => (
               <option key={store.id} value={store.id}>
@@ -324,7 +324,7 @@ export default function SupplierPage() {
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-slate-100 text-slate-655 font-semibold">
+            <tbody className="divide-y divide-slate-100 text-slate-600 font-semibold">
               {loading ? (
                 <tr>
                   <td colSpan={4} className="p-10 text-center">
@@ -333,7 +333,7 @@ export default function SupplierPage() {
                 </tr>
               ) : filteredSuppliers.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="p-16 text-center text-slate-450">
+                  <td colSpan={4} className="p-16 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center space-y-2">
                       <div className="p-3 bg-slate-50 border border-slate-150 rounded-2xl text-slate-400">
                         <Truck className="w-6 h-6" />
@@ -407,11 +407,11 @@ export default function SupplierPage() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
                 <h3 className="text-sm font-black text-slate-900">{editingId ? 'Ubah Rincian Supplier' : 'Daftarkan Vendor Supplier'}</h3>
-                <p className="text-[10px] font-semibold text-slate-450 mt-0.5">Konfigurasi nama entitas perusahaan penyalur pasokan serta kontak penghubung.</p>
+                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Konfigurasi nama entitas perusahaan penyalur pasokan serta kontak penghubung.</p>
               </div>
               <button 
                 onClick={() => setIsOpenModal(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-650 transition-colors"
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -427,7 +427,7 @@ export default function SupplierPage() {
                     disabled={!!editingId}
                     value={formData.storeId}
                     onChange={(e) => setFormData({ ...formData, storeId: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200/80 bg-slate-50/50 pl-10 pr-10 py-3 text-xs font-semibold text-slate-800 outline-none transition-all appearance-none cursor-pointer focus:border-indigo-550 focus:bg-white disabled:opacity-60"
+                    className="w-full rounded-xl border border-slate-200/80 bg-slate-50/50 pl-10 pr-10 py-3 text-xs font-semibold text-slate-800 outline-none transition-all appearance-none cursor-pointer focus:border-indigo-500 focus:bg-white disabled:opacity-60"
                   >
                     {stores.map((store) => (
                       <option key={store.id} value={store.id}>
@@ -449,7 +449,7 @@ export default function SupplierPage() {
                     placeholder="Contoh: PT. Sumber Makmur Sejahtera"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200/80 bg-slate-50/50 pl-10 pr-4 py-3 text-xs font-semibold outline-none transition-all focus:border-indigo-550 focus:bg-white"
+                    className="w-full rounded-xl border border-slate-200/80 bg-slate-50/50 pl-10 pr-4 py-3 text-xs font-semibold outline-none transition-all focus:border-indigo-500 focus:bg-white"
                   />
                 </div>
               </div>
@@ -463,7 +463,7 @@ export default function SupplierPage() {
                     placeholder="Contoh: 0217654321 atau 0812xxxxxxxx"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200/80 bg-slate-50/50 pl-10 pr-4 py-3 text-xs font-semibold outline-none transition-all focus:border-indigo-550 focus:bg-white"
+                    className="w-full rounded-xl border border-slate-200/80 bg-slate-50/50 pl-10 pr-4 py-3 text-xs font-semibold outline-none transition-all focus:border-indigo-500 focus:bg-white"
                   />
                 </div>
               </div>

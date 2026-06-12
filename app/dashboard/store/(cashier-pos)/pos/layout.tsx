@@ -202,7 +202,7 @@ export default function PosLayout({
             </div>
             <div className="text-left hidden sm:block">
               <p className="text-[8.5px] text-slate-400 font-bold uppercase tracking-wider leading-none">Kasir Aktif</p>
-              <p className="text-xs font-black text-slate-850 mt-0.5 leading-none">{cashier?.name || 'Loading...'}</p>
+              <p className="text-xs font-black text-slate-800 mt-0.5 leading-none">{cashier?.name || 'Loading...'}</p>
             </div>
           </div>
 
@@ -218,7 +218,7 @@ export default function PosLayout({
 
             <button
               onClick={handleExitPos}
-              className="flex items-center gap-1 rounded-xl bg-indigo-650 hover:bg-indigo-700 px-3 py-1.5 text-xs font-bold text-white transition-all shadow-3xs cursor-pointer active:scale-97"
+              className="flex items-center gap-1 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 text-xs font-bold text-white transition-all shadow-3xs cursor-pointer active:scale-97"
             >
               <LogOut size={13} />
               <span className="hidden sm:inline">Dashboard</span>
@@ -228,7 +228,7 @@ export default function PosLayout({
       </header>
 
       {/* Main POS Container */}
-      <main className="flex-1 overflow-hidden p-4">
+      <main className="flex-1 overflow-hidden p-2 sm:p-3 md:p-4">
         {children}
       </main>
 
@@ -238,7 +238,7 @@ export default function PosLayout({
           <div className="w-full max-w-xs overflow-hidden rounded-2xl border border-slate-150 bg-white p-6 shadow-xl relative animate-in zoom-in-95 duration-150 space-y-4">
             <div className="border-b border-slate-100 pb-3">
               <h3 className="text-sm font-black text-slate-900">Buka Shift Baru</h3>
-              <p className="text-[10px] font-semibold text-slate-450 mt-0.5">Masukkan modal kas kecil awal untuk memulai sesi kasir.</p>
+              <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Masukkan modal kas kecil awal untuk memulai sesi kasir.</p>
             </div>
             
             <form onSubmit={handleOpenShiftSubmit} className="space-y-4">
@@ -269,7 +269,7 @@ export default function PosLayout({
                 <button
                   type="submit"
                   disabled={isOpeningShift || openingCashInput === ''}
-                  className="rounded-xl bg-indigo-600 text-white py-2 text-xs font-bold hover:bg-indigo-750 shadow-indigo-500/10 transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-97"
+                  className="rounded-xl bg-indigo-600 text-white py-2 text-xs font-bold hover:bg-indigo-700 shadow-indigo-500/10 transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-97"
                 >
                   {isOpeningShift ? (
                     <Loader2 className="animate-spin" size={13} />
@@ -292,7 +292,7 @@ export default function PosLayout({
               <button 
                 type="button" 
                 onClick={() => setIsOpenCloseShiftModal(false)} 
-                className="rounded-lg p-0.5 text-slate-400 hover:bg-slate-50 hover:text-slate-655 cursor-pointer"
+                className="rounded-lg p-0.5 text-slate-400 hover:bg-slate-50 hover:text-slate-600 cursor-pointer"
               >
                 <X size={16} />
               </button>

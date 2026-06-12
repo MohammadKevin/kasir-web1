@@ -147,7 +147,7 @@ export default function AdminLayout({
           {/* Sidebar Header Brand */}
           <div className="mb-8 px-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="h-6 w-6 rounded-md bg-gradient-to-tr from-blue-600 to-indigo-650 flex items-center justify-center text-white font-black text-xs shadow-md shadow-blue-500/20">
+              <div className="h-6 w-6 rounded-md bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-xs shadow-md shadow-blue-500/20">
                 L
               </div>
               <div>
@@ -174,8 +174,8 @@ export default function AdminLayout({
                 href="/dashboard/admin"
                 className={`flex items-center gap-3 rounded-xl px-4 py-2.5 text-xs font-bold transition-all duration-200 ${
                   pathname === '/dashboard/admin'
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-650 text-white shadow-md shadow-blue-500/20 scale-[1.01]'
-                    : 'text-slate-655 hover:bg-slate-55/70 hover:text-slate-900 hover:translate-x-1'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 scale-[1.01]'
+                    : 'text-slate-600 hover:bg-slate-55/70 hover:text-slate-900 hover:translate-x-1'
                 }`}
               >
                 <LayoutDashboard size={15} />
@@ -219,7 +219,7 @@ export default function AdminLayout({
                   <div key={section.title} className="space-y-1.5">
                     <button
                       onClick={() => toggle(section.title)}
-                      className="flex w-full items-center justify-between px-4 py-2 text-[9px] font-extrabold uppercase tracking-widest text-slate-400 transition-colors hover:text-slate-650 cursor-pointer"
+                      className="flex w-full items-center justify-between px-4 py-2 text-[9px] font-extrabold uppercase tracking-widest text-slate-400 transition-colors hover:text-slate-600 cursor-pointer"
                     >
                       <span>{section.title}</span>
                       <ChevronDown 
@@ -279,7 +279,7 @@ export default function AdminLayout({
           
           <button
             onClick={logout}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-655 transition-all hover:bg-red-50 hover:text-red-650 hover:border-red-200 active:scale-97 cursor-pointer"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-600 transition-all hover:bg-red-50 hover:text-red-600 hover:border-red-200 active:scale-97 cursor-pointer"
           >
             <LogOut size={13} />
             <span>Keluar Sesi</span>

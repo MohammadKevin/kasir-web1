@@ -291,10 +291,10 @@ export default function AdminDashboard() {
     return (
       <div>
         <div className="flex max-w-xl items-center gap-4 rounded-2xl border border-red-150 bg-red-50/50 p-6 text-red-800 backdrop-blur-xs">
-          <AlertCircle className="h-6 w-6 shrink-0 text-red-650" />
+          <AlertCircle className="h-6 w-6 shrink-0 text-red-600" />
           <div className="flex-1">
             <h3 className="font-bold text-sm">Terjadi Kesalahan</h3>
-            <p className="mt-1 text-xs text-slate-550 leading-relaxed">{error}</p>
+            <p className="mt-1 text-xs text-slate-500 leading-relaxed">{error}</p>
           </div>
           <button onClick={loadDashboard} className="flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-slate-705 shadow-sm border border-slate-200 transition hover:bg-slate-50 cursor-pointer">
             <RefreshCw className="h-3.5 w-3.5" /> Coba Lagi
@@ -315,7 +315,7 @@ export default function AdminDashboard() {
         </div>
         <button 
           onClick={loadDashboard}
-          className="flex self-start items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-655 shadow-3xs transition-all hover:bg-slate-50 hover:text-slate-900 active:scale-97 cursor-pointer hover:border-slate-300"
+          className="flex self-start items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 shadow-3xs transition-all hover:bg-slate-50 hover:text-slate-900 active:scale-97 cursor-pointer hover:border-slate-300"
         >
           <RefreshCw className="h-3.5 w-3.5 text-slate-400" />
           <span>Perbarui Data</span>
@@ -334,7 +334,7 @@ export default function AdminDashboard() {
               <div className="absolute top-0 right-0 -mr-6 -mt-6 h-24 w-24 rounded-full bg-slate-950/[0.01] transition-transform duration-300 group-hover:scale-150" />
               <div className="flex items-center justify-between relative z-10">
                 <div className="space-y-1.5">
-                  <p className="text-[9px] font-extrabold uppercase tracking-widest text-slate-450">{card.title}</p>
+                  <p className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400">{card.title}</p>
                   <h2 className="text-xl font-black tracking-tight text-slate-950 sm:text-2xl">{card.value}</h2>
                 </div>
                 <div className={`rounded-xl p-3 transition-transform group-hover:scale-110 ${card.iconBgClass} ${card.iconTextClass}`}>
@@ -385,7 +385,7 @@ export default function AdminDashboard() {
                   <tbody className="divide-y divide-slate-100 text-slate-600 font-semibold">
                     {data.recentTransactions.map((tx) => (
                       <tr key={tx.id} className="group hover:bg-slate-50/45 transition-colors">
-                        <td className="p-4 pl-6 font-mono font-bold text-slate-900 group-hover:text-blue-650 transition-colors">{tx.invoiceNumber}</td>
+                        <td className="p-4 pl-6 font-mono font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{tx.invoiceNumber}</td>
                         <td className="p-4 text-slate-800 font-bold">{tx.storeName}</td>
                         <td className="p-4 text-slate-500">{tx.cashier?.name}</td>
                         <td className="p-4">
@@ -421,7 +421,7 @@ export default function AdminDashboard() {
                     key={p}
                     onClick={() => setPeriod(p)}
                     className={`px-3 py-1.5 rounded-lg text-[9px] uppercase font-black transition-all cursor-pointer ${
-                      period === p ? 'bg-blue-600 text-white shadow-2xs' : 'text-slate-455 hover:text-slate-700'
+                      period === p ? 'bg-blue-600 text-white shadow-2xs' : 'text-slate-500 hover:text-slate-700'
                     }`}
                   >
                     {p}

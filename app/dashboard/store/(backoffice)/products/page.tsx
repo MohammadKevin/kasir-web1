@@ -194,7 +194,7 @@ export default function ProductsPage() {
           </button>
           <div>
             <h1 className="text-xl font-black text-slate-900 tracking-tight">Katalog Produk</h1>
-            <p className="text-xs font-semibold text-slate-450 mt-0.5">Lihat ketersediaan stok aktual gudang, nilai jual, dan manifestasi label barcode.</p>
+            <p className="text-xs font-semibold text-slate-400 mt-0.5">Lihat ketersediaan stok aktual gudang, nilai jual, dan manifestasi label barcode.</p>
           </div>
         </div>
 
@@ -216,7 +216,7 @@ export default function ProductsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari produk berdasarkan nama, SKU, atau kode barcode..."
-            className="w-full rounded-xl border border-slate-250/70 bg-white pl-11 pr-4 py-3.5 text-xs font-semibold text-slate-900 placeholder:text-slate-450 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 transition-all shadow-3xs"
+            className="w-full rounded-xl border border-slate-250/70 bg-white pl-11 pr-4 py-3.5 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-3xs"
           />
         </div>
 
@@ -232,7 +232,7 @@ export default function ProductsPage() {
             key={cat.id}
             onClick={() => setSelectedCategoryId(cat.id)}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer active:scale-[0.98] ${selectedCategoryId === cat.id
-                ? 'bg-indigo-600 text-white border-indigo-650 shadow-3xs'
+                ? 'bg-indigo-600 text-white border-indigo-600 shadow-3xs'
                 : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
               }`}
           >
@@ -255,7 +255,7 @@ export default function ProductsPage() {
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-slate-100 text-slate-655 font-semibold">
+            <tbody className="divide-y divide-slate-100 text-slate-600 font-semibold">
               {loading ? (
                 <tr>
                   <td colSpan={5} className="p-10 text-center">
@@ -264,7 +264,7 @@ export default function ProductsPage() {
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-16 text-center text-slate-450">
+                  <td colSpan={5} className="p-16 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center space-y-2">
                       <div className="p-3 bg-slate-50 border border-slate-150 rounded-2xl text-slate-400">
                         <Boxes className="w-6 h-6" />
@@ -309,7 +309,7 @@ export default function ProductsPage() {
                         {product.barcode ? (
                           <div className="flex flex-col gap-1 max-w-[100px] overflow-hidden opacity-90 bg-white border border-slate-150 rounded-lg p-1.5 items-center">
                             <BarcodeRender value={product.barcode} height={15} width={1.1} displayValue={false} margin={0} />
-                            <span className="text-[8.5px] font-mono text-slate-450 truncate mt-0.5">{product.barcode}</span>
+                            <span className="text-[8.5px] font-mono text-slate-400 truncate mt-0.5">{product.barcode}</span>
                           </div>
                         ) : (
                           <span className="text-slate-300 italic text-[10px] font-semibold">Belum diatur</span>
@@ -321,7 +321,7 @@ export default function ProductsPage() {
                           <button
                             type="button"
                             onClick={() => handlePrintSingleBarcode(product.barcode!, product.name)}
-                            className="p-1.5 text-slate-405 hover:text-indigo-650 hover:bg-slate-100 rounded-lg transition-all cursor-pointer"
+                            className="p-1.5 text-slate-405 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-all cursor-pointer"
                             title="Cetak Label Item Ini"
                           >
                             <Printer size={14} />

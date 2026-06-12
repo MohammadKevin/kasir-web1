@@ -124,7 +124,7 @@ export default function ShiftPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200/80 pb-4">
         <div>
           <h1 className="text-xl font-black text-slate-900 tracking-tight">Riwayat Shift Kasir</h1>
-          <p className="text-xs font-semibold text-slate-450 mt-0.5">Pantau durasi aktivitas operasional dan rekam log masuk petugas outlet.</p>
+          <p className="text-xs font-semibold text-slate-400 mt-0.5">Pantau durasi aktivitas operasional dan rekam log masuk petugas outlet.</p>
         </div>
         <button
           onClick={loadShiftHistory}
@@ -169,7 +169,7 @@ export default function ShiftPage() {
             <XCircle className="text-slate-400 shrink-0 mt-0.5" size={16} />
             <div className="space-y-1">
               <h3 className="text-xs font-black text-slate-800">Tidak Ada Shift Aktif</h3>
-              <p className="text-xs font-semibold text-slate-450 leading-relaxed">
+              <p className="text-xs font-semibold text-slate-400 leading-relaxed">
                 Silakan lakukan otentikasi pin personel kasir terlebih dahulu di menu Terminal Kasir untuk mulai berjualan.
               </p>
             </div>
@@ -184,7 +184,7 @@ export default function ShiftPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cari nama personel kasir..."
-          className="w-full rounded-xl border border-slate-250/70 bg-white pl-11 pr-4 py-3.5 text-xs font-semibold text-slate-900 placeholder:text-slate-455 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 transition-all shadow-3xs"
+          className="w-full rounded-xl border border-slate-250/70 bg-white pl-11 pr-4 py-3.5 text-xs font-semibold text-slate-900 placeholder:text-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-3xs"
         />
       </div>
 
@@ -236,7 +236,7 @@ export default function ShiftPage() {
                   </div>
                   <div className="space-y-0.5 col-span-2 sm:col-span-1">
                     <span className="text-[9px] text-slate-400 block uppercase tracking-wider">Durasi Kerja</span>
-                    <span className="text-slate-850 font-mono font-bold">
+                    <span className="text-slate-800 font-mono font-bold">
                       {duration(shift.createdAt, shift.status === 'OPEN' ? undefined : (shift.closedAt || shift.updatedAt))}
                     </span>
                   </div>
@@ -256,7 +256,7 @@ export default function ShiftPage() {
                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Kas Aktual</p>
                   <p className="text-xs font-black font-mono text-slate-800 mt-1">
                     {shift.status === 'OPEN' ? (
-                      <span className="text-slate-450 italic font-sans font-semibold text-[10px]">Berjalan...</span>
+                      <span className="text-slate-400 italic font-sans font-semibold text-[10px]">Berjalan...</span>
                     ) : (
                       `Rp ${(shift.closingCash || 0).toLocaleString('id-ID')}`
                     )}
@@ -275,7 +275,7 @@ export default function ShiftPage() {
                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Selisih Kas</p>
                   <p className="text-xs font-black font-mono mt-1">
                     {shift.status === 'OPEN' ? (
-                      <span className="text-slate-450 italic font-sans font-semibold text-[10px]">Berjalan...</span>
+                      <span className="text-slate-400 italic font-sans font-semibold text-[10px]">Berjalan...</span>
                     ) : (
                       `${(shift.difference || 0) < 0 ? '-' : (shift.difference || 0) > 0 ? '+' : ''}Rp ${Math.abs(shift.difference || 0).toLocaleString('id-ID')}`
                     )}

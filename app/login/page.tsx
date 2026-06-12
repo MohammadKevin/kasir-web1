@@ -106,7 +106,7 @@ export default function LoginPage() {
             
             <div className="flex justify-between items-end">
               <div>
-                <p className="text-[8px] text-slate-450 font-bold uppercase tracking-wider">Server Utama</p>
+                <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Server Utama</p>
                 <p className="text-sm font-bold tracking-tight text-white mt-1">Laila Core Service v.1.0</p>
               </div>
               <div className="flex items-center gap-1.5 text-[8.5px] font-bold text-sky-400 bg-sky-500/10 rounded-full px-2 py-0.5 border border-sky-500/20">
@@ -211,7 +211,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={loading}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-650 focus:outline-none transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
                 >
                   {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
@@ -246,8 +246,8 @@ export default function LoginPage() {
           </form>
 
           {/* Security Notice Callout */}
-          <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 text-[10.5px] font-semibold text-slate-550 leading-relaxed mt-4 flex items-start gap-2">
-            <ShieldCheck size={14} className="shrink-0 mt-0.5 text-blue-650" />
+          <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 text-[10.5px] font-semibold text-slate-500 leading-relaxed mt-4 flex items-start gap-2">
+            <ShieldCheck size={14} className="shrink-0 mt-0.5 text-blue-600" />
             <span>
               <strong>Pemberitahuan Keamanan:</strong> Portal ini ditujukan khusus untuk karyawan Laila Collections. Jika Anda membutuhkan hak akses baru atau mengalami kendala login, silakan hubungi <strong>IT Administrator / Kepala Cabang</strong>.
             </span>

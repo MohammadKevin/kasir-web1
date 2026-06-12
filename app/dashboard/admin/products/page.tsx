@@ -250,7 +250,7 @@ export default function ProductPage() {
                 </span>
               )}
             </div>
-            <p className="text-xs font-semibold text-slate-450 mt-0.5">Kelola inventori stok, penentuan harga jual, SKU, barcode, dan limit stok cabang</p>
+            <p className="text-xs font-semibold text-slate-400 mt-0.5">Kelola inventori stok, penentuan harga jual, SKU, barcode, dan limit stok cabang</p>
           </div>
         </div>
         
@@ -333,7 +333,7 @@ export default function ProductPage() {
                 <th className="p-4 pr-6 text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-655 font-semibold">
+            <tbody className="divide-y divide-slate-100 text-slate-600 font-semibold">
               {loading ? (
                 [1, 2, 3, 4].map(i => (
                   <tr key={i}>
@@ -462,7 +462,7 @@ export default function ProductPage() {
                           <button 
                             onClick={() => remove(p.id)}
                             disabled={deletingId === p.id}
-                            className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-red-50 text-slate-400 hover:text-red-650 transition-colors disabled:opacity-50"
+                            className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors disabled:opacity-50"
                             title="Hapus Produk"
                           >
                             {deletingId === p.id ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={14} />}
@@ -498,7 +498,7 @@ export default function ProductPage() {
               <button 
                 type="button" 
                 onClick={() => setIsOpenModal(false)}
-                className="h-8 w-8 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-650 hover:bg-slate-100 transition-colors"
+                className="h-8 w-8 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
               >
                 <X size={15} />
               </button>
@@ -583,7 +583,7 @@ export default function ProductPage() {
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       placeholder="Contoh: Gamis Silk Premium Laila"
-                      className="w-full rounded-xl border border-slate-200 pl-11 pr-4 py-3 text-xs text-slate-900 placeholder:text-slate-450 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold"
+                      className="w-full rounded-xl border border-slate-200 pl-11 pr-4 py-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold"
                     />
                   </div>
                 </div>
@@ -599,7 +599,7 @@ export default function ProductPage() {
                         value={formData.sku}
                         onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
                         placeholder="Otomatis jika kosong"
-                        className="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-3 text-xs text-slate-900 placeholder:text-slate-450 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-mono font-semibold"
+                        className="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-mono font-semibold"
                       />
                     </div>
                   </div>
@@ -613,7 +613,7 @@ export default function ProductPage() {
                         value={formData.barcode}
                         onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
                         placeholder="Otomatis jika kosong"
-                        className="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-3 text-xs text-slate-900 placeholder:text-slate-450 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-mono font-semibold"
+                        className="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-mono font-semibold"
                       />
                     </div>
                   </div>
@@ -632,7 +632,7 @@ export default function ProductPage() {
                         value={formData.costPrice || ''}
                         onChange={(e) => setFormData({ ...formData, costPrice: Number(e.target.value) })}
                         placeholder="Harga Modal (Rp)"
-                        className="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-3 text-xs text-slate-900 placeholder:text-slate-455 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold"
+                        className="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-3 text-xs text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold"
                       />
                     </div>
 
@@ -645,7 +645,7 @@ export default function ProductPage() {
                         value={formData.sellingPrice || ''}
                         onChange={(e) => setFormData({ ...formData, sellingPrice: Number(e.target.value) })}
                         placeholder="Harga Jual (Rp)"
-                        className="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-3 text-xs text-slate-900 placeholder:text-slate-455 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold"
+                        className="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-3 text-xs text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold"
                       />
                     </div>
                   </div>
@@ -673,7 +673,7 @@ export default function ProductPage() {
                         value={formData.stock || ''}
                         onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
                         placeholder="Stok Awal Barang"
-                        className="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-3 text-xs text-slate-900 placeholder:text-slate-455 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold"
+                        className="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-3 text-xs text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold"
                       />
                     </div>
 
@@ -685,7 +685,7 @@ export default function ProductPage() {
                         value={formData.minimumStock || ''}
                         onChange={(e) => setFormData({ ...formData, minimumStock: Number(e.target.value) })}
                         placeholder="Limit Minimum Stok"
-                        className="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-3 text-xs text-slate-900 placeholder:text-slate-455 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold"
+                        className="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-3 text-xs text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold"
                       />
                     </div>
                   </div>
@@ -701,7 +701,7 @@ export default function ProductPage() {
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       placeholder="Masukkan deskripsi varian tunik/gamis, warna, ukuran baju, dll..."
                       rows={3}
-                      className="w-full rounded-xl border border-slate-200 pl-11 pr-4 py-3 text-xs text-slate-900 placeholder:text-slate-455 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all resize-none font-semibold"
+                      className="w-full rounded-xl border border-slate-200 pl-11 pr-4 py-3 text-xs text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all resize-none font-semibold"
                     />
                   </div>
                 </div>

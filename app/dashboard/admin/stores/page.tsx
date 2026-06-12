@@ -79,8 +79,9 @@ export default function StorePage() {
     try {
       await api.delete(`/stores/${id}`)
       load()
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
+      alert(err.response?.data?.message || 'Gagal menghapus cabang toko')
     } finally {
       setDeletingId(null)
     }
@@ -111,7 +112,7 @@ export default function StorePage() {
                 </span>
               )}
             </div>
-            <p className="text-xs font-semibold text-slate-450 mt-0.5">Kelola seluruh cabang outlet aktif dan kredensial aksesnya</p>
+            <p className="text-xs font-semibold text-slate-400 mt-0.5">Kelola seluruh cabang outlet aktif dan kredensial aksesnya</p>
           </div>
         </div>
 
@@ -168,7 +169,7 @@ export default function StorePage() {
             >
               <div>
                 <div className="flex justify-between items-start">
-                  <div className="h-10 w-10 bg-gradient-to-tr from-blue-600 to-indigo-650 rounded-xl flex items-center justify-center text-white shadow-sm shadow-blue-500/10">
+                  <div className="h-10 w-10 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-sm shadow-blue-500/10">
                     <Building2 size={18} />
                   </div>
                   
@@ -184,7 +185,7 @@ export default function StorePage() {
                     <button 
                       onClick={() => handleDelete(s.id)}
                       disabled={deletingId === s.id}
-                      className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-red-50 text-slate-400 hover:text-red-650 transition-colors disabled:opacity-50"
+                      className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors disabled:opacity-50"
                       title="Hapus Cabang"
                     >
                       {deletingId === s.id ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={14} />}
@@ -250,7 +251,7 @@ export default function StorePage() {
               <button 
                 type="button" 
                 onClick={() => setOpen(false)}
-                className="h-8 w-8 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-650 hover:bg-slate-100 transition-colors"
+                className="h-8 w-8 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
               >
                 <X size={15} />
               </button>
@@ -267,7 +268,7 @@ export default function StorePage() {
                   value={form.name}
                   onChange={e => setForm({ ...form, name: e.target.value })}
                   placeholder="Contoh: Cabang Jakarta Pusat"
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-xs text-slate-900 placeholder:text-slate-450 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 transition-all font-semibold"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 transition-all font-semibold"
                 />
               </div>
 
@@ -279,7 +280,7 @@ export default function StorePage() {
                   value={form.email}
                   onChange={e => setForm({ ...form, email: e.target.value })}
                   placeholder="nama.cabang@lailacollections.com"
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-xs text-slate-900 placeholder:text-slate-455 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 transition-all font-semibold"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-xs text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 transition-all font-semibold"
                 />
               </div>
 
@@ -293,7 +294,7 @@ export default function StorePage() {
                   value={form.password}
                   onChange={e => setForm({ ...form, password: e.target.value })}
                   placeholder="Min. 8 karakter"
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-xs text-slate-900 placeholder:text-slate-455 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 transition-all font-semibold"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-xs text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 transition-all font-semibold"
                 />
               </div>
 
@@ -304,7 +305,7 @@ export default function StorePage() {
                   value={form.phone}
                   onChange={e => setForm({ ...form, phone: e.target.value })}
                   placeholder="Contoh: 081234567890"
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-xs text-slate-900 placeholder:text-slate-455 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 transition-all font-semibold"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-xs text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 transition-all font-semibold"
                 />
               </div>
 
@@ -315,7 +316,7 @@ export default function StorePage() {
                   onChange={e => setForm({ ...form, address: e.target.value })}
                   placeholder="Alamat lengkap outlet cabang..."
                   rows={3}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-xs text-slate-900 placeholder:text-slate-455 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 transition-all resize-none font-semibold"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-xs text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 transition-all resize-none font-semibold"
                 />
               </div>
 

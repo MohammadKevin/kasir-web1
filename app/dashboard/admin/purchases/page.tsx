@@ -235,7 +235,7 @@ export default function PurchasePage() {
           </div>
           <div>
             <h1 className="text-xl font-black text-slate-900 tracking-tight">Transaksi Pembelian</h1>
-            <p className="text-xs font-semibold text-slate-450 mt-0.5">Catat dan monitoring pasokan stok barang masuk dari vendor supplier cabang toko.</p>
+            <p className="text-xs font-semibold text-slate-400 mt-0.5">Catat dan monitoring pasokan stok barang masuk dari vendor supplier cabang toko.</p>
           </div>
         </div>
 
@@ -261,12 +261,12 @@ export default function PurchasePage() {
             placeholder="Cari nomor nota invoice atau nama vendor..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-slate-250/70 bg-white pl-11 pr-11 py-3.5 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 transition-all shadow-3xs"
+            className="w-full rounded-xl border border-slate-250/70 bg-white pl-11 pr-11 py-3.5 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-3xs"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-650"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
             >
               <X size={15} />
             </button>
@@ -280,7 +280,7 @@ export default function PurchasePage() {
               setSelectedStoreId(e.target.value)
               localStorage.setItem('storeId', e.target.value)
             }}
-            className="w-full sm:w-60 appearance-none bg-white border border-slate-250/70 pl-4 pr-10 py-3.5 rounded-xl text-xs font-bold text-slate-800 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 cursor-pointer transition-all shadow-3xs"
+            className="w-full sm:w-60 appearance-none bg-white border border-slate-250/70 pl-4 pr-10 py-3.5 rounded-xl text-xs font-bold text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 cursor-pointer transition-all shadow-3xs"
           >
             {stores.map((store) => (
               <option key={store.id} value={store.id}>
@@ -306,7 +306,7 @@ export default function PurchasePage() {
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-slate-100 text-slate-655 font-semibold">
+            <tbody className="divide-y divide-slate-100 text-slate-600 font-semibold">
               {loadingList ? (
                 <tr>
                   <td colSpan={5} className="p-10 text-center">
@@ -315,7 +315,7 @@ export default function PurchasePage() {
                 </tr>
               ) : filteredPurchases.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-16 text-center text-slate-450">
+                  <td colSpan={5} className="p-16 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center space-y-2">
                       <div className="p-3 bg-slate-50 border border-slate-150 rounded-2xl text-slate-400">
                         <Receipt className="w-6 h-6" />
@@ -369,7 +369,7 @@ export default function PurchasePage() {
             <div className="flex justify-between items-center border-b border-slate-100 pb-4">
               <div>
                 <h2 className="text-sm font-black text-slate-900">Catat Kulakan Baru</h2>
-                <p className="text-[10px] font-semibold text-slate-450 mt-0.5">Input stok barang masuk dan hubungkan dengan vendor supplier.</p>
+                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Input stok barang masuk dan hubungkan dengan vendor supplier.</p>
               </div>
               <button onClick={() => setOpen(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-605">
                 <X className="h-4 w-4" />
@@ -436,7 +436,7 @@ export default function PurchasePage() {
               
               <div className="divide-y divide-slate-100 max-h-56 overflow-y-auto">
                 {cart.length === 0 ? (
-                  <div className="p-8 text-center text-xs text-slate-450 italic">Belum ada barang ditambahkan ke keranjang.</div>
+                  <div className="p-8 text-center text-xs text-slate-400 italic">Belum ada barang ditambahkan ke keranjang.</div>
                 ) : (
                   cart.map((item, idx) => (
                     <div key={idx} className="flex justify-between items-center p-4 hover:bg-slate-50 transition-colors text-xs">
@@ -481,7 +481,7 @@ export default function PurchasePage() {
               <button
                 onClick={submit}
                 disabled={submitting || cart.length === 0}
-                className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-indigo-750 shadow-indigo-500/10 transition-all disabled:opacity-40 cursor-pointer"
+                className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-indigo-700 shadow-indigo-500/10 transition-all disabled:opacity-40 cursor-pointer"
               >
                 {submitting ? (
                   <div className="flex items-center gap-1.5">
@@ -506,7 +506,7 @@ export default function PurchasePage() {
                 <Receipt className="w-4 h-4 text-slate-500" />
                 <h3 className="text-sm font-black text-slate-900">Rincian Nota Kulakan</h3>
               </div>
-              <button onClick={() => setIsOpenDetail(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-655">
+              <button onClick={() => setIsOpenDetail(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-600">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -554,7 +554,7 @@ export default function PurchasePage() {
             <div className="flex items-center gap-2 mt-5">
               <button 
                 onClick={() => setIsOpenDetail(false)}
-                className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-650 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-700 shadow-indigo-500/10 transition-all cursor-pointer"
+                className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-700 shadow-indigo-500/10 transition-all cursor-pointer"
               >
                 Tutup Rincian
               </button>

@@ -140,7 +140,7 @@ export default function CashierPage() {
                 </span>
               )}
             </div>
-            <p className="text-xs font-semibold text-slate-450 mt-0.5">Kelola akses kredensial login, PIN, dan status operasional staf kasir</p>
+            <p className="text-xs font-semibold text-slate-400 mt-0.5">Kelola akses kredensial login, PIN, dan status operasional staf kasir</p>
           </div>
         </div>
 
@@ -218,7 +218,7 @@ export default function CashierPage() {
                 <th className="p-4 pr-6 text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-655 font-semibold">
+            <tbody className="divide-y divide-slate-100 text-slate-600 font-semibold">
               {loading ? (
                 [1, 2, 3].map(i => (
                   <tr key={i}>
@@ -278,7 +278,7 @@ export default function CashierPage() {
                         <button 
                           onClick={() => toggleStatus(c)}
                           disabled={togglingId === c.id}
-                          className={`h-8 w-8 rounded-lg flex items-center justify-center hover:bg-slate-50 transition-colors disabled:opacity-50 ${c.isActive ? 'text-slate-400 hover:text-slate-650' : 'text-emerald-600 hover:text-emerald-700'}`}
+                          className={`h-8 w-8 rounded-lg flex items-center justify-center hover:bg-slate-50 transition-colors disabled:opacity-50 ${c.isActive ? 'text-slate-400 hover:text-slate-600' : 'text-emerald-600 hover:text-emerald-700'}`}
                           title={c.isActive ? 'Nonaktifkan Kasir' : 'Aktifkan Kasir'}
                         >
                           {togglingId === c.id ? (
@@ -292,7 +292,7 @@ export default function CashierPage() {
                         <button 
                           onClick={() => remove(c.id)}
                           disabled={deletingId === c.id}
-                          className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-red-50 text-slate-400 hover:text-red-650 transition-colors disabled:opacity-50"
+                          className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors disabled:opacity-50"
                           title="Hapus Kasir"
                         >
                           {deletingId === c.id ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={14} />}
@@ -334,7 +334,7 @@ export default function CashierPage() {
               <button 
                 type="button" 
                 onClick={() => setIsOpenModal(false)}
-                className="h-8 w-8 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-650 hover:bg-slate-100 transition-colors"
+                className="h-8 w-8 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
               >
                 <X size={15} />
               </button>
@@ -353,7 +353,7 @@ export default function CashierPage() {
                     value={formData.name}
                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                     placeholder="Contoh: Siti Rahmawati"
-                    className="w-full rounded-xl border border-slate-200 pl-11 pr-4 py-3 text-xs text-slate-900 placeholder:text-slate-450 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 transition-all font-semibold"
+                    className="w-full rounded-xl border border-slate-200 pl-11 pr-4 py-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 transition-all font-semibold"
                   />
                 </div>
               </div>
@@ -367,7 +367,7 @@ export default function CashierPage() {
                     value={formData.phone}
                     onChange={e => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="Contoh: 08123456789"
-                    className="w-full rounded-xl border border-slate-200 pl-11 pr-4 py-3 text-xs text-slate-900 placeholder:text-slate-455 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 transition-all font-semibold"
+                    className="w-full rounded-xl border border-slate-200 pl-11 pr-4 py-3 text-xs text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 transition-all font-semibold"
                   />
                 </div>
               </div>
@@ -385,7 +385,7 @@ export default function CashierPage() {
                     value={formData.pin}
                     onChange={e => setFormData({ ...formData, pin: e.target.value })}
                     placeholder="Masukkan 4-6 digit angka pin"
-                    className="w-full rounded-xl border border-slate-200 pl-11 pr-4 py-3 text-xs text-slate-900 placeholder:text-slate-455 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 transition-all font-semibold"
+                    className="w-full rounded-xl border border-slate-200 pl-11 pr-4 py-3 text-xs text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 transition-all font-semibold"
                   />
                 </div>
               </div>

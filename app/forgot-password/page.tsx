@@ -77,7 +77,7 @@ export default function ForgotPasswordPage() {
               <CheckCircle2 size={36} className="text-emerald-600 stroke-[2.5]" />
               <div className="space-y-1">
                 <p className="font-extrabold text-sm">Email Terkirim</p>
-                <p className="text-[10.5px] text-emerald-650 leading-relaxed font-semibold max-w-xs">{success}</p>
+                <p className="text-[10.5px] text-emerald-600 leading-relaxed font-semibold max-w-xs">{success}</p>
               </div>
             </div>
 
@@ -99,7 +99,7 @@ export default function ForgotPasswordPage() {
 
             <Link 
               href="/login" 
-              className="flex w-full items-center justify-center rounded-xl border border-slate-200 py-3.5 text-xs font-bold text-slate-650 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+              className="flex w-full items-center justify-center rounded-xl border border-slate-200 py-3.5 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
             >
               Kembali ke Login
             </Link>

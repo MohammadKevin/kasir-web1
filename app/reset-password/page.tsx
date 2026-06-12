@@ -71,10 +71,10 @@ function ResetPasswordForm() {
     return (
       <div className="space-y-5">
         <div className="flex flex-col items-center justify-center p-5 bg-red-50 rounded-2xl border border-red-100 text-red-800 text-center space-y-2.5">
-          <AlertTriangle size={36} className="text-red-650" />
+          <AlertTriangle size={36} className="text-red-600" />
           <div className="space-y-1">
             <p className="font-extrabold text-sm">Token Tidak Valid</p>
-            <p className="text-[10.5px] text-red-650 leading-relaxed font-semibold max-w-xs">
+            <p className="text-[10.5px] text-red-600 leading-relaxed font-semibold max-w-xs">
               Link reset password tidak valid atau tidak memiliki parameter token. Silakan periksa kembali tautan Anda.
             </p>
           </div>
@@ -95,17 +95,17 @@ function ResetPasswordForm() {
       {success ? (
         <div className="space-y-5">
           <div className="flex flex-col items-center justify-center text-center p-5 bg-emerald-50 rounded-2xl border border-emerald-150 text-emerald-800 space-y-2.5 animate-pulse">
-            <CheckCircle2 size={36} className="text-emerald-650 stroke-[2.5]" />
+            <CheckCircle2 size={36} className="text-emerald-600 stroke-[2.5]" />
             <div className="space-y-1">
               <p className="font-extrabold text-sm">Sandi Diperbarui</p>
-              <p className="text-[10.5px] text-emerald-650 leading-relaxed font-semibold">{success}</p>
+              <p className="text-[10.5px] text-emerald-600 leading-relaxed font-semibold">{success}</p>
             </div>
             <p className="text-[9.5px] text-slate-400 font-bold">Mengalihkan ke halaman masuk dalam 3 detik...</p>
           </div>
 
           <Link 
             href="/login" 
-            className="flex w-full items-center justify-center rounded-xl border border-slate-200 py-3.5 text-xs font-bold text-slate-650 hover:bg-slate-50 transition-colors"
+            className="flex w-full items-center justify-center rounded-xl border border-slate-200 py-3.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors"
           >
             Masuk Sekarang
           </Link>
@@ -131,7 +131,7 @@ function ResetPasswordForm() {
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 disabled={loading}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-655 focus:outline-none transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
               >
                 {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>

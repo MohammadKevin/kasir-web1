@@ -45,8 +45,11 @@ export default function ReportPage() {
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
 
+  const [isMounted, setIsMounted] = useState(false)
+
   useEffect(() => {
     initPage()
+    setIsMounted(true)
   }, [])
 
   useEffect(() => {
@@ -196,6 +199,14 @@ export default function ReportPage() {
     }
   }
 
+  if (!isMounted) {
+    return (
+      <div className="flex h-[50vh] w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+      </div>
+    )
+  }
+
   if (loadingSummary && stores.length === 0) {
     return (
       <div className="space-y-6">
@@ -226,7 +237,7 @@ export default function ReportPage() {
           </div>
           <div>
             <h1 className="text-xl font-black text-slate-900 tracking-tight">Manajemen Laporan Toko</h1>
-            <p className="text-xs font-semibold text-slate-455 mt-0.5">Audit finansial komprehensif, tracking performa inventori gudang, log shift, serta unduh berkas pembukuan.</p>
+            <p className="text-xs font-semibold text-slate-500 mt-0.5">Audit finansial komprehensif, tracking performa inventori gudang, log shift, serta unduh berkas pembukuan.</p>
           </div>
         </div>
 
@@ -237,7 +248,7 @@ export default function ReportPage() {
               setSelectedStoreId(e.target.value)
               localStorage.setItem('storeId', e.target.value)
             }}
-            className="w-full sm:w-60 appearance-none bg-white border border-slate-250/70 pl-4 pr-10 py-3.5 rounded-xl text-xs font-bold text-slate-800 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 cursor-pointer transition-all shadow-3xs"
+            className="w-full sm:w-60 appearance-none bg-white border border-slate-250/70 pl-4 pr-10 py-3.5 rounded-xl text-xs font-bold text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 cursor-pointer transition-all shadow-3xs"
           >
             {stores.map((store) => (
               <option key={store.id} value={store.id}>{store.name}</option>
@@ -250,12 +261,12 @@ export default function ReportPage() {
       {/* Date Filter Bar */}
       <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-3xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3 text-slate-800">
-          <div className="h-9 w-9 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-center text-indigo-650 shrink-0">
+          <div className="h-9 w-9 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 shrink-0">
             <Calendar size={18} />
           </div>
           <div>
             <h2 className="text-xs font-black text-slate-900 tracking-tight">Rentang Waktu Laporan</h2>
-            <p className="text-[10px] text-slate-455 font-semibold mt-0.5">Filter metrik ringkasan & tabel data transaksi secara realtime.</p>
+            <p className="text-[10px] text-slate-500 font-semibold mt-0.5">Filter metrik ringkasan & tabel data transaksi secara realtime.</p>
           </div>
         </div>
 
@@ -275,7 +286,7 @@ export default function ReportPage() {
                   onClick={() => handleQuickFilter(opt.value)}
                   className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
                     isSelected
-                      ? 'bg-white text-indigo-655 shadow-3xs font-extrabold'
+                      ? 'bg-white text-indigo-600 shadow-3xs font-extrabold'
                       : 'text-slate-500 hover:text-slate-900'
                   }`}
                 >
@@ -291,7 +302,7 @@ export default function ReportPage() {
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="bg-white border border-slate-250/70 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 cursor-pointer transition-all shadow-3xs"
+                className="bg-white border border-slate-250/70 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 cursor-pointer transition-all shadow-3xs"
               />
             </div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">s/d</span>
@@ -300,7 +311,7 @@ export default function ReportPage() {
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="bg-white border border-slate-250/70 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:border-indigo-550 focus:outline-none focus:ring-4 focus:ring-indigo-550/10 cursor-pointer transition-all shadow-3xs"
+                className="bg-white border border-slate-250/70 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 cursor-pointer transition-all shadow-3xs"
               />
             </div>
             {(startDate || endDate) && (
@@ -328,16 +339,18 @@ export default function ReportPage() {
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Omset Penjualan</p>
             <p className="text-xl font-black text-slate-900 font-mono mt-0.5">Rp {(profit.totalSales ?? 0).toLocaleString('id-ID')}</p>
+            <p className="text-[8.5px] text-slate-400 font-semibold mt-1 leading-tight">Total nilai transaksi kotor (Harga Jual)</p>
           </div>
         </div>
 
         <div className="border border-slate-200 rounded-2xl p-5 bg-white shadow-3xs flex items-center gap-4 hover:border-slate-355 transition-all duration-200">
-          <div className="p-3 bg-rose-550/10 rounded-xl border border-rose-100/50 text-rose-600 shrink-0">
+          <div className="p-3 bg-rose-500/10 rounded-xl border border-rose-100/50 text-rose-600 shrink-0">
             <TrendingDown className="w-5 h-5" />
           </div>
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Biaya Pengeluaran</p>
             <p className="text-xl font-black text-slate-900 font-mono mt-0.5">Rp {(profit.totalExpense ?? 0).toLocaleString('id-ID')}</p>
+            <p className="text-[8.5px] text-slate-400 font-semibold mt-1 leading-tight">Harga Pokok Penjualan (HPP) + Biaya Ops</p>
           </div>
         </div>
 
@@ -350,6 +363,7 @@ export default function ReportPage() {
             <p className={`text-xl font-black font-mono mt-0.5 ${profit.estimatedProfit >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}>
               Rp {(profit.estimatedProfit ?? 0).toLocaleString('id-ID')}
             </p>
+            <p className="text-[8.5px] text-slate-400 font-semibold mt-1 leading-tight">Sisa bersih (Omset dikurangi HPP & Biaya Ops)</p>
           </div>
         </div>
       </div>
@@ -370,7 +384,7 @@ export default function ReportPage() {
               onClick={() => setActiveTab(tab.id as TabType)}
               className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
                 activeTab === tab.id
-                  ? 'bg-indigo-650 text-white shadow-3xs'
+                  ? 'bg-indigo-600 text-white shadow-3xs'
                   : 'text-slate-500 hover:text-slate-900'
               }`}
             >
@@ -409,12 +423,12 @@ export default function ReportPage() {
               <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
             </div>
           ) : tableData.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-slate-450 gap-2">
+            <div className="flex flex-col items-center justify-center py-16 text-slate-400 gap-2">
               <BarChart3 className="w-8 h-8 text-slate-350" />
-              <p className="text-xs font-bold text-slate-550">Manifes data pembukuan masih kosong</p>
+              <p className="text-xs font-bold text-slate-500">Manifes data pembukuan masih kosong</p>
             </div>
           ) : (
-            <table className="w-full border-collapse text-left text-xs text-slate-655 font-semibold">
+            <table className="w-full border-collapse text-left text-xs text-slate-600 font-semibold">
               {activeTab === 'sales' && (
                 <>
                   <thead className="bg-slate-50/70 text-[9px] font-bold uppercase text-slate-400 border-b border-slate-200 tracking-wider">
@@ -572,7 +586,7 @@ export default function ReportPage() {
                         <td className="p-4 text-slate-500 font-medium">{new Date(sh.createdAt).toLocaleString('id-ID')}</td>
                         <td className="p-4 font-mono">Rp {(sh.openingCash ?? 0).toLocaleString('id-ID')}</td>
                         <td className="p-4 font-mono">{sh.closingCash ? `Rp ${(sh.closingCash ?? 0).toLocaleString('id-ID')}` : '-'}</td>
-                        <td className={`p-4 font-bold font-mono ${sh.difference < 0 ? 'text-rose-600' : sh.difference > 0 ? 'text-emerald-650' : 'text-slate-500'}`}>
+                        <td className={`p-4 font-bold font-mono ${sh.difference < 0 ? 'text-rose-600' : sh.difference > 0 ? 'text-emerald-600' : 'text-slate-500'}`}>
                           Rp {sh.difference?.toLocaleString('id-ID') ?? 0}
                         </td>
                         <td className="p-4 pr-6">
