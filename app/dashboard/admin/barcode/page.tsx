@@ -28,6 +28,7 @@ export default function BarcodePage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [printQty, setPrintQty] = useState<Record<string, number>>({})
 
   useEffect(() => { 
     initStores() 
@@ -103,7 +104,6 @@ export default function BarcodePage() {
       <head>
         <style>
           @page { 
-            size: 5cm 2cm; 
             margin: 0; 
           }
           * {
@@ -113,9 +113,11 @@ export default function BarcodePage() {
             font-family: Arial, sans-serif; 
             margin: 0; 
             padding: 0; 
-            width: 5cm; 
-            height: 2cm;
             background-color: #fff;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            align-content: flex-start;
           }
           .label { 
             width: 5cm; 
@@ -126,7 +128,7 @@ export default function BarcodePage() {
             align-items: center;
             justify-content: space-between;
             overflow: hidden;
-            page-break-after: always;
+            box-sizing: border-box;
             page-break-inside: avoid;
           }
           .name { 
@@ -160,6 +162,33 @@ export default function BarcodePage() {
             text-align: center; 
             line-height: 1;
             letter-spacing: 0.5px;
+          }
+
+          /* A4 Grid Printing (Paper width > 10cm) */
+          @media (min-width: 10cm) {
+            body {
+              padding: 8mm;
+              gap: 1.5mm 1.5mm;
+              justify-content: center;
+            }
+            .label {
+              border: 0.15mm dashed #bbb;
+              border-radius: 1mm;
+            }
+          }
+
+          /* Thermal Roll Printing (Paper width <= 9.9cm) */
+          @media (max-width: 9.9cm) {
+            body {
+              width: 5cm;
+              height: 2cm;
+              padding: 0;
+              justify-content: center;
+            }
+            .label {
+              border: none;
+              page-break-after: always;
+            }
           }
         </style>
       </head>
@@ -279,7 +308,18 @@ export default function BarcodePage() {
         <div className="flex flex-wrap items-center gap-3 shrink-0 sm:ml-auto">
           {selectedIds.length > 0 && (
             <button
-              onClick={() => printLabels(products.filter(p => selectedIds.includes(p.id) && p.barcode).map(p => ({ barcode: p.barcode!, name: p.name })))}
+              onClick={() => {
+                const labelItems: { barcode: string; name: string }[] = []
+                products.forEach(p => {
+                  if (selectedIds.includes(p.id) && p.barcode) {
+                    const qty = printQty[p.id] || 1
+                    for (let i = 0; i < qty; i++) {
+                      labelItems.push({ barcode: p.barcode, name: p.name })
+                    }
+                  }
+                })
+                printLabels(labelItems)
+              }}
               className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2.5 text-xs font-bold text-white transition-all shadow-3xs active:scale-97 cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
@@ -372,13 +412,29 @@ export default function BarcodePage() {
                     </td>
                     <td className="p-4 pr-6 text-right">
                       {p.barcode ? (
-                        <button 
-                          onClick={() => printLabels([{ barcode: p.barcode!, name: p.name }])} 
-                          className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-750 transition-colors"
-                        >
-                          <Printer className="w-3.5 h-3.5" /> 
-                          <span>Cetak Label</span>
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden h-9 bg-slate-50/50">
+                            <span className="text-[10px] px-2 font-bold text-slate-400 border-r border-slate-200">Qty</span>
+                            <input 
+                              type="number" 
+                              min={1} 
+                              value={printQty[p.id] || 1} 
+                              onChange={(e) => setPrintQty(prev => ({ ...prev, [p.id]: Math.max(1, parseInt(e.target.value) || 1) }))}
+                              className="w-12 text-center text-xs font-bold text-slate-800 focus:outline-none bg-transparent"
+                            />
+                          </div>
+                          <button 
+                            onClick={() => {
+                              const qty = printQty[p.id] || 1
+                              const labelItems = Array.from({ length: qty }).map(() => ({ barcode: p.barcode!, name: p.name }))
+                              printLabels(labelItems)
+                            }} 
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-750 transition-colors bg-white border border-slate-200 hover:bg-slate-50 px-3.5 py-2 rounded-xl shadow-3xs"
+                          >
+                            <Printer className="w-3.5 h-3.5" /> 
+                            <span>Cetak</span>
+                          </button>
+                        </div>
                       ) : (
                         <button 
                           onClick={() => handleGenerateSingle(p.id)} 
