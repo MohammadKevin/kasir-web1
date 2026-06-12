@@ -38,14 +38,21 @@ export default function Home() {
     }
   }, [])
 
-  function handleLogout() {
-    localStorage.clear()
-    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-    document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-    document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-    setIsLoggedIn(false)
-    router.replace('/login')
+  async function handleLogout() {
+    try {
+      await api.post('/auth/logout')
+    } catch (e) {
+      console.error('Gagal memproses logout di server:', e)
+    } finally {
+      localStorage.clear()
+      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      setIsLoggedIn(false)
+      router.replace('/login')
+    }
   }
+
 
   const systemGuides: FAQItem[] = [
     {

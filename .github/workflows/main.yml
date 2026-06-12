@@ -20,4 +20,6 @@ jobs:
           git pull origin main
           npm install
           NODE_OPTIONS="--max-old-space-size=1024" npm run build
-          PORT=3001 pm2 restart kasir-frontend --update-env || PORT=3001 pm2 start npm --name "kasir-frontend" -- run start
+          pm2 delete kasir-frontend || true
+          pm2 start npm --name "kasir-frontend" -- run start -- -p 3001
+

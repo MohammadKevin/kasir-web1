@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { api } from '@/lib/api'
+
 import {
   LayoutDashboard,
   Building2,
@@ -118,13 +120,20 @@ export default function AdminLayout({
     setOpen([...open, section])
   }
 
-  function logout() {
-    localStorage.clear()
-    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-    document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-    document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-    window.location.href = '/login'
+  async function logout() {
+    try {
+      await api.post('/auth/logout')
+    } catch (e) {
+      console.error('Gagal memproses logout di server:', e)
+    } finally {
+      localStorage.clear()
+      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      window.location.href = '/login'
+    }
   }
+
 
   return (
     <div className="flex min-h-screen bg-slate-50 text-slate-800 antialiased font-sans">
