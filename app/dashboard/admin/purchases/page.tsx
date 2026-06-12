@@ -227,7 +227,6 @@ export default function PurchasePage() {
   return (
     <div className="space-y-6">
       
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-start gap-3">
           <div className="h-10 w-10 bg-indigo-50 border border-indigo-100/55 rounded-xl flex items-center justify-center text-indigo-600 shrink-0">
@@ -252,7 +251,6 @@ export default function PurchasePage() {
         </button>
       </div>
 
-      {/* Control Bar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1 max-w-md">
           <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -292,7 +290,6 @@ export default function PurchasePage() {
         </div>
       </div>
 
-      {/* Main Table */}
       <div className="rounded-2xl border border-slate-200 bg-white shadow-3xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[700px] text-left border-collapse text-xs">
@@ -362,7 +359,6 @@ export default function PurchasePage() {
         </div>
       </div>
 
-      {/* Entry Modal */}
       {open && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex justify-center items-center p-4 transition-all">
           <div className="bg-white w-full max-w-2xl rounded-2xl p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-150 max-h-[95vh] overflow-y-auto space-y-5">
@@ -376,7 +372,6 @@ export default function PurchasePage() {
               </button>
             </div>
 
-            {/* Supplier Selection */}
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Vendor Supplier</label>
               <div className="relative">
@@ -393,7 +388,6 @@ export default function PurchasePage() {
               </div>
             </div>
 
-            {/* Product Selector */}
             <div className="border-t border-slate-100 pt-4">
               <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Pilih Barang & Kuantitas</label>
               <div className="flex flex-col sm:flex-row gap-3">
@@ -427,7 +421,6 @@ export default function PurchasePage() {
               </div>
             </div>
 
-            {/* Cart Items List */}
             <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50/30">
               <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Keranjang Item</span>
@@ -497,7 +490,6 @@ export default function PurchasePage() {
         </div>
       )}
 
-      {/* Detail Modal */}
       {isOpenDetail && selectedPurchase && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-all">
           <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-150 bg-white p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">

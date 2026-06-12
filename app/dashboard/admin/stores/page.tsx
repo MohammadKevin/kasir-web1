@@ -97,7 +97,6 @@ export default function StorePage() {
   return (
     <div className="space-y-6">
       
-      {/* Header section */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
           <div className="h-10 w-10 bg-blue-50 border border-blue-100/50 rounded-xl flex items-center justify-center text-blue-600 shrink-0">
@@ -125,7 +124,6 @@ export default function StorePage() {
         </button>
       </div>
 
-      {/* Toolbar - Search */}
       <div className="relative">
         <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         <input
@@ -145,7 +143,6 @@ export default function StorePage() {
         )}
       </div>
 
-      {/* Grid List */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {loading ? (
           [1, 2, 3].map(i => (
@@ -173,7 +170,6 @@ export default function StorePage() {
                     <Building2 size={18} />
                   </div>
                   
-                  {/* Actions */}
                   <div className="flex gap-1.5 opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-all duration-200">
                     <button 
                       onClick={() => { setEditingId(s.id); setForm({ ...s, password: '' }); setOpen(true) }}
@@ -231,7 +227,6 @@ export default function StorePage() {
         )}
       </div>
 
-      {/* Modal Dialog */}
       {open && (
         <div 
           className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200"

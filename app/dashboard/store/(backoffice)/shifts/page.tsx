@@ -120,7 +120,6 @@ export default function ShiftPage() {
   return (
     <div className="space-y-6">
       
-      {/* Header Panel */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200/80 pb-4">
         <div>
           <h1 className="text-xl font-black text-slate-900 tracking-tight">Riwayat Shift Kasir</h1>
@@ -135,7 +134,6 @@ export default function ShiftPage() {
         </button>
       </div>
 
-      {/* Error Alert */}
       {error && (
         <div className="rounded-2xl border border-rose-200 bg-rose-50/70 p-4 text-rose-800 flex items-start gap-3 shadow-3xs animate-in fade-in duration-200">
           <AlertCircle className="text-rose-600 shrink-0 mt-0.5" size={16} />
@@ -146,7 +144,6 @@ export default function ShiftPage() {
         </div>
       )}
 
-      {/* Active Shift Info */}
       {!error && (
         active ? (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-5 shadow-3xs text-emerald-800 flex items-start gap-3 animate-in fade-in duration-200">
@@ -177,7 +174,6 @@ export default function ShiftPage() {
         )
       )}
 
-      {/* Filters */}
       <div className="relative w-full max-w-sm">
         <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         <input
@@ -188,7 +184,6 @@ export default function ShiftPage() {
         />
       </div>
 
-      {/* Shift Log Items */}
       <div className="space-y-4">
         {loading ? (
           Array.from({ length: 3 }).map((_, i) => (
@@ -204,7 +199,6 @@ export default function ShiftPage() {
               key={shift.id}
               className="rounded-2xl border border-slate-200 bg-white p-5 shadow-3xs flex flex-col md:flex-row md:items-center justify-between gap-5 hover:bg-slate-50/45 transition-colors"
             >
-              {/* Left Column */}
               <div className="flex-1 space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="h-8 w-8 rounded-full bg-indigo-50 border border-indigo-150 flex items-center justify-center text-indigo-600 font-bold text-xs">
@@ -243,7 +237,6 @@ export default function ShiftPage() {
                 </div>
               </div>
 
-              {/* Right Column */}
               <div className="flex flex-wrap items-center gap-3 md:border-l md:border-slate-100 md:pl-5 pt-3 md:pt-0">
                 <div className="rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-left min-w-[100px] shadow-3xs">
                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Modal Awal</p>

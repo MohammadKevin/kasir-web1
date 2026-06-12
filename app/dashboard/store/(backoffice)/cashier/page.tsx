@@ -100,7 +100,6 @@ export default function CashierPage() {
   return (
     <div className="space-y-6">
       
-      {/* Header Panel */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200/80 pb-4">
         <div>
           <h1 className="text-xl font-black text-slate-900 tracking-tight">Terminal Otentikasi POS</h1>
@@ -117,7 +116,6 @@ export default function CashierPage() {
         )}
       </div>
 
-      {/* Banner Sesi Aktif */}
       {activeCashier && (
         <div className="rounded-2xl bg-emerald-50 border border-emerald-150 p-5 text-emerald-800 flex items-start gap-3 shadow-3xs animate-in fade-in duration-200">
           <CheckCircle2 className="text-emerald-600 shrink-0 mt-0.5" size={16} />
@@ -134,7 +132,6 @@ export default function CashierPage() {
         </div>
       )}
 
-      {/* Search Bar */}
       <div className="relative w-full max-w-sm">
         <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         <input
@@ -145,7 +142,6 @@ export default function CashierPage() {
         />
       </div>
 
-      {/* Grid Personel */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
         {loading ? (
           Array.from({ length: 3 }).map((_, i) => (
@@ -193,7 +189,6 @@ export default function CashierPage() {
         )}
       </div>
 
-      {/* Password verification drawer */}
       {selected && (
         <div className="rounded-2xl bg-white border border-slate-200 p-5 max-w-sm shadow-3xs space-y-4 animate-in slide-in-from-bottom-2 duration-200">
           <div>

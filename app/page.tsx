@@ -16,7 +16,6 @@ import {
   LogOut
 } from 'lucide-react'
 
-// Types for FAQ
 interface FAQItem {
   question: string
   answer: string
@@ -26,10 +25,8 @@ export default function Home() {
   const router = useRouter()
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
 
-  // Login State
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
-  // Check login state
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const hasCookieToken = document.cookie.split('; ').some((row) => row.startsWith('token='))
@@ -41,7 +38,6 @@ export default function Home() {
     }
   }, [])
 
-  // Logout function
   function handleLogout() {
     localStorage.clear()
     document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
@@ -51,7 +47,6 @@ export default function Home() {
     router.replace('/login')
   }
 
-  // System FAQ Data (Internal Guide)
   const systemGuides: FAQItem[] = [
     {
       question: 'Bagaimana cara kasir memulai shift baru?',
@@ -74,16 +69,13 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-slate-50/70 text-slate-900 selection:bg-blue-600 selection:text-white relative overflow-hidden font-sans">
 
-      {/* Dynamic Glow Backgrounds */}
       <div className="absolute top-[-10%] left-[-5%] -z-10 h-[500px] w-[500px] rounded-full bg-blue-400/10 blur-3xl" />
       <div className="absolute top-[40%] right-[-10%] -z-10 h-[500px] w-[500px] rounded-full bg-sky-400/10 blur-3xl" />
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-[size:5rem_5rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] -z-20 opacity-35" />
 
-      {/* Navigation Header */}
       <nav className="sticky top-0 z-50 border-b border-slate-200/60 bg-white/80 backdrop-blur-md transition-all duration-200 shadow-xs">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
 
-          {/* Brand Logo */}
           <div className="flex items-center gap-2">
             <div className="h-6.5 w-6.5 rounded-lg bg-gradient-to-tr from-blue-600 to-sky-500 flex items-center justify-center text-white font-black text-sm shadow-md shadow-blue-500/20">
               L
@@ -94,14 +86,12 @@ export default function Home() {
             </h1>
           </div>
 
-          {/* Desktop Menu links */}
           <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
             <a href="#portal" className="hover:text-blue-600 transition-colors">Akses Portal</a>
             <a href="#fitur" className="hover:text-blue-600 transition-colors">Fitur Sistem</a>
             <a href="#faq" className="hover:text-blue-600 transition-colors">Panduan</a>
           </div>
 
-          {/* Right Portal Logout/Login CTA */}
           <div>
             {isLoggedIn ? (
               <button
@@ -124,10 +114,8 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* Hero Portal Overview Section */}
       <section className="relative mx-auto max-w-7xl px-6 pt-12 pb-20 lg:px-8 lg:pt-20 flex flex-col lg:grid lg:grid-cols-12 gap-12 items-center">
 
-        {/* Copywriter */}
         <div className="lg:col-span-6 text-center lg:text-left space-y-6">
 
           <div className="inline-flex items-center gap-1.5 rounded-full border border-blue-200/80 bg-blue-50/70 px-4 py-1.5 text-xs font-extrabold tracking-wide text-blue-700 shadow-3xs">
@@ -170,13 +158,11 @@ export default function Home() {
 
         </div>
 
-        {/* Hero CSS POS Mockup (Tablet UI Preview) */}
         <div className="lg:col-span-6 w-full max-w-lg lg:max-w-none flex justify-center">
 
           <div className="w-full bg-slate-900 rounded-3xl p-3 shadow-2xl border border-slate-800 relative overflow-hidden group hover:border-blue-500/40 transition-colors duration-300">
             <div className="absolute top-2 left-1/2 -translate-x-1/2 h-3.5 w-20 rounded-full bg-slate-800" />
 
-            {/* Cashier Mockup Screen */}
             <div className="bg-slate-100 rounded-2xl overflow-hidden aspect-[4/3] w-full text-slate-800 text-[9px] flex flex-col font-sans select-none">
 
               <div className="h-7 bg-white border-b border-slate-200 px-2.5 flex items-center justify-between flex-shrink-0">
@@ -191,7 +177,6 @@ export default function Home() {
 
               <div className="flex-1 flex overflow-hidden">
 
-                {/* Catalog (Left side) */}
                 <div className="flex-1 p-2 space-y-2 flex flex-col justify-between overflow-hidden">
                   <div className="flex items-center bg-white border border-slate-200 px-2 py-1.5 rounded-lg text-slate-400 gap-1.5">
                     <Search size={8} />
@@ -219,7 +204,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Checkout Summary (Right side) */}
                 <div className="w-40 bg-white border-l border-slate-200 p-2 flex flex-col justify-between flex-shrink-0">
                   <div className="space-y-1.5 flex-1 overflow-y-auto">
                     <p className="font-extrabold text-slate-400 uppercase tracking-widest text-[6px] border-b border-slate-100 pb-1">Detail Nota</p>
@@ -250,7 +234,6 @@ export default function Home() {
 
       </section>
 
-      {/* Access Gateways Section */}
       <section id="portal" className="bg-white border-y border-slate-200/50 py-16">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
 
@@ -263,7 +246,6 @@ export default function Home() {
 
           <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto items-stretch">
 
-            {/* Admin Portal Gateway */}
             <div className="bg-slate-50/80 rounded-2xl border border-slate-200 p-6.5 flex flex-col justify-between shadow-xs">
               <div className="space-y-4">
                 <div className="h-10 w-10 rounded-xl bg-blue-50 border border-blue-150 text-blue-600 flex items-center justify-center">
@@ -282,7 +264,6 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* Cashier Portal Gateway */}
             <div className="bg-slate-50/80 rounded-2xl border border-slate-200 p-6.5 flex flex-col justify-between shadow-xs">
               <div className="space-y-4">
                 <div className="h-10 w-10 rounded-xl bg-sky-50 border border-sky-150 text-sky-600 flex items-center justify-center">
@@ -301,7 +282,6 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* Store Backoffice Gateway */}
             <div className="bg-slate-50/80 rounded-2xl border border-slate-200 p-6.5 flex flex-col justify-between shadow-xs">
               <div className="space-y-4">
                 <div className="h-10 w-10 rounded-xl bg-indigo-50 border border-indigo-150 text-indigo-600 flex items-center justify-center">
@@ -325,7 +305,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Platform Features for Laila Collections */}
       <section id="fitur" className="py-20 mx-auto max-w-7xl px-6 lg:px-8">
 
         <div className="text-center max-w-2xl mx-auto space-y-3 mb-16">
@@ -364,7 +343,6 @@ export default function Home() {
 
       </section>
 
-      {/* Internal FAQ / Guides Section */}
       <section id="faq" className="py-20 mx-auto max-w-4xl px-6 lg:px-8 space-y-12">
 
         <div className="text-center space-y-3">
@@ -400,7 +378,6 @@ export default function Home() {
 
       </section>
 
-      {/* Footer Section */}
       <footer className="bg-slate-950 py-12 text-xs text-slate-400 border-t border-slate-900 relative">
         <div className="mx-auto max-w-7xl px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
 

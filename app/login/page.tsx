@@ -66,15 +66,12 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen bg-slate-50/50 flex items-stretch antialiased font-sans select-none">
       
-      {/* ─── LEFT PANEL: Internal Portal Branding & System Status Showcase ─── */}
       <div className="hidden lg:flex lg:w-[42%] bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 text-white p-12 flex-col justify-between relative overflow-hidden shrink-0 select-none">
         
-        {/* Glow Spheres */}
         <div className="absolute top-[-10%] left-[-15%] h-[350px] w-[350px] rounded-full bg-blue-500/15 blur-3xl" />
         <div className="absolute bottom-[-15%] right-[-10%] h-[400px] w-[400px] rounded-full bg-sky-500/10 blur-3xl" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:3rem_3rem] -z-10" />
 
-        {/* Header Branding */}
         <div className="relative z-10 flex items-center gap-2">
           <div className="h-6 w-6 rounded bg-blue-600 text-white flex items-center justify-center font-black text-xs shadow-md">
             L
@@ -85,7 +82,6 @@ export default function LoginPage() {
           </span>
         </div>
 
-        {/* Center Value Points */}
         <div className="relative z-10 my-auto space-y-8">
           <div className="space-y-3">
             <h2 className="text-2xl font-black leading-snug">Sistem ERP & POS Terintegrasi</h2>
@@ -94,7 +90,6 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Graphical Micro Mockup (System & Database Monitor) */}
           <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-4 shadow-xl space-y-3.5 max-w-sm">
             <div className="flex justify-between items-center border-b border-white/5 pb-2">
               <span className="text-[9px] font-extrabold uppercase tracking-widest text-blue-300">Status Layanan Internal</span>
@@ -126,7 +121,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Quick List Bullet Benefits */}
           <div className="space-y-2.5 text-xs font-semibold text-slate-350">
             <div className="flex items-center gap-2">
               <ShieldCheck size={13} className="text-blue-400 shrink-0" />
@@ -140,7 +134,6 @@ export default function LoginPage() {
 
         </div>
 
-        {/* Footer Support Info */}
         <div className="relative z-10 text-[9.5px] text-slate-400 font-bold tracking-wide flex justify-between items-center border-t border-white/5 pt-4">
           <span>IT Division • Laila Collections</span>
           <span className="text-slate-500">v.1.0</span>
@@ -148,10 +141,8 @@ export default function LoginPage() {
 
       </div>
 
-      {/* ─── RIGHT PANEL: Authentication Login Form Card ─── */}
       <div className="flex-1 flex flex-col justify-between p-6 sm:p-12 md:px-24 bg-white">
         
-        {/* Back to Home Header */}
         <div className="flex justify-between items-center">
           <Link
             href="/"
@@ -163,7 +154,6 @@ export default function LoginPage() {
           <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider lg:hidden">Laila Collections</span>
         </div>
 
-        {/* Center Login Card Form */}
         <div className="w-full max-w-sm mx-auto my-auto space-y-6">
           
           <div className="space-y-1.5 text-center sm:text-left">
@@ -218,7 +208,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Error Message banner */}
             {error && (
               <div className="flex items-start gap-2.5 rounded-xl bg-red-50 border border-red-100 p-3.5 text-xs text-red-600 transition-all">
                 <svg className="h-4 w-4 shrink-0 text-red-500 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -245,7 +234,6 @@ export default function LoginPage() {
 
           </form>
 
-          {/* Security Notice Callout */}
           <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 text-[10.5px] font-semibold text-slate-500 leading-relaxed mt-4 flex items-start gap-2">
             <ShieldCheck size={14} className="shrink-0 mt-0.5 text-blue-600" />
             <span>
@@ -255,7 +243,6 @@ export default function LoginPage() {
 
         </div>
 
-        {/* Footer notices */}
         <div className="text-center text-[10px] text-slate-400 font-semibold mt-8 border-t border-slate-100 pt-4 flex justify-center items-center gap-2">
           <span>Khusus Penggunaan Internal Laila Collections • Hak Cipta © {new Date().getFullYear()}</span>
         </div>

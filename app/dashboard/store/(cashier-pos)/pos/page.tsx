@@ -62,14 +62,48 @@ type CartItem = Product & {
   cashierDiscount: number
 }
 
-type PaymentMethod = 'CASH' | 'QRIS' | 'DEBIT' | 'TRANSFER' | 'CREDIT'
+type PaymentMethod = 'CASH' | 'QRIS' | 'DEBIT'
 
 const PAYMENT_METHOD_MAP: Record<string, string> = {
   CASH: 'Tunai',
   QRIS: 'QRIS',
-  DEBIT: 'Debit',
-  TRANSFER: 'Transfer',
-  CREDIT: 'Kredit'
+  DEBIT: 'Debit'
+}
+
+const formatDate = (dateInput: string | Date) => {
+  const d = new Date(dateInput)
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+const formatTime = (dateInput: string | Date) => {
+  const d = new Date(dateInput)
+  const hh = String(d.getHours()).padStart(2, '0')
+  const min = String(d.getMinutes()).padStart(2, '0')
+  const ss = String(d.getSeconds()).padStart(2, '0')
+  return `${hh}:${min}:${ss}`
+}
+
+const getReceiptUniqueCode = (invoice: string, createdAt: string | Date) => {
+  const d = new Date(createdAt)
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const hh = String(d.getHours()).padStart(2, '0')
+  const min = String(d.getMinutes()).padStart(2, '0')
+  const ss = String(d.getSeconds()).padStart(2, '0')
+  
+  let hash = 0
+  if (invoice) {
+    for (let i = 0; i < invoice.length; i++) {
+      hash = (hash << 5) - hash + invoice.charCodeAt(i)
+      hash |= 0
+    }
+  }
+  const prefix = Math.abs(hash).toString().slice(0, 6).padEnd(6, '0')
+  return `${prefix}${yyyy}${mm}${dd}${hh}${min}${ss}`
 }
 
 export default function PosPage() {
@@ -96,6 +130,7 @@ export default function PosPage() {
 
   const [receiptData, setReceiptData] = useState<any>(null)
   const [isOpenReceipt, setIsOpenReceipt] = useState(false)
+  const [currentStore, setCurrentStore] = useState<any>(null)
   const [mobileView, setMobileView] = useState<'catalog' | 'cart'>('catalog')
 
   const barcodeBuffer = useRef<string>('')
@@ -129,7 +164,6 @@ export default function PosPage() {
     return () => window.removeEventListener('keydown', handleKeydown)
   }, [cart, payment, paid, submitting])
 
-  // Barcode scanner global handler
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       const currentTime = Date.now()
@@ -159,12 +193,14 @@ export default function PosPage() {
       const storeId = localStorage.getItem('storeId')
       const token = localStorage.getItem('token')
       const headers = { Authorization: `Bearer ${token}` }
-      const [productsRes, categoriesRes] = await Promise.all([
+      const [productsRes, categoriesRes, storeRes] = await Promise.all([
         api.get(`/products/store/${storeId}`, { headers }),
-        api.get(`/categories/store/${storeId}`, { headers })
+        api.get(`/categories/store/${storeId}`, { headers }),
+        api.get(`/stores/${storeId}`, { headers })
       ])
       setProducts(productsRes.data || [])
       setCategories(categoriesRes.data || [])
+      setCurrentStore(storeRes.data || null)
     } catch (err) {
       console.error('Gagal memuat data POS:', err)
     } finally {
@@ -289,81 +325,107 @@ export default function PosPage() {
     const printWindow = window.open('', '_blank')
     if (!printWindow) return
     const totalQty = data.items.reduce((s: number, i: any) => s + i.quantity, 0)
+    const uniqueCode = getReceiptUniqueCode(data.invoice, data.createdAt)
+    const storeEmailPrefix = currentStore?.email ? currentStore.email.split('@')[0] : 'karis'
+    const branchAddress = currentStore?.address?.split(',').slice(-1)[0]?.trim() || 'Sby'
     printWindow.document.write(`
       <html>
       <head>
       <title>Nota #${data.invoice}</title>
       <style>
-      @media print { @page { margin: 0; size: 58mm auto; } body { margin: 0; padding: 4px 8px; } }
-      body { font-family: 'Courier New', Courier, monospace; font-size: 10px; max-width: 210px; margin: 0 auto; padding: 4px 8px; color: #000; background: #fff; line-height: 1.35; }
+      @media print { @page { margin: 0; size: 58mm auto; } body { margin: 0; padding: 4px 6px; } }
+      body { font-family: 'Courier New', Courier, monospace; font-size: 10px; max-width: 210px; margin: 0 auto; padding: 4px 6px; color: #000; background: #fff; line-height: 1.3; }
       .tc { text-align: center; }
+      .tl { text-align: left; }
+      .tr { text-align: right; }
       .b { font-weight: bold; }
-      .brand { font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 2px; }
-      .subtitle { font-size: 9px; font-weight: bold; color: #333; margin-bottom: 2px; text-transform: uppercase; }
-      .meta { font-size: 9px; margin-bottom: 2px; color: #222; }
-      .hr { border: none; border-top: 1px dashed #000; margin: 5px 0; }
-      .row { display: flex; justify-content: space-between; margin-bottom: 2px; }
-      .item { margin-bottom: 4px; }
-      .item-sub { display: flex; justify-content: space-between; font-size: 9px; padding-left: 6px; margin-top: 1px; }
-      .discount-row { display: flex; justify-content: space-between; font-size: 8.5px; padding-left: 12px; font-style: italic; color: #333; }
-      .total-row { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; }
-      .footer { margin-top: 10px; font-size: 8px; }
+      .hr-dotted { border: none; border-top: 1px dotted #000; margin: 6px 0; }
+      .hr-dashed { border: none; border-top: 1px dashed #000; margin: 6px 0; }
+      .flex-row { display: flex; justify-content: space-between; }
+      .store-icon { width: 36px; height: 36px; margin: 0 auto 6px; display: block; }
+      .brand { font-size: 12px; font-weight: bold; text-transform: uppercase; margin: 0 0 2px; }
+      .store-detail { font-size: 8.5px; margin-bottom: 2px; }
+      .unique-code { font-size: 8.5px; margin: 4px 0; font-weight: bold; }
+      .meta-block { font-size: 8.5px; margin: 4px 0; line-height: 1.25; }
+      .meta-row { display: flex; justify-content: space-between; align-items: flex-start; }
+      .meta-right { text-align: right; }
+      .items-block { font-size: 9.5px; }
+      .item-row { margin-bottom: 5px; }
+      .item-name { font-weight: bold; }
+      .item-details { display: flex; justify-content: space-between; font-size: 9px; padding-left: 10px; }
+      .summary-block { font-size: 9px; margin-top: 4px; line-height: 1.35; }
+      .total-row { font-size: 11px; font-weight: bold; }
+      .footer-block { margin-top: 12px; font-size: 8px; line-height: 1.3; }
+      .grey-box { width: 100px; height: 16px; background-color: #e2e8f0; margin: 6px auto 0; }
       </style>
       </head>
       <body>
+      <svg class="store-icon" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M21.9 8.89l-1.05-4.37c-.22-.9-1-1.52-1.91-1.52H5.05c-.9 0-1.69.63-1.9 1.52L2.1 8.89c-.24.97.26 1.96 1.2 2.32c.12.04.24.07.37.08v7.71c0 .99.81 1.8 1.8 1.8h13c.99 0 1.8-.81 1.8-1.8v-7.71c.13-.01.25-.04.37-.08c.95-.36 1.45-1.35 1.21-2.32zM13 18H8v-4h5v4z"/>
+      </svg>
       <div class="tc">
-      <p class="brand">${data.store}</p>
-      <p class="subtitle">LAILA COLLECTIONS</p>
-      <p class="meta">Kasir Digital</p>
+        <div class="brand">${data.store}</div>
+        <div class="store-detail">${currentStore?.address || 'Jl. Dr. Ir. H. Soekarno No.19, Medokan Semampir Surabaya'}</div>
+        <div class="store-detail">No. Telp ${currentStore?.phone || '0812345678'}</div>
+        <div class="unique-code">${uniqueCode}</div>
       </div>
-      <div class="hr"></div>
-      <div class="meta">
-      <div class="row"><span>Waktu</span><span>${new Date(data.createdAt).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</span></div>
-      <div class="row"><span>No.Nota</span><span class="b">${data.invoice}</span></div>
-      <div class="row"><span>Kasir</span><span>${data.cashier}</span></div>
-      <div class="row"><span>Pelanggan</span><span>${data.customer || 'Pelanggan Umum'}</span></div>
-      </div>
-      <div class="hr"></div>
-      ${data.items.map((item: any, i: number) => {
-        const itemDiscount = (item.discount || 0) * item.quantity;
-        return `
-        <div class="item">
-        <div class="b">${i + 1}. ${item.product}</div>
-        <div class="item-sub">
-        <span>${item.quantity} pcs &times; Rp ${item.originalPrice.toLocaleString('id-ID')}</span>
-        <span class="b">Rp ${(item.originalPrice * item.quantity).toLocaleString('id-ID')}</span>
+      <div class="hr-dotted"></div>
+      <div class="meta-block">
+        <div class="meta-row">
+          <div>
+            <div>${formatDate(data.createdAt)}</div>
+            <div>${formatTime(data.createdAt)}</div>
+            <div class="b">No. ${data.invoice}</div>
+          </div>
+          <div class="meta-right">
+            <div>${storeEmailPrefix}</div>
+            <div>${data.cashier}</div>
+            <div>${branchAddress}</div>
+          </div>
         </div>
-        ${itemDiscount > 0 ? `
-        <div class="discount-row">
-        <span>Diskon Item</span>
-        <span>-Rp ${itemDiscount.toLocaleString('id-ID')}</span>
-        </div>
-        ` : ''}
-        </div>
-        `;
-      }).join('')}
-      <div class="hr"></div>
-      <div class="meta">
-      <div class="row"><span>Total QTY</span><span class="b">${totalQty} item</span></div>
-      <div class="row"><span>Sub Total</span><span>Rp ${data.subtotal.toLocaleString('id-ID')}</span></div>
-      <div class="row"><span>Diskon</span><span>-Rp ${data.discount.toLocaleString('id-ID')}</span></div>
       </div>
-      <div class="hr"></div>
-      <div class="total-row"><span>TOTAL</span><span>Rp ${data.total.toLocaleString('id-ID')}</span></div>
-      <div class="hr"></div>
-      <div class="meta">
-      <div class="row"><span>Bayar (${PAYMENT_METHOD_MAP[paymentMethod] || paymentMethod})</span><span>Rp ${data.paidAmount.toLocaleString('id-ID')}</span></div>
-      <div class="row b"><span>Kembalian</span><span>Rp ${data.changeAmount.toLocaleString('id-ID')}</span></div>
+      <div class="hr-dashed"></div>
+      <div class="items-block">
+        ${data.items.map((item: any, i: number) => {
+          const itemDiscount = (item.discount || 0) * item.quantity;
+          const itemTotal = (item.originalPrice * item.quantity);
+          return `
+            <div class="item-row">
+              <div class="item-name">${i + 1}. ${item.product}</div>
+              <div class="item-details">
+                <span>${item.quantity} x ${item.originalPrice.toLocaleString('id-ID')}</span>
+                <span>Rp ${itemTotal.toLocaleString('id-ID')}</span>
+              </div>
+              ${itemDiscount > 0 ? `
+                <div class="item-details" style="color: #000; font-style: italic;">
+                  <span>Diskon Item</span>
+                  <span>-Rp ${itemDiscount.toLocaleString('id-ID')}</span>
+                </div>
+              ` : ''}
+            </div>
+          `;
+        }).join('')}
       </div>
-      <div class="hr"></div>
-      <div class="tc footer b">
-      TERIMA KASIH ATAS KUNJUNGAN ANDA
-      <div style="font-size: 7px; font-weight: normal; margin-top: 3px; color: #555;">Laila Collections POS v1.0</div>
+      <div class="hr-dotted"></div>
+      <div class="summary-block">
+        <div class="flex-row"><span>Total QTY : ${totalQty}</span></div>
+        <div class="flex-row"><span>Sub Total</span><span>Rp ${data.subtotal.toLocaleString('id-ID')}</span></div>
+        <div class="flex-row"><span>Diskon</span><span>Rp ${data.discount.toLocaleString('id-ID')}</span></div>
+        <div class="flex-row total-row"><span>Total</span><span>Rp ${data.total.toLocaleString('id-ID')}</span></div>
+        <div class="flex-row"><span>Bayar (${PAYMENT_METHOD_MAP[paymentMethod] || paymentMethod})</span><span>Rp ${data.paidAmount.toLocaleString('id-ID')}</span></div>
+        <div class="flex-row"><span>Kembali</span><span>Rp ${data.changeAmount.toLocaleString('id-ID')}</span></div>
+      </div>
+      <div class="hr-dotted"></div>
+      <div class="tc footer-block b">
+        <div>Terimakasih Telah Berbelanja</div>
+        <div style="font-weight: normal; margin-top: 4px;">Link Kritik dan Saran:</div>
+        <div style="font-weight: normal; word-break: break-all;">lailacollections.com/e-receipt/${data.invoice}</div>
+        <div class="grey-box"></div>
       </div>
       <script>
       window.onload = function() {
-      window.print();
-      setTimeout(function() { window.close(); }, 600);
+        window.print();
+        setTimeout(function() { window.close(); }, 600);
       }
       </script>
       </body>
@@ -474,10 +536,8 @@ export default function PosPage() {
   return (
     <div className="grid gap-3 sm:gap-6 lg:grid-cols-[1fr_390px] h-full overflow-hidden relative">
 
-      {/* LEFT: Product Catalog */}
       <div className={`flex flex-col h-full overflow-hidden space-y-3 sm:space-y-4 ${mobileView === 'catalog' ? 'flex' : 'hidden lg:flex'}`}>
 
-        {/* Search bar & Mobile Cart Trigger */}
         <div className="flex items-center gap-2 flex-shrink-0">
           <div className="flex-1 flex items-center gap-3 bg-white border border-slate-200/80 px-4 py-3 rounded-2xl shadow-3xs relative overflow-hidden group transition-all duration-200">
             <Search size={15} className="text-slate-400 shrink-0 group-focus-within:text-indigo-600 transition-colors" />
@@ -505,7 +565,6 @@ export default function PosPage() {
           </button>
         </div>
 
-        {/* Category filter */}
         <div className="flex flex-nowrap gap-1.5 flex-shrink-0 overflow-x-auto pb-1.5 scrollbar-none">
           <button
             onClick={() => setCategoryFilter('all')}
@@ -532,7 +591,6 @@ export default function PosPage() {
           ))}
         </div>
 
-        {/* Product grid */}
         <div className="flex-1 overflow-y-auto pr-1 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 content-start pb-24 sm:pb-6 scrollbar-thin">
           {loading
             ? Array.from({ length: 8 }).map((_, i) => (
@@ -614,10 +672,8 @@ export default function PosPage() {
         </div>
       </div>
 
-      {/* RIGHT: Checkout Panel */}
       <div className={`bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-3xs flex flex-col h-full overflow-hidden ${mobileView === 'cart' ? 'flex' : 'hidden lg:flex'}`}>
 
-        {/* Header */}
         <div className="border-b border-slate-100 pb-3 flex items-center justify-between flex-shrink-0 mb-4">
           <div className="flex items-center gap-2">
             <button
@@ -630,7 +686,7 @@ export default function PosPage() {
             <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ringkasan Pembayaran</h2>
           </div>
           <span className="text-[10px] font-bold text-slate-700 ">{cashier?.name || 'Kasir'}</span>
-        </div>        {/* Cart items - Scrollable */}
+        </div>        
         <div className="flex-1 overflow-y-auto pr-0.5 space-y-3 mb-4 scrollbar-thin">
           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Item Dipilih</p>
           
@@ -660,7 +716,6 @@ export default function PosPage() {
                         <button onClick={() => removeFromCart(item.id)} className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer transition-colors"><Trash2 size={14} /></button>
                       </div>
                     </div>
-                    {/* Per-item cashier discount */}
                     <div className="flex items-center justify-between gap-3 bg-white border border-slate-100 px-2.5 py-1 rounded-lg">
                       <span className="text-[9.5px] font-bold text-slate-400">Diskon kasir (Rp)</span>
                       <input
@@ -679,10 +734,8 @@ export default function PosPage() {
           )}
         </div>
 
-        {/* Fixed Checkout Section at the Bottom */}
         <div className="flex-shrink-0 space-y-4 border-t border-slate-200 pt-4 bg-white">
           
-          {/* Customer Section */}
           <div>
             {!isCustomerMode ? (
               <button type="button" onClick={() => setIsCustomerMode(true)} className="inline-flex items-center gap-1.5 text-[10px] text-slate-400 hover:text-slate-700 transition-colors cursor-pointer font-bold">
@@ -712,7 +765,6 @@ export default function PosPage() {
             )}
           </div>
 
-          {/* Totals & payment details */}
           <div className="space-y-3">
 
             <div className="flex justify-between text-xs text-slate-500 font-bold">
@@ -720,7 +772,6 @@ export default function PosPage() {
               <span className="font-mono text-slate-900">{fmt(rawSubtotal)}</span>
             </div>
 
-            {/* Global discount */}
             <div>
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">Diskon Transaksi (F7)</span>
               <div className="flex rounded-xl border border-slate-200 overflow-hidden bg-white">
@@ -742,7 +793,6 @@ export default function PosPage() {
               </div>
             </div>
 
-            {/* PPN toggle */}
             <div className="flex items-center justify-between text-xs font-bold text-slate-500">
               <span>PPN 11%</span>
               <div className="flex items-center gap-3">
@@ -761,7 +811,6 @@ export default function PosPage() {
               </div>
             </div>
 
-            {/* Payment method */}
             <div>
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Metode Bayar</span>
               <div className="grid grid-cols-3 gap-2">
@@ -787,7 +836,6 @@ export default function PosPage() {
               </div>
             </div>
 
-            {/* Cash input */}
             {payment === 'CASH' && (
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-3xs space-y-1.5 font-mono text-xs">
                 <div className="flex items-center justify-between">
@@ -810,7 +858,6 @@ export default function PosPage() {
               </div>
             )}
 
-            {/* Digital payment info */}
             {payment !== 'CASH' && (
               <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-150 rounded-xl px-3 py-2 text-[10px] text-emerald-700 font-bold shadow-3xs leading-none">
                 <CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
@@ -820,7 +867,6 @@ export default function PosPage() {
 
           </div>
 
-          {/* Sticky Checkout Pinned Footer */}
           <div className="border-t border-slate-200 pt-3 space-y-3">
             <div className="flex justify-between items-center px-1">
               <span className="text-xs text-slate-400 font-extrabold uppercase tracking-wide">Total Pembayaran</span>
@@ -853,7 +899,6 @@ export default function PosPage() {
         </div>
       </div>
 
-      {/* Receipt Success Dialog */}
       {isOpenReceipt && receiptData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-all animate-in fade-in duration-200">
           <div className="w-full max-w-sm rounded-2xl border border-slate-150 bg-white p-6 shadow-xl space-y-4 animate-in zoom-in-95 duration-150 relative overflow-hidden">
@@ -866,45 +911,77 @@ export default function PosPage() {
               <p className="text-xs font-black text-slate-800 font-mono tracking-tight">{receiptData.invoice}</p>
             </div>
 
-            {/* Receipt Mockup */}
-            <div className="bg-white border border-slate-200 rounded-xl p-4 font-mono text-[11px] space-y-3.5 shadow-3xs max-h-[280px] overflow-y-auto scrollbar-thin">
-              <div className="text-center border-b border-dashed border-slate-300 pb-3">
-                <p className="font-black text-xs text-slate-900 uppercase tracking-wider">{receiptData.store}</p>
-                <p className="text-[8.5px] font-bold text-slate-500 mt-1">LAILA COLLECTIONS</p>
+            <div className="bg-white border border-slate-200 rounded-xl p-4 font-mono text-[10px] text-slate-800 space-y-3 shadow-3xs max-h-[280px] overflow-y-auto scrollbar-thin">
+              <svg className="w-9 h-9 mx-auto text-slate-800" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M21.9 8.89l-1.05-4.37c-.22-.9-1-1.52-1.91-1.52H5.05c-.9 0-1.69.63-1.9 1.52L2.1 8.89c-.24.97.26 1.96 1.2 2.32c.12.04.24.07.37.08v7.71c0 .99.81 1.8 1.8 1.8h13c.99 0 1.8-.81 1.8-1.8v-7.71c.13-.01.25-.04.37-.08c.95-.36 1.45-1.35 1.21-2.32zM13 18H8v-4h5v4z"/>
+              </svg>
+
+              <div className="text-center space-y-0.5">
+                <p className="font-bold text-xs text-slate-900 uppercase">{receiptData.store}</p>
+                <p className="text-[8.5px] leading-snug">{currentStore?.address || 'Jl. Dr. Ir. H. Soekarno No.19, Medokan Semampir Surabaya'}</p>
+                <p className="text-[8.5px]">No. Telp {currentStore?.phone || '0812345678'}</p>
+                <p className="text-[8.5px] font-bold mt-1.5">{getReceiptUniqueCode(receiptData.invoice, receiptData.createdAt)}</p>
               </div>
 
-              <div className="space-y-1 text-slate-500 text-[9.5px] leading-relaxed">
-                <div className="flex justify-between"><span>Waktu:</span><span>{new Date(receiptData.createdAt).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</span></div>
-                <div className="flex justify-between"><span>Kasir:</span><span className="truncate max-w-[120px]">{receiptData.cashier}</span></div>
-                <div className="flex justify-between"><span>Pelanggan:</span><span className="truncate max-w-[120px]">{receiptData.customer || 'Pelanggan Umum'}</span></div>
+              <div className="border-t border-dotted border-slate-400 my-1"></div>
+
+              <div className="text-[8.5px] leading-tight flex justify-between">
+                <div>
+                  <p>{formatDate(receiptData.createdAt)}</p>
+                  <p>{formatTime(receiptData.createdAt)}</p>
+                  <p className="font-bold">No. {receiptData.invoice}</p>
+                </div>
+                <div className="text-right">
+                  <p>{currentStore?.email ? currentStore.email.split('@')[0] : 'karis'}</p>
+                  <p>{receiptData.cashier}</p>
+                  <p>{currentStore?.address?.split(',').slice(-1)[0]?.trim() || 'Sby'}</p>
+                </div>
               </div>
 
-              <div className="border-t border-b border-dashed border-slate-350 py-2.5 space-y-2.5 max-h-[120px] overflow-y-auto pr-0.5">
+              <div className="border-t border-dashed border-slate-400 my-1"></div>
+
+              <div className="space-y-2">
                 {receiptData.items.map((item: any, idx: number) => {
                   const itemDiscount = (item.discount || 0) * item.quantity
+                  const itemTotal = item.originalPrice * item.quantity
                   return (
-                    <div key={idx} className="space-y-0.5 text-[10px]">
-                      <div className="flex justify-between items-start gap-4">
-                        <span className="font-bold text-slate-800">{idx + 1}. {item.product}</span>
-                        <span className="font-bold text-slate-900 shrink-0">{fmt(item.originalPrice * item.quantity)}</span>
+                    <div key={idx} className="space-y-0.5 text-[9.5px]">
+                      <p className="font-bold text-slate-900">{idx + 1}. {item.product}</p>
+                      <div className="flex justify-between pl-2.5 text-slate-600">
+                        <span>{item.quantity} x {item.originalPrice.toLocaleString('id-ID')}</span>
+                        <span className="font-semibold text-slate-800">Rp {itemTotal.toLocaleString('id-ID')}</span>
                       </div>
-                      <div className="flex justify-between text-[9px] text-slate-400 pl-3">
-                        <span>{item.quantity} x {fmt(item.originalPrice)}</span>
-                        {itemDiscount > 0 && <span className="text-rose-500 font-bold">- {fmt(itemDiscount)}</span>}
-                      </div>
+                      {itemDiscount > 0 && (
+                        <div className="flex justify-between pl-2.5 text-rose-500 italic">
+                          <span>Diskon Item</span>
+                          <span>-Rp {itemDiscount.toLocaleString('id-ID')}</span>
+                        </div>
+                      )}
                     </div>
                   )
                 })}
               </div>
 
-              <div className="space-y-1.5 text-[10px] text-slate-600 border-t border-dashed border-slate-200 pt-2">
-                <div className="flex justify-between"><span>Subtotal:</span><span>{fmt(receiptData.subtotal)}</span></div>
-                <div className="flex justify-between text-rose-500 font-bold"><span>Diskon:</span><span>- {fmt(receiptData.discount)}</span></div>
-                <div className="flex justify-between font-black text-slate-950 text-xs border-t border-dashed border-slate-300 pt-2">
-                  <span>GRAND TOTAL:</span><span>{fmt(receiptData.total)}</span>
+              <div className="border-t border-dotted border-slate-400 my-1"></div>
+
+              <div className="space-y-1 text-[9px] text-slate-600 border-t border-dashed border-slate-200 pt-2">
+                <div className="flex justify-between"><span>Total QTY : {receiptData.items.reduce((s: number, i: any) => s + i.quantity, 0)}</span></div>
+                <div className="flex justify-between"><span>Sub Total</span><span>Rp {receiptData.subtotal.toLocaleString('id-ID')}</span></div>
+                <div className="flex justify-between"><span>Diskon</span><span>Rp {receiptData.discount.toLocaleString('id-ID')}</span></div>
+                <div className="flex justify-between font-bold text-slate-950 text-xs border-t border-dashed border-slate-300 pt-1.5">
+                  <span>Total</span><span>Rp {receiptData.total.toLocaleString('id-ID')}</span>
                 </div>
-                <div className="flex justify-between text-slate-500 text-[9px] pt-1"><span>Bayar ({PAYMENT_METHOD_MAP[payment] || payment}):</span><span>{fmt(receiptData.paidAmount)}</span></div>
-                <div className="flex justify-between font-black text-emerald-600"><span>Kembalian:</span><span>{fmt(receiptData.changeAmount)}</span></div>
+                <div className="flex justify-between"><span>Bayar ({PAYMENT_METHOD_MAP[payment] || payment})</span><span>Rp {receiptData.paidAmount.toLocaleString('id-ID')}</span></div>
+                <div className="flex justify-between font-bold text-slate-950"><span>Kembali</span><span>Rp {receiptData.changeAmount.toLocaleString('id-ID')}</span></div>
+              </div>
+
+              <div className="border-t border-dotted border-slate-400 my-1"></div>
+
+              <div className="text-center space-y-0.5 text-[8px] font-bold text-slate-900 pt-1">
+                <p>Terimakasih Telah Berbelanja</p>
+                <p className="font-normal text-slate-500">Link Kritik dan Saran:</p>
+                <p className="font-normal text-slate-600 select-all">lailacollections.com/e-receipt/{receiptData.invoice}</p>
+                <div className="w-24 h-4 bg-slate-200 mx-auto mt-2"></div>
               </div>
             </div>
 

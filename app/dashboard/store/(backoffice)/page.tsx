@@ -80,7 +80,6 @@ export default function StoreDashboard() {
   return (
     <div className="space-y-6">
       
-      {/* Top Banner */}
       <div className="flex items-center justify-between border-b border-slate-200/80 pb-4">
         <div>
           <h1 className="text-xl font-black text-slate-900 tracking-tight">Ringkasan Outlet</h1>
@@ -93,7 +92,6 @@ export default function StoreDashboard() {
         </div>
       </div>
 
-      {/* Grid Stats */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
         <Card 
           icon={Wallet} 
@@ -126,7 +124,6 @@ export default function StoreDashboard() {
         </div>
       </div>
 
-      {/* Action Links */}
       <div className="grid gap-5 grid-cols-1 sm:grid-cols-3">
         <Link
           href="/dashboard/store/cashier"
@@ -173,7 +170,6 @@ export default function StoreDashboard() {
         </div>
       </div>
 
-      {/* Footer SOP Panel */}
       <div className="border border-indigo-100 bg-indigo-50/35 p-5 rounded-2xl flex items-start gap-3 shadow-3xs">
         <div className="p-2 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-600 shrink-0">
           <Clock size={16} />

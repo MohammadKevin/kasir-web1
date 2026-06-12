@@ -235,7 +235,6 @@ export default function ProductPage() {
   return (
     <div className="space-y-6">
 
-      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
           <div className="h-10 w-10 bg-blue-50 border border-blue-100/50 rounded-xl flex items-center justify-center text-blue-600 shrink-0">
@@ -271,10 +270,8 @@ export default function ProductPage() {
         </div>
       </div>
 
-      {/* Toolbar / Filters */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
         
-        {/* Search */}
         <div className="relative flex-1">
           <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <input 
@@ -294,7 +291,6 @@ export default function ProductPage() {
           )}
         </div>
 
-        {/* Store Select */}
         <div className="relative shrink-0">
           <select 
             value={selectedStoreId} 
@@ -316,7 +312,6 @@ export default function ProductPage() {
         )}
       </div>
 
-      {/* Table List */}
       <div className="rounded-2xl border border-slate-200/70 bg-white shadow-3xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[950px] text-left border-collapse text-xs">
@@ -363,7 +358,6 @@ export default function ProductPage() {
                   return (
                     <tr key={p.id} className="group hover:bg-slate-50/45 transition-colors">
                       
-                      {/* Image thumbnail */}
                       <td className="p-4 pl-6">
                         {p.image ? (
                           <img src={p.image} alt={p.name} className="w-10 h-10 rounded-lg object-cover border border-slate-200" />
@@ -374,7 +368,6 @@ export default function ProductPage() {
                         )}
                       </td>
 
-                      {/* Name */}
                       <td className="p-4 max-w-[200px]">
                         <p className="font-extrabold text-slate-900 text-xs truncate">{p.name}</p>
                         {p.description && (
@@ -382,7 +375,6 @@ export default function ProductPage() {
                         )}
                       </td>
 
-                      {/* Category */}
                       <td className="p-4">
                         <span className="inline-flex items-center gap-1 bg-slate-50 border border-slate-200/60 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-lg">
                           <Folder size={11} className="text-slate-400" />
@@ -390,7 +382,6 @@ export default function ProductPage() {
                         </span>
                       </td>
 
-                      {/* SKU / Barcode */}
                       <td className="p-4">
                         <div className="space-y-1">
                           <div className="flex items-center gap-1 text-[10px] text-slate-500 font-mono leading-none">
@@ -404,12 +395,10 @@ export default function ProductPage() {
                         </div>
                       </td>
 
-                      {/* Cost Price */}
                       <td className="p-4 font-mono text-slate-600">
                         Rp {fmt(p.costPrice)}
                       </td>
 
-                      {/* Selling Price & Discounts */}
                       <td className="p-4 font-mono">
                         <span className={`text-xs font-bold ${disc > 0 ? 'text-emerald-600' : 'text-slate-900'}`}>
                           Rp {fmt(final)}
@@ -424,7 +413,6 @@ export default function ProductPage() {
                         )}
                       </td>
 
-                      {/* Stock Status */}
                       <td className="p-4">
                         <div className="flex items-center gap-1.5">
                           <span className={`font-mono text-xs font-extrabold ${lowStock && p.isActive ? 'text-amber-600' : 'text-slate-900'}`}>
@@ -439,7 +427,6 @@ export default function ProductPage() {
                         <span className="text-[9.5px] text-slate-350 font-semibold block mt-0.5">min. {p.minimumStock}</span>
                       </td>
 
-                      {/* Status Toggle */}
                       <td className="p-4">
                         <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-bold border text-[9px] uppercase tracking-wider ${
                           p.isActive ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-slate-50 border-slate-200 text-slate-400'
@@ -449,7 +436,6 @@ export default function ProductPage() {
                         </span>
                       </td>
 
-                      {/* Action buttons */}
                       <td className="p-4 pr-6">
                         <div className="flex gap-1.5 opacity-80 md:opacity-0 md:group-hover:opacity-100 justify-end transition-all duration-200">
                           <button 
@@ -479,7 +465,6 @@ export default function ProductPage() {
         </div>
       </div>
 
-      {/* Modal Dialog */}
       {isOpenModal && (
         <div 
           className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200"
@@ -487,7 +472,6 @@ export default function ProductPage() {
         >
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200/80 animate-in slide-in-from-bottom-3 duration-250 flex flex-col max-h-[90vh]">
             
-            {/* Modal Header */}
             <div className="p-6 pb-0 flex items-start justify-between shrink-0">
               <div>
                 <h3 className="text-base font-black text-slate-950">{editingId ? 'Edit Detail Barang' : 'Daftarkan Barang Baru'}</h3>
@@ -506,11 +490,9 @@ export default function ProductPage() {
 
             <div className="h-px bg-slate-100 my-4 mx-6 shrink-0" />
 
-            {/* Modal Body (Scrollable) */}
             <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
               <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-4">
                 
-                {/* Photo Upload */}
                 <div className="space-y-2">
                   <label className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 block">Foto Produk</label>
                   <div className="flex items-center gap-4">
@@ -538,7 +520,6 @@ export default function ProductPage() {
                   </div>
                 </div>
 
-                {/* Branch and Category placement */}
                 <div className="space-y-2">
                   <label className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 block">Penempatan</label>
                   <div className="grid gap-3 grid-cols-2">
@@ -572,7 +553,6 @@ export default function ProductPage() {
                   </div>
                 </div>
 
-                {/* Identity Name */}
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 block">Nama Barang *</label>
                   <div className="relative">
@@ -588,7 +568,6 @@ export default function ProductPage() {
                   </div>
                 </div>
 
-                {/* SKU & Barcode */}
                 <div className="grid gap-3 grid-cols-2">
                   <div className="space-y-1.5">
                     <label className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400">Kode SKU</label>
@@ -619,7 +598,6 @@ export default function ProductPage() {
                   </div>
                 </div>
 
-                {/* Prices */}
                 <div className="space-y-2">
                   <label className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 block">Harga Barang</label>
                   <div className="grid gap-3 grid-cols-2">
@@ -650,7 +628,6 @@ export default function ProductPage() {
                     </div>
                   </div>
 
-                  {/* Profit Margin indicator */}
                   {formData.costPrice > 0 && formData.sellingPrice > 0 && (
                     <div className="flex items-center gap-2 bg-emerald-50/60 border border-emerald-200/60 rounded-xl px-4 py-2.5 text-[11px] font-bold text-emerald-700">
                       <span>Estimasi Margin Keuntungan Cabang:</span>
@@ -661,7 +638,6 @@ export default function ProductPage() {
                   )}
                 </div>
 
-                {/* Stock Controls */}
                 <div className="space-y-2">
                   <label className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 block">Inventori Stok</label>
                   <div className="grid gap-3 grid-cols-2">
@@ -691,7 +667,6 @@ export default function ProductPage() {
                   </div>
                 </div>
 
-                {/* Description */}
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 block">Deskripsi & Keterangan</label>
                   <div className="relative">
@@ -706,7 +681,6 @@ export default function ProductPage() {
                   </div>
                 </div>
 
-                {/* Active Toggle Card */}
                 <div 
                   onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
                   className="flex items-center justify-between p-4 bg-slate-50/60 border border-slate-200 rounded-xl cursor-pointer hover:border-slate-300 transition-colors select-none"
@@ -726,7 +700,6 @@ export default function ProductPage() {
 
               </div>
 
-              {/* Modal Actions Footer */}
               <div className="p-6 border-t border-slate-100 flex gap-3 shrink-0 bg-slate-50/50">
                 <button 
                   type="button" 

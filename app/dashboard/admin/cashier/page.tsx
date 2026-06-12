@@ -125,7 +125,6 @@ export default function CashierPage() {
   return (
     <div className="space-y-6">
 
-      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
           <div className="h-10 w-10 bg-blue-50 border border-blue-100/50 rounded-xl flex items-center justify-center text-blue-600 shrink-0">
@@ -153,10 +152,8 @@ export default function CashierPage() {
         </button>
       </div>
 
-      {/* Toolbar / Filters */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
         
-        {/* Search */}
         <div className="relative flex-1">
           <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <input
@@ -176,7 +173,6 @@ export default function CashierPage() {
           )}
         </div>
 
-        {/* Store selector */}
         <div className="relative shrink-0">
           <select 
             value={selectedStoreId} 
@@ -191,7 +187,6 @@ export default function CashierPage() {
           <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         </div>
 
-        {/* Status Counter overview */}
         {!loading && cashiers.length > 0 && (
           <div className="flex gap-2 shrink-0 sm:ml-auto">
             <div className="flex items-center gap-1.5 bg-emerald-50/50 border border-emerald-200/60 rounded-xl px-3 py-2 text-[10px] font-bold text-emerald-700">
@@ -206,7 +201,6 @@ export default function CashierPage() {
         )}
       </div>
 
-      {/* Table Data */}
       <div className="rounded-2xl border border-slate-200/70 bg-white shadow-3xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-left border-collapse text-xs">
@@ -307,14 +301,12 @@ export default function CashierPage() {
         </div>
       </div>
 
-      {/* Footer statistics label */}
       {!loading && filtered.length > 0 && (
         <p className="text-[10.5px] font-bold text-slate-400 text-right mt-2">
           Menampilkan {filtered.length} dari {cashiers.length} staf kasir cabang
         </p>
       )}
 
-      {/* Modal Form */}
       {isOpenModal && (
         <div 
           className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200"

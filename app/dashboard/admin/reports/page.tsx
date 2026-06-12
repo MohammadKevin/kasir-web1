@@ -229,7 +229,6 @@ export default function ReportPage() {
   return (
     <div className="space-y-6">
       
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-start gap-3">
           <div className="h-10 w-10 bg-indigo-50 border border-indigo-100/55 rounded-xl flex items-center justify-center text-indigo-600 shrink-0">
@@ -258,7 +257,6 @@ export default function ReportPage() {
         </div>
       </div>
 
-      {/* Date Filter Bar */}
       <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-3xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3 text-slate-800">
           <div className="h-9 w-9 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 shrink-0">
@@ -271,7 +269,6 @@ export default function ReportPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {/* Quick ranges */}
           <div className="flex bg-slate-100/80 p-1 rounded-xl border border-slate-200/40">
             {[
               { label: 'Semua', value: 'all' },
@@ -330,7 +327,6 @@ export default function ReportPage() {
         </div>
       </div>
 
-      {/* Profit Loss Indicators */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div className="border border-slate-200 rounded-2xl p-5 bg-white shadow-3xs flex items-center gap-4 hover:border-slate-350 transition-all duration-200">
           <div className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-100/50 text-emerald-600 shrink-0">
@@ -368,7 +364,6 @@ export default function ReportPage() {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between border-b border-slate-200/60 pb-3">
         <div className="flex flex-wrap gap-1 bg-slate-100/80 p-1 rounded-2xl border border-slate-200/40">
           {[
@@ -415,7 +410,6 @@ export default function ReportPage() {
         )}
       </div>
 
-      {/* Tab Contents Table */}
       <div className="rounded-2xl border border-slate-200 bg-white shadow-3xs overflow-hidden">
         <div className="overflow-x-auto">
           {loadingTable ? (

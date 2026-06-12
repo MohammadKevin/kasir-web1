@@ -211,7 +211,6 @@ export default function StockMovementPage() {
   return (
     <div className="space-y-6">
       
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-start gap-3">
           <div className="h-10 w-10 bg-indigo-50 border border-indigo-100/55 rounded-xl flex items-center justify-center text-indigo-600 shrink-0">
@@ -232,7 +231,6 @@ export default function StockMovementPage() {
         </button>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 flex items-center gap-4 shadow-3xs">
           <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shrink-0 border border-emerald-100/50">
@@ -265,7 +263,6 @@ export default function StockMovementPage() {
         </div>
       </div>
 
-      {/* Control Bar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1 max-w-md">
           <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -313,7 +310,6 @@ export default function StockMovementPage() {
         </div>
       </div>
 
-      {/* Main Table */}
       <div className="rounded-2xl border border-slate-200 bg-white shadow-3xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[800px] text-left border-collapse text-xs">
@@ -370,7 +366,6 @@ export default function StockMovementPage() {
         </div>
       </div>
 
-      {/* Adjust Stock Modal */}
       {isOpenModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-all">
           <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-150 bg-white p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-150">

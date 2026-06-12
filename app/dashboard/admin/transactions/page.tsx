@@ -52,18 +52,58 @@ type Transaction = {
     name: string
   }
   items?: TransactionItem[]
+  storeId?: string
   createdAt: string
 }
 
 type StoreType = {
   id: string
   name: string
+  address?: string | null
+  phone?: string | null
+  email?: string | null
 }
 
 const PAYMENT_METHOD_MAP: Record<string, string> = {
   CASH: 'Tunai',
   QRIS: 'QRIS',
   DEBIT: 'Debit'
+}
+
+const formatDate = (dateInput: string | Date) => {
+  const d = new Date(dateInput)
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+const formatTime = (dateInput: string | Date) => {
+  const d = new Date(dateInput)
+  const hh = String(d.getHours()).padStart(2, '0')
+  const min = String(d.getMinutes()).padStart(2, '0')
+  const ss = String(d.getSeconds()).padStart(2, '0')
+  return `${hh}:${min}:${ss}`
+}
+
+const getReceiptUniqueCode = (invoice: string, createdAt: string | Date) => {
+  const d = new Date(createdAt)
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const hh = String(d.getHours()).padStart(2, '0')
+  const min = String(d.getMinutes()).padStart(2, '0')
+  const ss = String(d.getSeconds()).padStart(2, '0')
+  
+  let hash = 0
+  if (invoice) {
+    for (let i = 0; i < invoice.length; i++) {
+      hash = (hash << 5) - hash + invoice.charCodeAt(i)
+      hash |= 0
+    }
+  }
+  const prefix = Math.abs(hash).toString().slice(0, 6).padEnd(6, '0')
+  return `${prefix}${yyyy}${mm}${dd}${hh}${min}${ss}`
 }
 
 export default function TransactionAdminPage() {
@@ -230,11 +270,12 @@ export default function TransactionAdminPage() {
           }
           #receipt-print-content {
             position: absolute;
-            left: 0;
+            left: 50%;
             top: 0;
+            transform: translateX(-50%);
             width: 100%;
-            max-width: 100%;
-            padding: 24px;
+            max-width: 210px;
+            padding: 4px 6px;
             margin: 0;
             background: white !important;
             border: none !important;
@@ -252,7 +293,7 @@ export default function TransactionAdminPage() {
           aside, 
           header, 
           .print-hidden, 
-          .print\\:hidden {
+          .print\:hidden {
             display: none !important;
           }
           main, 
@@ -266,7 +307,6 @@ export default function TransactionAdminPage() {
         }
       `}</style>
 
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 print-hidden">
         <div className="flex items-start gap-3">
           <div className="h-10 w-10 bg-indigo-50 border border-indigo-100/55 rounded-xl flex items-center justify-center text-indigo-600 shrink-0">
@@ -295,7 +335,6 @@ export default function TransactionAdminPage() {
         </div>
       </div>
 
-      {/* Toolbar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between print-hidden">
         <div className="relative flex-1 max-w-md">
           <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -333,7 +372,6 @@ export default function TransactionAdminPage() {
         </div>
       </div>
 
-      {/* Filters Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50/60 p-4 rounded-2xl border border-slate-200/60 print-hidden">
         <div className="flex flex-col gap-1.5">
           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Metode Pembayaran</label>
@@ -382,7 +420,6 @@ export default function TransactionAdminPage() {
         </div>
       </div>
 
-      {/* Main Table */}
       <div className="rounded-2xl border border-slate-200 bg-white shadow-3xs overflow-hidden print-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[800px] text-left border-collapse text-xs">
@@ -461,7 +498,6 @@ export default function TransactionAdminPage() {
         </div>
       </div>
 
-      {/* Invoice Detail Modal */}
       {isOpenDetail && selectedTransaction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-all">
           <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-150 bg-white p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
@@ -475,54 +511,89 @@ export default function TransactionAdminPage() {
               </button>
             </div>
 
-            <div id="receipt-print-content" className="mt-4 p-4 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 font-mono text-xs text-slate-700 space-y-3">
-              <div className="text-center border-b border-dashed border-slate-200 pb-2">
+            <div id="receipt-print-content" className="mt-4 p-4 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 font-mono text-xs text-slate-700 space-y-3 print:p-0 print:border-none print:bg-white">
+              {/* Store Icon */}
+              <svg className="w-9 h-9 mx-auto text-slate-800" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M21.9 8.89l-1.05-4.37c-.22-.9-1-1.52-1.91-1.52H5.05c-.9 0-1.69.63-1.9 1.52L2.1 8.89c-.24.97.26 1.96 1.2 2.32c.12.04.24.07.37.08v7.71c0 .99.81 1.8 1.8 1.8h13c.99 0 1.8-.81 1.8-1.8v-7.71c.13-.01.25-.04.37-.08c.95-.36 1.45-1.35 1.21-2.32zM13 18H8v-4h5v4z"/>
+              </svg>
+
+              {/* Store Header Info */}
+              <div className="text-center space-y-0.5">
                 <p className="font-bold text-xs text-slate-900 uppercase">{activeStoreName}</p>
-                <p className="text-[9px] text-slate-400 mt-0.5">Invoice: {selectedTransaction.invoiceNumber}</p>
+                <p className="text-[8.5px] leading-snug">
+                  {stores.find((s) => s.id === (selectedTransaction.storeId || selectedStoreId))?.address || 'Jl. Dr. Ir. H. Soekarno No.19, Medokan Semampir Surabaya'}
+                </p>
+                <p className="text-[8.5px]">
+                  No. Telp {stores.find((s) => s.id === (selectedTransaction.storeId || selectedStoreId))?.phone || '0812345678'}
+                </p>
+                <p className="text-[8.5px] font-bold mt-1.5">{getReceiptUniqueCode(selectedTransaction.invoiceNumber, selectedTransaction.createdAt)}</p>
               </div>
 
-              <div className="space-y-1 text-slate-500 text-[10px]">
-                <p><span className="font-semibold text-slate-750">Waktu :</span> {new Date(selectedTransaction.createdAt).toLocaleString('id-ID')}</p>
-                <p><span className="font-semibold text-slate-755">Kasir :</span> {selectedTransaction.cashier?.name}</p>
-                <p><span className="font-semibold text-slate-755">Member:</span> {selectedTransaction.customer?.name || 'Pelanggan Umum'}</p>
+              <div className="border-t border-dotted border-slate-400 my-1"></div>
+
+              {/* Transaction Meta */}
+              <div className="text-[8.5px] leading-tight flex justify-between">
+                <div>
+                  <p>{formatDate(selectedTransaction.createdAt)}</p>
+                  <p>{formatTime(selectedTransaction.createdAt)}</p>
+                  <p className="font-bold">No. {selectedTransaction.invoiceNumber}</p>
+                </div>
+                <div className="text-right">
+                  <p>{stores.find((s) => s.id === (selectedTransaction.storeId || selectedStoreId))?.email ? (stores.find((s) => s.id === (selectedTransaction.storeId || selectedStoreId))?.email as string).split('@')[0] : 'karis'}</p>
+                  <p>{selectedTransaction.cashier?.name}</p>
+                  <p>
+                    {stores.find((s) => s.id === (selectedTransaction.storeId || selectedStoreId))?.address?.split(',').slice(-1)[0]?.trim() || 'Sby'}
+                  </p>
+                </div>
               </div>
 
-              <div id="receipt-print-items" className="border-t border-b border-dashed border-slate-200 py-2 space-y-2 max-h-[200px] overflow-y-auto pr-1">
+              <div className="border-t border-dashed border-slate-400 my-1"></div>
+
+              {/* Items Block */}
+              <div id="receipt-print-items" className="space-y-2">
                 {selectedTransaction.items?.map((item) => {
                   const itemDiscount = ((item.masterDiscount || 0) + (item.cashierDiscount || 0)) * item.quantity
+                  const itemTotal = item.originalPrice * item.quantity
                   return (
-                    <div key={item.id} className="space-y-0.5">
-                      <div className="flex justify-between items-start gap-4">
-                        <span className="font-bold text-slate-800 text-[10.5px]">{item.product?.name}</span>
-                        <span className="font-bold text-slate-900 shrink-0">Rp {(item.originalPrice * item.quantity).toLocaleString('id-ID')}</span>
+                    <div key={item.id} className="space-y-0.5 text-[9.5px]">
+                      <p className="font-bold text-slate-900">{item.product?.name}</p>
+                      <div className="flex justify-between pl-2.5 text-slate-600">
+                        <span>{item.quantity} x {item.originalPrice.toLocaleString('id-ID')}</span>
+                        <span className="font-semibold text-slate-800">Rp {itemTotal.toLocaleString('id-ID')}</span>
                       </div>
-                      <div className="flex justify-between text-[9.5px] text-slate-400 pl-3">
-                        <span>{item.quantity} x Rp {item.originalPrice.toLocaleString('id-ID')}</span>
-                        {itemDiscount > 0 && <span className="text-rose-500 font-semibold">- Rp {itemDiscount.toLocaleString('id-ID')}</span>}
-                      </div>
+                      {itemDiscount > 0 && (
+                        <div className="flex justify-between pl-2.5 text-rose-500 italic">
+                          <span>Diskon Item</span>
+                          <span>-Rp {itemDiscount.toLocaleString('id-ID')}</span>
+                        </div>
+                      )}
                     </div>
                   )
                 })}
               </div>
 
-              <div className="space-y-1 text-slate-600 text-[10px]">
-                <div className="flex justify-between"><span>Subtotal:</span><span>Rp {selectedTransaction.subtotal.toLocaleString('id-ID')}</span></div>
-                <div className="flex justify-between text-rose-600"><span>Diskon:</span><span>-Rp {selectedTransaction.totalDiscount.toLocaleString('id-ID')}</span></div>
-                <div className="flex justify-between font-extrabold text-slate-900 text-xs border-t border-dashed border-slate-200 pt-1.5">
-                  <span>TOTAL JUAL:</span><span>Rp {selectedTransaction.total.toLocaleString('id-ID')}</span>
+              <div className="border-t border-dotted border-slate-400 my-1"></div>
+
+              {/* Summary Block */}
+              <div className="space-y-1 text-[9px] text-slate-600 border-t border-dashed border-slate-200 pt-2">
+                <div className="flex justify-between"><span>Total QTY : {selectedTransaction.items?.reduce((s, i) => s + i.quantity, 0)}</span></div>
+                <div className="flex justify-between"><span>Sub Total</span><span>Rp {selectedTransaction.subtotal.toLocaleString('id-ID')}</span></div>
+                <div className="flex justify-between"><span>Diskon</span><span>Rp {selectedTransaction.totalDiscount.toLocaleString('id-ID')}</span></div>
+                <div className="flex justify-between font-bold text-slate-950 text-xs border-t border-dashed border-slate-350 pt-1.5">
+                  <span>Total</span><span>Rp {selectedTransaction.total.toLocaleString('id-ID')}</span>
                 </div>
-                <div className="flex justify-between"><span>Bayar / Cash:</span><span>Rp {selectedTransaction.paidAmount.toLocaleString('id-ID')}</span></div>
-                <div className="flex justify-between font-bold text-slate-900"><span>Kembalian:</span><span>Rp {selectedTransaction.changeAmount.toLocaleString('id-ID')}</span></div>
+                <div className="flex justify-between"><span>Bayar ({PAYMENT_METHOD_MAP[selectedTransaction.paymentMethod] || selectedTransaction.paymentMethod})</span><span>Rp {selectedTransaction.paidAmount.toLocaleString('id-ID')}</span></div>
+                <div className="flex justify-between font-bold text-slate-950"><span>Kembali</span><span>Rp {selectedTransaction.changeAmount.toLocaleString('id-ID')}</span></div>
               </div>
 
-              <div className="text-center pt-2 border-t border-dashed border-slate-200">
-                <p className="font-extrabold text-slate-400 uppercase tracking-wider text-[9px]">Metode: {PAYMENT_METHOD_MAP[selectedTransaction.paymentMethod]?.toUpperCase() || selectedTransaction.paymentMethod}</p>
-                {selectedTransaction.status === 'CANCELLED' && (
-                  <div className="mt-2 p-2 bg-rose-50 rounded-xl border border-rose-150 text-rose-700 text-[9.5px] font-sans text-left">
-                    <p className="font-black uppercase tracking-wide">🚨 STATUS VOID / DIBATALKAN</p>
-                    <p className="mt-0.5"><span className="font-semibold text-rose-800">Alasan:</span> {selectedTransaction.voidReason}</p>
-                  </div>
-                )}
+              <div className="border-t border-dotted border-slate-400 my-1"></div>
+
+              {/* Footer Block */}
+              <div className="text-center space-y-0.5 text-[8px] font-bold text-slate-900 pt-1">
+                <p>Terimakasih Telah Berbelanja</p>
+                <p className="font-normal text-slate-500">Link Kritik dan Saran:</p>
+                <p className="font-normal text-slate-600 select-all">lailacollections.com/e-receipt/{selectedTransaction.invoiceNumber}</p>
+                <div className="w-24 h-4 bg-slate-200 mx-auto mt-2 print:border print:border-slate-300"></div>
               </div>
             </div>
 
@@ -546,7 +617,6 @@ export default function TransactionAdminPage() {
         </div>
       )}
 
-      {/* Void Reason Modal */}
       {isOpenVoidModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-all">
           <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-slate-150 bg-white p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-150">

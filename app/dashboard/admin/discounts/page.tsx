@@ -294,7 +294,6 @@ export default function DiscountPage() {
   return (
     <div className="space-y-6">
       
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-start gap-3">
           <div className="h-10 w-10 bg-indigo-50 border border-indigo-100/55 rounded-xl flex items-center justify-center text-indigo-600 shrink-0">
@@ -315,7 +314,6 @@ export default function DiscountPage() {
         </button>
       </div>
 
-      {/* Toolbar / Filters */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1 max-w-md">
           <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -353,7 +351,6 @@ export default function DiscountPage() {
         </div>
       </div>
 
-      {/* Grid Layout for Discounts */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {loading ? (
           <div className="col-span-full py-16 flex items-center justify-center">
@@ -448,7 +445,6 @@ export default function DiscountPage() {
         )}
       </div>
 
-      {/* Modal Buat/Ubah Diskon */}
       {isOpenModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-all">
           <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-150 bg-white p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-150">
@@ -533,7 +529,6 @@ export default function DiscountPage() {
         </div>
       )}
 
-      {/* Modal Produk Terikat */}
       {isOpenManageProducts && selectedDiscount && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-all">
           <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-slate-150 bg-white p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-150 max-h-[85vh] overflow-y-auto space-y-4">
@@ -548,7 +543,6 @@ export default function DiscountPage() {
               <button onClick={() => setIsOpenManageProducts(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-600"><X className="h-4 w-4" /></button>
             </div>
 
-            {/* Mass allocation */}
             <div className="p-3 border border-slate-200 rounded-xl bg-slate-50/50 flex items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] font-bold text-slate-900">Terapkan Massal</p>
@@ -570,7 +564,6 @@ export default function DiscountPage() {
               <div className="flex-grow border-t border-slate-200"></div>
             </div>
 
-            {/* Single allocation */}
             <form onSubmit={handleAssignProduct} className="flex gap-2">
               <div className="relative flex-1">
                 <select
@@ -587,7 +580,6 @@ export default function DiscountPage() {
               </button>
             </form>
 
-            {/* Linked items */}
             <div className="border border-slate-200 rounded-xl max-h-48 overflow-y-auto bg-slate-50/30 p-2 space-y-1.5 scrollbar-thin">
               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1">Daftar Item Saat Ini :</p>
               {selectedDiscount.products?.length === 0 ? (

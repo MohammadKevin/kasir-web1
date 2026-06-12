@@ -241,7 +241,6 @@ export default function ExpensePage() {
   return (
     <div className="space-y-6">
       
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-start gap-3">
           <div className="h-10 w-10 bg-indigo-50 border border-indigo-100/55 rounded-xl flex items-center justify-center text-indigo-600 shrink-0">
@@ -261,7 +260,6 @@ export default function ExpensePage() {
         </button>
       </div>
 
-      {/* Summary Card */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div className="border border-slate-200 rounded-2xl p-5 bg-white shadow-3xs flex items-center gap-4">
           <div className="p-3 bg-rose-50 rounded-xl border border-rose-100/50 text-rose-600 shrink-0">
@@ -284,7 +282,6 @@ export default function ExpensePage() {
         </div>
       </div>
 
-      {/* Toolbar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1 max-w-md">
           <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -334,7 +331,6 @@ export default function ExpensePage() {
         </div>
       </div>
 
-      {/* Main Table */}
       <div className="rounded-2xl border border-slate-200 bg-white shadow-3xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[700px] text-left border-collapse text-xs">
@@ -407,7 +403,6 @@ export default function ExpensePage() {
         </div>
       </div>
 
-      {/* Expense Modal */}
       {isOpenModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-all animate-in fade-in duration-200">
           <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-150 bg-white p-6 shadow-xl relative animate-in zoom-in-95 duration-150">

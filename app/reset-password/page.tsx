@@ -188,7 +188,6 @@ export default function ResetPasswordPage() {
     <main className="min-h-screen bg-slate-50/50 flex items-center justify-center px-4 antialiased font-sans select-none">
       <div className="w-full max-w-md rounded-2xl border border-slate-200/80 bg-white p-8 shadow-xl shadow-slate-100/40 space-y-6">
         
-        {/* Back navigation */}
         <div>
           <Link 
             href="/login" 
@@ -199,7 +198,6 @@ export default function ResetPasswordPage() {
           </Link>
         </div>
 
-        {/* Brand header details */}
         <div className="text-center space-y-2">
           <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-150 shadow-3xs">
             <Lock size={18} />

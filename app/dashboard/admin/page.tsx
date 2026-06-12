@@ -307,7 +307,6 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-8">
       
-      {/* Header section */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Ringkasan Dashboard</h1>
@@ -322,7 +321,6 @@ export default function AdminDashboard() {
         </button>
       </div>
 
-      {/* Cards list */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((card) => {
           const Icon = card.icon
@@ -346,10 +344,8 @@ export default function AdminDashboard() {
         })}
       </div>
 
-      {/* Chart & Tables row */}
       <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         
-        {/* Recent Transactions list */}
         <div className="rounded-2xl border border-slate-200/70 bg-white shadow-3xs flex flex-col justify-between overflow-hidden">
           <div>
             <div className="border-b border-slate-100 p-5 bg-slate-50/50 flex items-center justify-between">
@@ -406,7 +402,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Chart Card */}
         <div className="rounded-2xl border border-slate-200/70 bg-white shadow-3xs p-6 flex flex-col justify-between">
           <div>
             <div className="flex items-start justify-between border-b border-slate-100 pb-5">
@@ -438,10 +433,8 @@ export default function AdminDashboard() {
                 <span>{chartData.growth ? 'Tren Penjualan Stabil/Naik' : 'Perubahan Sesi Fluktuatif'}</span>
               </div>
 
-              {/* Chart Canvas with custom gridlines */}
               <div className="w-full h-40 border-b border-l border-slate-200/75 relative">
                 
-                {/* Visual grid lines backdrop */}
                 <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-0.5">
                   <div className="w-full border-t border-dashed border-slate-100" />
                   <div className="w-full border-t border-dashed border-slate-100" />
@@ -464,7 +457,6 @@ export default function AdminDashboard() {
                     <polyline fill="none" stroke="#2563eb" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" points={chartData.points} className="transition-all duration-300" />
                   )}
 
-                  {/* Pulsing indicator dots */}
                   {chartData.points && chartData.points.split(' ').map((pt, i) => {
                     const coords = pt.split(',')
                     const x = coords[0]

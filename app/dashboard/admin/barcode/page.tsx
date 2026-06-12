@@ -196,7 +196,6 @@ export default function BarcodePage() {
   return (
     <div className="space-y-6">
       
-      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
           <div className="h-10 w-10 bg-blue-50 border border-blue-100/50 rounded-xl flex items-center justify-center text-blue-600 shrink-0">
@@ -222,10 +221,8 @@ export default function BarcodePage() {
         </button>
       </div>
 
-      {/* Toolbar / Filters */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
         
-        {/* Search */}
         <div className="relative flex-1">
           <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <input
@@ -256,7 +253,6 @@ export default function BarcodePage() {
             </button>
           )}
 
-          {/* Store select */}
           <div className="relative shrink-0">
             <select
               value={selectedStoreId}
@@ -278,7 +274,6 @@ export default function BarcodePage() {
 
       </div>
 
-      {/* Main Table */}
       <div className="rounded-2xl border border-slate-200/70 bg-white shadow-3xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[700px] text-left border-collapse text-xs">

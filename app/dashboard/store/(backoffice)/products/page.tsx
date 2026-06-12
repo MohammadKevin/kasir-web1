@@ -181,7 +181,6 @@ export default function ProductsPage() {
   return (
     <div className="space-y-6">
 
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200/80 pb-4">
         <div className="flex items-center gap-3">
           <button
@@ -208,7 +207,6 @@ export default function ProductsPage() {
         </button>
       </div>
 
-      {/* Control Bar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1 max-w-md">
           <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -225,7 +223,6 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      {/* Category Tabs */}
       <div className="flex flex-wrap gap-1.5">
         {categories.map((cat) => (
           <button
@@ -241,7 +238,6 @@ export default function ProductsPage() {
         ))}
       </div>
 
-      {/* Main Table */}
       <div className="rounded-2xl border border-slate-200 bg-white shadow-3xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[700px] text-left border-collapse text-xs">

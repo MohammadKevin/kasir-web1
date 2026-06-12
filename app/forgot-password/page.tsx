@@ -29,7 +29,6 @@ export default function ForgotPasswordPage() {
       const res = await api.post('/auth/forgot-password', { email })
       setSuccess(res.data.message || 'Link reset password telah dikirim ke email Anda.')
       
-      // Save debug reset link if returned (for local dev mode)
       if (res.data.resetLink) {
         setDevResetUrl(res.data.resetLink)
       }
@@ -49,7 +48,6 @@ export default function ForgotPasswordPage() {
     <main className="min-h-screen bg-slate-50/50 flex items-center justify-center px-4 antialiased font-sans select-none">
       <div className="w-full max-w-md rounded-2xl border border-slate-200/80 bg-white p-8 shadow-xl shadow-slate-100/40 space-y-6">
         
-        {/* Back navigation */}
         <div>
           <Link 
             href="/login" 
@@ -60,7 +58,6 @@ export default function ForgotPasswordPage() {
           </Link>
         </div>
 
-        {/* Headings */}
         <div className="text-center space-y-2">
           <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-150 shadow-3xs">
             <Mail size={18} />
@@ -81,7 +78,6 @@ export default function ForgotPasswordPage() {
               </div>
             </div>
 
-            {/* Debug reset panel for developers in local dev environment */}
             {devResetUrl && (
               <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 text-amber-900 space-y-3">
                 <p className="font-extrabold text-[10px] tracking-wider uppercase text-amber-800">🛠️ LOCAL DEVELOPMENT HELPER:</p>
