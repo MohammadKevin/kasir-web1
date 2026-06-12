@@ -16,6 +16,7 @@ jobs:
       - name: Build and Restart Next.js
         run: |
           cd /var/www/kasir-frontend
+          git reset --hard
           git pull origin main
           npm install
           NODE_OPTIONS="--max-old-space-size=1024" npm run build
