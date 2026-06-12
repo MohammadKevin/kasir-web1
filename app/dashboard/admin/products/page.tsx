@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
+import * as XLSX from 'xlsx'
 import {
   Package, 
   Search, 
@@ -24,7 +25,9 @@ import {
   Loader2, 
   ToggleLeft, 
   ToggleRight,
-  DollarSign
+  DollarSign,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react'
 
 type Product = {
@@ -66,6 +69,15 @@ export default function ProductPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [formData, setFormData] = useState(EMPTY_FORM)
+  const [importStatus, setImportStatus] = useState<{
+    isOpen: boolean;
+    total: number;
+    current: number;
+    currentName: string;
+    errors: string[];
+    successCount: number;
+    isFinished: boolean;
+  } | null>(null)
 
   useEffect(() => { 
     initPage() 
@@ -113,6 +125,193 @@ export default function ProductPage() {
       const { data } = await api.get(`/categories/store/${storeId}`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
       setCategories(data)
     } catch { }
+  }
+
+  async function handleImportExcel(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    e.target.value = ''
+
+    if (!selectedStoreId) {
+      alert('Silakan pilih toko/cabang terlebih dahulu!')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = async (evt) => {
+      try {
+        const bstr = evt.target?.result
+        const wb = XLSX.read(bstr, { type: 'binary' })
+        const wsname = wb.SheetNames[0]
+        const ws = wb.Sheets[wsname]
+        const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][]
+
+        let headerRowIdx = -1
+        let nameIdx = -1
+        let sellingPriceIdx = -1
+        let skuIdx = -1
+        let costPriceIdx = -1
+        let categoryIdx = -1
+        let stockIdx = -1
+
+        const namePossibilities = ['nama produk/variant', 'nama produk', 'nama barang', 'nama', 'product name', 'name', 'nama variant', 'nama varian']
+        const sellingPricePossibilities = ['harga jual', 'harga jual (rp)', 'selling price', 'harga jual cabang', 'harga jual toko', 'harga']
+        const skuPossibilities = ['sku', 'kode sku', 'kode barang', 'kode']
+        const costPricePossibilities = ['harga beli', 'harga modal', 'harga modal (rp)', 'cost price', 'harga beli (rp)', 'harga pokok']
+        const categoryPossibilities = ['kategori', 'category', 'kelompok', 'golongan', 'grup']
+        const stockPossibilities = ['stok', 'stock', 'stok awal', 'stok barang', 'stok akhir', 'jumlah stok']
+
+        for (let r = 0; r < Math.min(data.length, 15); r++) {
+          const row = data[r]
+          if (!row || !Array.isArray(row)) continue
+          
+          const rowStr = row.map(cell => String(cell || '').trim().toLowerCase())
+          
+          const tempNameIdx = rowStr.findIndex(cellVal => 
+            namePossibilities.some(p => cellVal === p || cellVal.includes(p))
+          )
+          const tempSellingPriceIdx = rowStr.findIndex(cellVal => 
+            sellingPricePossibilities.some(p => cellVal === p || cellVal.includes(p))
+          )
+
+          if (tempNameIdx !== -1 && tempSellingPriceIdx !== -1) {
+            headerRowIdx = r
+            nameIdx = tempNameIdx
+            sellingPriceIdx = tempSellingPriceIdx
+            
+            skuIdx = rowStr.findIndex(cellVal => skuPossibilities.some(p => cellVal === p || cellVal.includes(p)))
+            costPriceIdx = rowStr.findIndex(cellVal => costPricePossibilities.some(p => cellVal === p || cellVal.includes(p)))
+            categoryIdx = rowStr.findIndex(cellVal => categoryPossibilities.some(p => cellVal === p || cellVal.includes(p)))
+            stockIdx = rowStr.findIndex(cellVal => stockPossibilities.some(p => cellVal === p || cellVal.includes(p)))
+            break
+          }
+        }
+
+        if (headerRowIdx === -1) {
+          const firstRow = data[0] && Array.isArray(data[0]) 
+            ? data[0].map(h => String(h || '').trim()).join(', ') 
+            : 'tidak terdeteksi'
+          alert(`Header kolom Excel tidak valid.\n\nBaris pertama file Anda berisi: "${firstRow}"\n\nFile Excel minimal harus memiliki kolom yang mengandung nama "Nama Produk" dan "Harga Jual". Mohon periksa baris header tabel Excel Anda.`);
+          return
+        }
+
+        const rows = data.slice(headerRowIdx + 1).filter(row => row.length > 0 && row[nameIdx])
+        if (rows.length === 0) {
+          alert('Tidak ada data produk yang valid untuk di-import setelah baris header.')
+          return
+        }
+
+        setImportStatus({
+          isOpen: true,
+          total: rows.length,
+          current: 0,
+          currentName: '',
+          errors: [],
+          successCount: 0,
+          isFinished: false,
+        })
+
+        const headersApi = { Authorization: `Bearer ${localStorage.getItem('token')}` }
+
+        let currentCategories = [...categories]
+        try {
+          const catRes = await api.get(`/categories/store/${selectedStoreId}`, { headers: headersApi })
+          currentCategories = catRes.data || []
+          setCategories(currentCategories)
+        } catch (catErr) {
+          console.error('Failed to reload categories before import', catErr)
+        }
+
+        let successCount = 0
+        const errors: string[] = []
+
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i]
+          const productName = String(row[nameIdx] || '').trim()
+          if (!productName) continue
+
+          setImportStatus(prev => prev ? { ...prev, current: i + 1, currentName: productName } : null)
+
+          try {
+            let catId = ''
+            const rawCategory = categoryIdx !== -1 && row[categoryIdx] ? String(row[categoryIdx]).trim() : 'Umum'
+            
+            const foundCategory = currentCategories.find(c => c.name.toLowerCase() === rawCategory.toLowerCase())
+            if (foundCategory) {
+              catId = foundCategory.id
+            } else {
+              const catPayload = {
+                storeId: selectedStoreId,
+                name: rawCategory,
+                description: `Kategori otomatis dari import Excel`
+              }
+              const newCatRes = await api.post('/categories', catPayload, { headers: headersApi })
+              const newCat = newCatRes.data
+              if (newCat && newCat.id) {
+                catId = newCat.id
+                currentCategories.push(newCat)
+                setCategories([...currentCategories])
+              } else {
+                throw new Error(`Gagal membuat kategori baru "${rawCategory}"`)
+              }
+            }
+
+            const costPrice = costPriceIdx !== -1 && row[costPriceIdx] ? Math.max(0, Number(row[costPriceIdx]) || 0) : 0
+            const sellingPrice = sellingPriceIdx !== -1 && row[sellingPriceIdx] ? Math.max(0, Number(row[sellingPriceIdx]) || 0) : 0
+            const stock = stockIdx !== -1 && row[stockIdx] ? Math.max(0, Number(row[stockIdx]) || 0) : 0
+            const sku = skuIdx !== -1 && row[skuIdx] ? String(row[skuIdx]).trim() : ''
+
+            const productPayload: any = {
+              storeId: selectedStoreId,
+              categoryId: catId,
+              name: productName,
+              costPrice,
+              sellingPrice,
+              stock: 0,
+              minimumStock: 0,
+              isActive: true,
+            }
+            if (sku) productPayload.sku = sku
+
+            const prodRes = await api.post('/products', productPayload, { headers: headersApi })
+            const newProd = prodRes.data
+
+            if (newProd && newProd.id && stock > 0) {
+              const movementPayload = {
+                storeId: selectedStoreId,
+                productId: newProd.id,
+                type: 'IN',
+                qty: stock,
+                note: 'Stok awal dari import Excel produk',
+              }
+              await api.post('/stock-movements', movementPayload, { headers: headersApi })
+            }
+            successCount++
+          } catch (err: any) {
+            console.error('Import row error', err)
+            const errMsg = err.response?.data?.message || err.message || 'Gagal menyimpan produk'
+            const formattedError = Array.isArray(errMsg) ? errMsg.join(', ') : errMsg
+            errors.push(`Baris ${i + 2} (${productName}): ${formattedError}`)
+          }
+        }
+
+        setImportStatus(prev => prev ? {
+          ...prev,
+          current: rows.length,
+          currentName: 'Selesai!',
+          successCount,
+          errors,
+          isFinished: true,
+        } : null)
+
+        loadProducts(selectedStoreId)
+      } catch (excelErr: any) {
+        alert('Gagal membaca atau memproses file Excel: ' + (excelErr.message || excelErr))
+        setImportStatus(null)
+      }
+    }
+    reader.readAsBinaryString(file)
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -200,7 +399,20 @@ export default function ProductPage() {
         const { storeId, ...u } = payload
         await api.patch(`/products/${editingId}`, u, { headers }) 
       } else {
-        await api.post('/products', payload, { headers })
+        const targetStock = Number(formData.stock) || 0
+        const createPayload = { ...payload, stock: 0 }
+        const res = await api.post('/products', createPayload, { headers })
+        const newProd = res.data
+        if (newProd && newProd.id && targetStock > 0) {
+          const movementPayload = {
+            storeId: formData.storeId,
+            productId: newProd.id,
+            type: 'IN',
+            qty: targetStock,
+            note: 'Stok awal saat pembuatan produk baru',
+          }
+          await api.post('/stock-movements', movementPayload, { headers })
+        }
       }
       setIsOpenModal(false)
       loadProducts(selectedStoreId)
@@ -260,6 +472,25 @@ export default function ProductPage() {
               <span>{lowStockCount} Stok Menipis</span>
             </div>
           )}
+
+          <label className={`flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-4 py-2.5 text-xs font-bold text-slate-700 hover:text-slate-800 transition-all shadow-3xs active:scale-97 cursor-pointer select-none ${
+            importStatus && !importStatus.isFinished ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''
+          }`}>
+            {importStatus && !importStatus.isFinished ? (
+              <Loader2 size={15} className="text-blue-500 animate-spin" />
+            ) : (
+              <Upload size={15} className="text-slate-500" />
+            )}
+            <span>Import Excel</span>
+            <input 
+              type="file" 
+              accept=".xlsx, .xls" 
+              onChange={handleImportExcel} 
+              className="hidden" 
+              disabled={!!(importStatus && !importStatus.isFinished)}
+            />
+          </label>
+
           <button 
             onClick={openCreate}
             className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2.5 text-xs font-bold text-white transition-all shadow-3xs active:scale-97 cursor-pointer"
@@ -607,7 +838,7 @@ export default function ProductPage() {
                         type="number"
                         min={0}
                         required
-                        value={formData.costPrice || ''}
+                        value={formData.costPrice ?? ''}
                         onChange={(e) => setFormData({ ...formData, costPrice: Number(e.target.value) })}
                         placeholder="Harga Modal (Rp)"
                         className="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-3 text-xs text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold"
@@ -620,7 +851,7 @@ export default function ProductPage() {
                         type="number"
                         min={0}
                         required
-                        value={formData.sellingPrice || ''}
+                        value={formData.sellingPrice ?? ''}
                         onChange={(e) => setFormData({ ...formData, sellingPrice: Number(e.target.value) })}
                         placeholder="Harga Jual (Rp)"
                         className="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-3 text-xs text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold"
@@ -646,7 +877,7 @@ export default function ProductPage() {
                       <input
                         type="number"
                         min={0}
-                        value={formData.stock || ''}
+                        value={formData.stock ?? ''}
                         onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
                         placeholder="Stok Awal Barang"
                         className="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-3 text-xs text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold"
@@ -658,7 +889,7 @@ export default function ProductPage() {
                       <input
                         type="number"
                         min={0}
-                        value={formData.minimumStock || ''}
+                        value={formData.minimumStock ?? ''}
                         onChange={(e) => setFormData({ ...formData, minimumStock: Number(e.target.value) })}
                         placeholder="Limit Minimum Stok"
                         className="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-3 text-xs text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold"
@@ -728,6 +959,122 @@ export default function ProductPage() {
                 </button>
               </div>
             </form>
+
+          </div>
+        </div>
+      )}
+
+      {importStatus && (
+        <div 
+          className="fixed inset-0 z-55 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200"
+        >
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200/80 animate-in slide-in-from-bottom-3 duration-250 flex flex-col max-h-[85vh]">
+            
+            {/* Header */}
+            <div className="p-6 pb-0 flex items-start justify-between shrink-0">
+              <div>
+                <h3 className="text-base font-black text-slate-950">
+                  {importStatus.isFinished ? 'Proses Import Selesai' : 'Sedang Mengimport Produk...'}
+                </h3>
+                <p className="text-[10.5px] font-semibold text-slate-400 mt-0.5">
+                  {importStatus.isFinished 
+                    ? 'Proses import massal produk telah rampung dilaksanakan' 
+                    : 'Mohon tidak menutup halaman ini hingga proses selesai'}
+                </p>
+              </div>
+              {importStatus.isFinished && (
+                <button 
+                  type="button" 
+                  onClick={() => setImportStatus(null)}
+                  className="h-8 w-8 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  <X size={15} />
+                </button>
+              )}
+            </div>
+
+            <div className="h-px bg-slate-100 my-4 mx-6 shrink-0" />
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-5">
+              
+              {/* Progress and status name */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs font-bold text-slate-700">
+                  <span>Progres</span>
+                  <span className="font-mono">
+                    {importStatus.current} / {importStatus.total} ({Math.round((importStatus.current / importStatus.total) * 100)}%)
+                  </span>
+                </div>
+                
+                {/* Progress bar container */}
+                <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
+                  <div 
+                    className="h-full bg-blue-600 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${(importStatus.current / importStatus.total) * 100}%` }}
+                  />
+                </div>
+                
+                {!importStatus.isFinished && (
+                  <p className="text-[10.5px] text-slate-500 font-semibold truncate animate-pulse">
+                    Memproses: <span className="font-bold text-slate-800">{importStatus.currentName}</span>
+                  </p>
+                )}
+              </div>
+
+              {/* Statistics Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-emerald-50/50 border border-emerald-200/50 rounded-xl p-3 flex items-center gap-3">
+                  <div className="h-8 w-8 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600 shrink-0">
+                    <CheckCircle size={16} />
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block leading-none">Berhasil</span>
+                    <span className="font-mono text-base font-black text-emerald-700">{importStatus.successCount}</span>
+                  </div>
+                </div>
+
+                <div className="bg-rose-50/50 border border-rose-200/50 rounded-xl p-3 flex items-center gap-3">
+                  <div className="h-8 w-8 bg-rose-100 rounded-lg flex items-center justify-center text-rose-600 shrink-0">
+                    <AlertCircle size={16} />
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block leading-none">Gagal</span>
+                    <span className="font-mono text-base font-black text-rose-700">{importStatus.errors.length}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Error list (if any) */}
+              {importStatus.errors.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-[9px] font-extrabold uppercase tracking-widest text-rose-600 block">Daftar Kesalahan ({importStatus.errors.length})</label>
+                  <div className="border border-rose-100 bg-rose-50/20 rounded-xl p-3 max-h-[180px] overflow-y-auto space-y-1.5 text-[10.5px] text-rose-700 font-semibold scrollbar-thin">
+                    {importStatus.errors.map((err, idx) => (
+                      <div key={idx} className="flex items-start gap-1.5 leading-relaxed">
+                        <span className="text-rose-400 mt-0.5 shrink-0">•</span>
+                        <span>{err}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            {/* Footer */}
+            {importStatus.isFinished && (
+              <div className="p-6 border-t border-slate-100 bg-slate-50/50 shrink-0 flex justify-end">
+                <button 
+                  type="button" 
+                  onClick={() => setImportStatus(null)} 
+                  className="w-full sm:w-auto rounded-xl bg-blue-600 hover:bg-blue-700 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-600/10 transition-all active:scale-98 cursor-pointer flex justify-center items-center gap-1.5"
+                >
+                  <span>Selesai & Tutup</span>
+                  <CheckCircle size={14} />
+                </button>
+              </div>
+            )}
 
           </div>
         </div>

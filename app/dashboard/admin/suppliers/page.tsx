@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { api } from '@/lib/api'
+import * as XLSX from 'xlsx'
 import { 
+  Boxes, 
   Truck, 
   Search, 
   Plus, 
@@ -14,7 +16,10 @@ import {
   Building2,
   PackageCheck,
   Loader2,
-  ChevronDown
+  ChevronDown,
+  Upload,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react'
 
 type Supplier = {
@@ -46,6 +51,16 @@ export default function SupplierPage() {
     name: '',
     phone: '',
   })
+
+  const [importStatus, setImportStatus] = useState<{
+    isOpen: boolean;
+    total: number;
+    current: number;
+    currentName: string;
+    errors: string[];
+    successCount: number;
+    isFinished: boolean;
+  } | null>(null)
 
   useEffect(() => {
     initPage()
@@ -94,6 +109,151 @@ export default function SupplierPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleImportSupplierExcel(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    e.target.value = ''
+
+    if (!selectedStoreId) {
+      alert('Silakan pilih toko/cabang terlebih dahulu!')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = async (evt) => {
+      try {
+        const bstr = evt.target?.result
+        const wb = XLSX.read(bstr, { type: 'binary' })
+        const wsname = wb.SheetNames[0]
+        const ws = wb.Sheets[wsname]
+        const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][]
+
+        if (data.length <= 1) {
+          alert('File Excel kosong atau tidak memiliki data supplier.')
+          return
+        }
+
+        let headerRowIdx = -1
+        let nameIdx = -1
+        let phoneIdx = -1
+
+        const namePossibilities = ['nama supplier', 'supplier name', 'nama vendor', 'nama perusahaan', 'nama', 'name']
+        const phonePossibilities = ['telepon', 'phone', 'telpon', 'no telepon', 'no telp', 'no hp', 'telephone', 'mobile']
+
+        for (let r = 0; r < Math.min(data.length, 15); r++) {
+          const row = data[r]
+          if (!row || !Array.isArray(row)) continue
+          
+          const rowStr = row.map(cell => String(cell || '').trim().toLowerCase())
+          
+          let tempNameIdx = rowStr.indexOf('nama supplier')
+          if (tempNameIdx === -1) {
+            tempNameIdx = rowStr.findIndex(cellVal => 
+              namePossibilities.some(p => cellVal === p)
+            )
+          }
+          if (tempNameIdx === -1) {
+            tempNameIdx = rowStr.findIndex(cellVal => 
+              namePossibilities.some(p => cellVal.includes(p))
+            )
+          }
+
+          let tempPhoneIdx = rowStr.indexOf('telepon')
+          if (tempPhoneIdx === -1) {
+            tempPhoneIdx = rowStr.findIndex(cellVal => 
+              phonePossibilities.some(p => cellVal === p)
+            )
+          }
+          if (tempPhoneIdx === -1) {
+            tempPhoneIdx = rowStr.findIndex(cellVal => 
+              phonePossibilities.some(p => cellVal.includes(p))
+            )
+          }
+
+          if (tempNameIdx !== -1) {
+            headerRowIdx = r
+            nameIdx = tempNameIdx
+            phoneIdx = tempPhoneIdx
+            break
+          }
+        }
+
+        if (headerRowIdx === -1) {
+          const firstRow = data[0] && Array.isArray(data[0]) 
+            ? data[0].map(h => String(h || '').trim()).join(', ') 
+            : 'tidak terdeteksi'
+          alert(`Header kolom Excel tidak valid.\n\nBaris pertama file Anda berisi: "${firstRow}"\n\nFile Excel minimal harus memiliki kolom yang mengandung nama "Nama Supplier". Mohon periksa baris header tabel Excel Anda.`);
+          return
+        }
+
+        const rows = data.slice(headerRowIdx + 1).filter(row => row.length > 0 && row[nameIdx])
+        if (rows.length === 0) {
+          alert('Tidak ada data supplier yang valid untuk di-import setelah baris header.')
+          return
+        }
+
+        setImportStatus({
+          isOpen: true,
+          total: rows.length,
+          current: 0,
+          currentName: '',
+          errors: [],
+          successCount: 0,
+          isFinished: false,
+        })
+
+        const token = localStorage.getItem('token')
+        const headersApi = { Authorization: `Bearer ${token}` }
+
+        let successCount = 0
+        const errors: string[] = []
+
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i]
+          const supplierName = String(row[nameIdx] || '').trim()
+          if (!supplierName) continue
+
+          setImportStatus(prev => prev ? { ...prev, current: i + 1, currentName: supplierName } : null)
+
+          try {
+            const rawPhone = phoneIdx !== -1 && row[phoneIdx] ? String(row[phoneIdx]).trim() : ''
+            
+            const payload = {
+              storeId: selectedStoreId,
+              name: supplierName,
+              phone: rawPhone || undefined,
+            }
+
+            await api.post('/suppliers', payload, { headers: headersApi })
+            successCount++
+          } catch (err: any) {
+            console.warn('Import supplier row error', err.message || err)
+            const responseData = err.response?.data
+            const errMsg = responseData?.message || responseData?.error || err.message || 'Gagal menyimpan supplier'
+            const formattedError = Array.isArray(errMsg) ? errMsg.join(', ') : errMsg
+            errors.push(`Baris ${i + headerRowIdx + 2} (${supplierName}): ${formattedError}`)
+          }
+        }
+
+        setImportStatus(prev => prev ? {
+          ...prev,
+          current: rows.length,
+          currentName: 'Selesai!',
+          successCount,
+          errors,
+          isFinished: true,
+        } : null)
+
+        loadSuppliers(selectedStoreId)
+      } catch (excelErr: any) {
+        alert('Gagal membaca atau memproses file Excel: ' + (excelErr.message || excelErr))
+        setImportStatus(null)
+      }
+    }
+    reader.readAsBinaryString(file)
   }
 
   function handleOpenCreate() {
@@ -237,13 +397,33 @@ export default function SupplierPage() {
           </div>
         </div>
 
-        <button
-          onClick={handleOpenCreate}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white transition-all shadow-3xs hover:bg-indigo-700 active:scale-97 cursor-pointer shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          Tambahkan Supplier
-        </button>
+        <div className="flex items-center gap-3 shrink-0">
+          <label className={`inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-4 py-2.5 text-xs font-bold text-slate-700 hover:text-slate-800 transition-all shadow-3xs active:scale-97 cursor-pointer select-none shrink-0 ${
+            importStatus && !importStatus.isFinished ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''
+          }`}>
+            {importStatus && !importStatus.isFinished ? (
+              <Loader2 size={14} className="text-indigo-600 animate-spin" />
+            ) : (
+              <Upload size={14} className="text-slate-500" />
+            )}
+            <span>Import Excel</span>
+            <input 
+              type="file" 
+              accept=".xlsx, .xls" 
+              onChange={handleImportSupplierExcel} 
+              className="hidden" 
+              disabled={!!(importStatus && !importStatus.isFinished)}
+            />
+          </label>
+
+          <button
+            onClick={handleOpenCreate}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white transition-all shadow-3xs hover:bg-indigo-700 active:scale-97 cursor-pointer shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            Tambahkan Supplier
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -490,6 +670,122 @@ export default function SupplierPage() {
                 </button>
               </div>
             </form>
+
+          </div>
+        </div>
+      )}
+
+      {importStatus && (
+        <div 
+          className="fixed inset-0 z-55 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200"
+        >
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200/80 animate-in slide-in-from-bottom-3 duration-250 flex flex-col max-h-[85vh]">
+            
+            {/* Header */}
+            <div className="p-6 pb-0 flex items-start justify-between shrink-0">
+              <div>
+                <h3 className="text-base font-black text-slate-950">
+                  {importStatus.isFinished ? 'Proses Import Selesai' : 'Sedang Mengimport Supplier...'}
+                </h3>
+                <p className="text-[10.5px] font-semibold text-slate-400 mt-0.5">
+                  {importStatus.isFinished 
+                    ? 'Proses import massal supplier telah rampung dilaksanakan' 
+                    : 'Mohon tidak menutup halaman ini hingga proses selesai'}
+                </p>
+              </div>
+              {importStatus.isFinished && (
+                <button 
+                  type="button" 
+                  onClick={() => setImportStatus(null)}
+                  className="h-8 w-8 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  <X size={15} />
+                </button>
+              )}
+            </div>
+
+            <div className="h-px bg-slate-100 my-4 mx-6 shrink-0" />
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-5">
+              
+              {/* Progress and status name */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs font-bold text-slate-700">
+                  <span>Progres</span>
+                  <span className="font-mono">
+                    {importStatus.current} / {importStatus.total} ({Math.round((importStatus.current / importStatus.total) * 100)}%)
+                  </span>
+                </div>
+                
+                {/* Progress bar container */}
+                <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
+                  <div 
+                    className="h-full bg-indigo-600 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${(importStatus.current / importStatus.total) * 100}%` }}
+                  />
+                </div>
+                
+                {!importStatus.isFinished && (
+                  <p className="text-[10.5px] text-slate-505 font-semibold truncate animate-pulse">
+                    Memproses: <span className="font-bold text-slate-800">{importStatus.currentName}</span>
+                  </p>
+                )}
+              </div>
+
+              {/* Statistics Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-emerald-50/50 border border-emerald-200/50 rounded-xl p-3 flex items-center gap-3">
+                  <div className="h-8 w-8 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600 shrink-0">
+                    <CheckCircle size={16} />
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block leading-none">Berhasil</span>
+                    <span className="font-mono text-base font-black text-emerald-700">{importStatus.successCount}</span>
+                  </div>
+                </div>
+
+                <div className="bg-rose-50/50 border border-rose-200/50 rounded-xl p-3 flex items-center gap-3">
+                  <div className="h-8 w-8 bg-rose-100 rounded-lg flex items-center justify-center text-rose-600 shrink-0">
+                    <AlertCircle size={16} />
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block leading-none">Gagal</span>
+                    <span className="font-mono text-base font-black text-rose-700">{importStatus.errors.length}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Error list (if any) */}
+              {importStatus.errors.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-[9px] font-extrabold uppercase tracking-widest text-rose-600 block">Daftar Kesalahan ({importStatus.errors.length})</label>
+                  <div className="border border-rose-100 bg-rose-50/20 rounded-xl p-3 max-h-[180px] overflow-y-auto space-y-1.5 text-[10.5px] text-rose-700 font-semibold scrollbar-thin">
+                    {importStatus.errors.map((err, idx) => (
+                      <div key={idx} className="flex items-start gap-1.5 leading-relaxed">
+                        <span className="text-rose-400 mt-0.5 shrink-0">•</span>
+                        <span>{err}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            {/* Footer */}
+            {importStatus.isFinished && (
+              <div className="p-6 border-t border-slate-100 bg-slate-50/50 shrink-0 flex justify-end">
+                <button 
+                  type="button" 
+                  onClick={() => setImportStatus(null)} 
+                  className="w-full sm:w-auto rounded-xl bg-indigo-600 hover:bg-indigo-700 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/10 transition-all active:scale-98 cursor-pointer flex justify-center items-center gap-1.5"
+                >
+                  <span>Selesai & Tutup</span>
+                  <CheckCircle size={14} />
+                </button>
+              </div>
+            )}
 
           </div>
         </div>

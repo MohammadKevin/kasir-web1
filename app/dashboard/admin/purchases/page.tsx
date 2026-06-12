@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { api } from '@/lib/api'
+import * as XLSX from 'xlsx'
 import { 
   Plus, 
   Trash2, 
@@ -16,7 +17,10 @@ import {
   Eye,
   ChevronDown,
   ShoppingCart,
-  PlusCircle
+  PlusCircle,
+  Upload,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react'
 
 type PurchaseItem = {
@@ -77,6 +81,18 @@ export default function PurchasePage() {
   const [isOpenDetail, setIsOpenDetail] = useState(false)
   const [loadingDetail, setLoadingDetail] = useState(false)
 
+  const [isOpenImportModal, setIsOpenImportModal] = useState(false)
+  const [importSupplierId, setImportSupplierId] = useState('')
+  const [importStatus, setImportStatus] = useState<{
+    isOpen: boolean;
+    total: number;
+    current: number;
+    currentName: string;
+    errors: string[];
+    successCount: number;
+    isFinished: boolean;
+  } | null>(null)
+
   useEffect(() => {
     initPage()
   }, [])
@@ -131,6 +147,350 @@ export default function PurchasePage() {
       setLoadingList(false)
       setLoading(false)
     }
+  }
+
+  async function handleImportPurchasesExcel(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    e.target.value = ''
+
+    if (!selectedStoreId) {
+      alert('Silakan pilih toko/cabang terlebih dahulu!')
+      return
+    }
+
+    const defaultSupplier = suppliers.find(s => s.id === importSupplierId)
+
+    const reader = new FileReader()
+    reader.onload = async (evt) => {
+      try {
+        const bstr = evt.target?.result
+        const wb = XLSX.read(bstr, { type: 'binary' })
+        const wsname = wb.SheetNames[0]
+        const ws = wb.Sheets[wsname]
+        const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][]
+
+        if (data.length <= 1) {
+          alert('File Excel kosong atau tidak memiliki data pembelian.')
+          return
+        }
+
+        const parseExcelNumber = (val: any): number => {
+          if (val === undefined || val === null) return 0
+          if (typeof val === 'number') return val
+          let str = String(val).trim().replace(/\s/g, '')
+          if (!str) return 0
+          if (str.includes('.') && str.includes(',')) {
+            const dotIdx = str.indexOf('.')
+            const commaIdx = str.indexOf(',')
+            if (dotIdx < commaIdx) {
+              str = str.replace(/\./g, '').replace(/,/g, '.')
+            } else {
+              str = str.replace(/,/g, '')
+            }
+          } else if (str.includes(',')) {
+            const parts = str.split(',')
+            if (parts.length === 2 && parts[1].length === 2) {
+              str = str.replace(/,/g, '.')
+            } else {
+              str = str.replace(/,/g, '.')
+            }
+          }
+          const num = Number(str)
+          return isNaN(num) ? 0 : num
+        }
+
+        const parseExcelDate = (val: any): Date | null => {
+          if (!val) return null
+          if (val instanceof Date) return val
+          if (typeof val === 'number') {
+            const excelEpoch = new Date(Date.UTC(1899, 11, 30))
+            const msPerDay = 24 * 60 * 60 * 1000
+            return new Date(excelEpoch.getTime() + val * msPerDay)
+          }
+          const str = String(val).trim()
+          
+          const parts = str.split(/[-/]/)
+          if (parts.length === 3) {
+            const day = parseInt(parts[0], 10)
+            const month = parseInt(parts[1], 10) - 1
+            const year = parseInt(parts[2], 10)
+            if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+              if (year > 1000) {
+                return new Date(year, month, day)
+              }
+            }
+          }
+          
+          const parsed = new Date(str)
+          return isNaN(parsed.getTime()) ? null : parsed
+        }
+
+        let headerRowIdx = -1
+        let invoiceIdx = -1
+        let dateIdx = -1
+        let supplierIdx = -1
+        let productIdx = -1
+        let qtyIdx = -1
+        let priceIdx = -1
+
+        const invoicePossibilities = ['no invoice', 'no nota', 'invoice number', 'nomor invoice', 'nomor nota', 'invoice', 'nota', 'faktur', 'no faktur', 'id invoice', 'id pembelian', 'purchase order', 'no po', 'po number']
+        const datePossibilities = ['tanggal', 'date', 'waktu', 'time', 'created at', 'tgl', 'tanggal pembelian', 'order date']
+        const supplierPossibilities = ['nama supplier', 'supplier', 'vendor', 'nama vendor', 'supplier name', 'perusahaan']
+        const namePossibilities = ['produk', 'nama produk', 'nama barang', 'product', 'item', 'nama varian', 'nama variant', 'produk/varian', 'produk nama']
+        const qtyPossibilities = ['qty', 'kuantitas', 'jumlah', 'quantity', 'pembelian', 'jumlah barang', 'jumlah beli', 'jumlah pesanan', 'jumlah diterima']
+        const pricePossibilities = ['harga beli', 'harga modal', 'cost price', 'harga', 'unit price', 'harga satuan', 'harga beli satuan']
+
+        for (let r = 0; r < Math.min(data.length, 15); r++) {
+          const row = data[r]
+          if (!row || !Array.isArray(row)) continue
+          
+          const rowStr = row.map(cell => String(cell || '').trim().toLowerCase())
+          
+          const tempInvoiceIdx = rowStr.findIndex(cellVal => invoicePossibilities.some(p => cellVal === p || cellVal.includes(p)))
+          const tempProductIdx = rowStr.findIndex(cellVal => namePossibilities.some(p => cellVal === p || cellVal.includes(p)))
+          const tempQtyIdx = rowStr.findIndex(cellVal => qtyPossibilities.some(p => cellVal === p || cellVal.includes(p)))
+
+          if (tempProductIdx !== -1 && tempQtyIdx !== -1) {
+            headerRowIdx = r
+            invoiceIdx = tempInvoiceIdx
+            productIdx = tempProductIdx
+            qtyIdx = tempQtyIdx
+            
+            dateIdx = rowStr.findIndex(cellVal => datePossibilities.some(p => cellVal === p || cellVal.includes(p)))
+            supplierIdx = rowStr.findIndex(cellVal => supplierPossibilities.some(p => cellVal === p || cellVal.includes(p)))
+            priceIdx = rowStr.findIndex(cellVal => pricePossibilities.some(p => cellVal === p || cellVal.includes(p)))
+            break
+          }
+        }
+
+        let excelDate: Date | null = null
+        for (let r = 0; r < Math.min(data.length, 15); r++) {
+          const row = data[r]
+          if (!row || !Array.isArray(row)) continue
+          const colA = String(row[0] || '').trim().toLowerCase()
+          if (colA === 'tanggal' || colA === 'date') {
+            excelDate = parseExcelDate(row[1])
+          }
+        }
+
+        let filenameInvoice = ''
+        const filenameMatch = file.name.match(/\(?(PO-\d+)\)?/) || file.name.match(/(PO-[a-zA-Z0-9]+)/)
+        if (filenameMatch) {
+          filenameInvoice = filenameMatch[1]
+        }
+
+        if (headerRowIdx === -1) {
+          const firstRow = data[0] && Array.isArray(data[0]) 
+            ? data[0].map(h => String(h || '').trim()).join(', ') 
+            : 'tidak terdeteksi'
+          alert(`Header kolom Excel tidak valid.\n\nBaris pertama file Anda berisi: "${firstRow}"\n\nFile Excel minimal harus memiliki kolom yang mengandung nama "Produk" dan "Qty". Mohon periksa baris header tabel Excel Anda.`);
+          return
+        }
+
+        const rawRows = data.slice(headerRowIdx + 1).filter(row => row.length > 0 && row[productIdx])
+        if (rawRows.length === 0) {
+          alert('Tidak ada data pembelian yang valid untuk di-import setelah baris header.')
+          return
+        }
+
+        const rowHeader = data[headerRowIdx].map(c => String(c || '').trim().toLowerCase())
+        const tempDiterimaIdx = rowHeader.findIndex(h => h.includes('jumlah diterima') || h.includes('qty diterima') || h.includes('diterima'))
+        const tempPesananIdx = rowHeader.findIndex(h => h.includes('jumlah pesanan') || h.includes('qty pesanan') || h.includes('pesanan'))
+        
+        interface GroupedPurchase {
+          invoiceNumber: string;
+          dateStr?: string;
+          supplierName: string;
+          items: {
+            productName: string;
+            quantity: number;
+            costPrice: number;
+          }[];
+          origLine: number;
+        }
+
+        const groups: GroupedPurchase[] = []
+        let lastGroup: GroupedPurchase | null = null
+
+        for (let i = 0; i < rawRows.length; i++) {
+          const row = rawRows[i]
+          const lineNum = i + headerRowIdx + 2
+
+          const productName = String(row[productIdx] || '').trim()
+          
+          if (!productName || productName.toLowerCase() === 'total' || productName.toLowerCase().startsWith('total')) {
+            continue
+          }
+
+          const rawInvoice = invoiceIdx !== -1 && row[invoiceIdx] ? String(row[invoiceIdx]).trim() : ''
+          const rawDate = dateIdx !== -1 && row[dateIdx] ? String(row[dateIdx]).trim() : ''
+          const rawSupplier = supplierIdx !== -1 && row[supplierIdx] ? String(row[supplierIdx]).trim() : ''
+          
+          let quantity = 0
+          if (tempDiterimaIdx !== -1) {
+            quantity = parseExcelNumber(row[tempDiterimaIdx])
+          }
+          if (quantity <= 0 && tempPesananIdx !== -1) {
+            quantity = parseExcelNumber(row[tempPesananIdx])
+          }
+          if (quantity <= 0) {
+            quantity = parseExcelNumber(row[qtyIdx])
+          }
+          
+          const costPrice = parseExcelNumber(priceIdx !== -1 ? row[priceIdx] : 0)
+
+          if (quantity <= 0) continue
+
+          const item = { productName, quantity, costPrice }
+
+          let isSameGroup = false
+          if (lastGroup) {
+            if (rawInvoice && lastGroup.invoiceNumber && rawInvoice === lastGroup.invoiceNumber) {
+              isSameGroup = true
+            } else if (!rawInvoice && !lastGroup.invoiceNumber && (!rawSupplier || rawSupplier === lastGroup.supplierName) && (!rawDate || rawDate === lastGroup.dateStr)) {
+              isSameGroup = true
+            } else if (!rawInvoice && lastGroup.invoiceNumber && !rawSupplier && !rawDate) {
+              isSameGroup = true
+            }
+          }
+
+          if (isSameGroup && lastGroup) {
+            lastGroup.items.push(item)
+          } else {
+            const invoiceNum = rawInvoice || filenameInvoice || `INV-PURCH-${Date.now().toString().slice(-4)}-${groups.length + 1}`
+            const supplierName = rawSupplier || (defaultSupplier ? defaultSupplier.name : 'Umum')
+            const newGroup: GroupedPurchase = {
+              invoiceNumber: invoiceNum,
+              dateStr: rawDate || undefined,
+              supplierName: supplierName,
+              items: [item],
+              origLine: lineNum
+            }
+            groups.push(newGroup)
+            lastGroup = newGroup
+          }
+        }
+
+        if (groups.length === 0) {
+          alert('Tidak ada transaksi pembelian yang valid untuk di-import (semua baris kosong atau bernilai total).')
+          return
+        }
+
+        setImportStatus({
+          isOpen: true,
+          total: groups.length,
+          current: 0,
+          currentName: '',
+          errors: [],
+          successCount: 0,
+          isFinished: false,
+        })
+
+        setIsOpenImportModal(false)
+
+        const token = localStorage.getItem('token')
+        const headersApi = { Authorization: `Bearer ${token}` }
+
+        let latestSuppliers = [...suppliers]
+        let latestProducts = [...products]
+
+        try {
+          const [sRes, prodRes] = await Promise.all([
+            api.get(`/suppliers/store/${selectedStoreId}`, { headers: headersApi }),
+            api.get(`/products/store/${selectedStoreId}`, { headers: headersApi })
+          ])
+          latestSuppliers = sRes.data || []
+          latestProducts = prodRes.data || []
+          setSuppliers(latestSuppliers)
+          setProducts(latestProducts)
+        } catch (loadErr) {
+          console.warn('Gagal memuat master data', loadErr)
+        }
+
+        let successCount = 0
+        const errors: string[] = []
+
+        for (let g = 0; g < groups.length; g++) {
+          const group = groups[g]
+          setImportStatus(prev => prev ? { ...prev, current: g + 1, currentName: group.invoiceNumber } : null)
+
+          try {
+            let suppId = ''
+            const foundSupplier = latestSuppliers.find(s => s.name.toLowerCase() === group.supplierName.toLowerCase())
+            if (foundSupplier) {
+              suppId = foundSupplier.id
+            } else if (importSupplierId) {
+              suppId = importSupplierId
+            } else {
+              const suppPayload = {
+                storeId: selectedStoreId,
+                name: group.supplierName,
+                phone: ''
+              }
+              const newSuppRes = await api.post('/suppliers', suppPayload, { headers: headersApi })
+              const newSupp = newSuppRes.data
+              if (newSupp && newSupp.id) {
+                suppId = newSupp.id
+                latestSuppliers.push(newSupp)
+                setSuppliers([...latestSuppliers])
+              } else {
+                throw new Error(`Gagal membuat supplier baru "${group.supplierName}"`)
+              }
+            }
+
+            const purchaseItems: any[] = []
+            for (const item of group.items) {
+              const dbProduct = latestProducts.find(p => p.name.toLowerCase() === item.productName.toLowerCase())
+              if (!dbProduct) {
+                throw new Error(`Produk "${item.productName}" tidak ditemukan di katalog cabang ini. Silakan daftarkan produk terlebih dahulu.`)
+              }
+              purchaseItems.push({
+                productId: dbProduct.id,
+                quantity: item.quantity,
+                costPrice: item.costPrice || dbProduct.costPrice || 0
+              })
+            }
+
+            if (purchaseItems.length === 0) {
+              throw new Error(`Tidak ada item produk valid dalam nota pembelian ini`)
+            }
+
+            const payload: any = {
+              storeId: selectedStoreId,
+              supplierId: suppId,
+              invoiceNumber: group.invoiceNumber,
+              items: purchaseItems
+            }
+
+            await api.post('/purchases', payload, { headers: headersApi })
+            successCount++
+          } catch (err: any) {
+            console.warn('Import purchase error', err)
+            const responseData = err.response?.data
+            const errMsg = responseData?.message || responseData?.error || err.message || 'Gagal menyimpan pembelian'
+            const formattedError = Array.isArray(errMsg) ? errMsg.join(', ') : errMsg
+            errors.push(`Baris ${group.origLine} (Nota: ${group.invoiceNumber}): ${formattedError}`)
+          }
+        }
+
+        setImportStatus(prev => prev ? {
+          ...prev,
+          current: groups.length,
+          currentName: 'Selesai!',
+          successCount,
+          errors,
+          isFinished: true,
+        } : null)
+
+        loadData(selectedStoreId)
+      } catch (excelErr: any) {
+        alert('Gagal membaca atau memproses file Excel: ' + (excelErr.message || excelErr))
+        setImportStatus(null)
+      }
+    }
+    reader.readAsBinaryString(file)
   }
 
   function addToCart() {
@@ -238,17 +598,30 @@ export default function PurchasePage() {
           </div>
         </div>
 
-        <button
-          onClick={() => {
-            setCart([])
-            setSupplierId('')
-            setOpen(true)
-          }}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white transition-all shadow-3xs hover:bg-indigo-700 active:scale-97 cursor-pointer shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          Transaksi Baru
-        </button>
+        <div className="flex items-center gap-3 shrink-0">
+          <button
+            onClick={() => {
+              setImportSupplierId('')
+              setIsOpenImportModal(true)
+            }}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-4 py-2.5 text-xs font-bold text-slate-700 hover:text-slate-800 transition-all shadow-3xs active:scale-97 cursor-pointer shrink-0"
+          >
+            <Upload size={14} className="text-slate-500" />
+            <span>Import Excel</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setCart([])
+              setSupplierId('')
+              setOpen(true)
+            }}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white transition-all shadow-3xs hover:bg-indigo-700 active:scale-97 cursor-pointer shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            Transaksi Baru
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -551,6 +924,176 @@ export default function PurchasePage() {
                 Tutup Rincian
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {isOpenImportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-all">
+          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-150 bg-white p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div>
+                <h3 className="text-sm font-black text-slate-900">Import Nota Pembelian Excel</h3>
+                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Unggah log transaksi PO kulakan massal dari Pawoon atau format kustom.</p>
+              </div>
+              <button 
+                onClick={() => setIsOpenImportModal(false)} 
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Supplier Utama (Opsional)</label>
+                <div className="relative">
+                  <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                  <select
+                    value={importSupplierId}
+                    onChange={(e) => setImportSupplierId(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200/80 bg-slate-50/50 pl-10 pr-10 py-3 text-xs font-semibold text-slate-800 outline-none cursor-pointer appearance-none focus:border-indigo-500 focus:bg-white"
+                  >
+                    <option value="">Deteksi Otomatis dari Excel / Baru</option>
+                    {suppliers.map((s) => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                </div>
+                <p className="text-[9px] text-slate-400 mt-1">
+                  Jika Excel tidak memiliki kolom Supplier, transaksi akan dihubungkan ke supplier yang Anda pilih di atas. Jika dikosongkan, akan dibuat supplier baru bernama &quot;Umum&quot;.
+                </p>
+              </div>
+
+              <div className="border-t border-slate-100 pt-4">
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Pilih File Excel Pembelian</label>
+                <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 bg-slate-50 hover:bg-slate-100/70 py-6 px-4 rounded-xl cursor-pointer gap-2 text-slate-500 hover:text-indigo-600 transition-all select-none">
+                  <Upload size={20} className="text-slate-400" />
+                  <span className="text-xs font-bold">Pilih File (.xlsx, .xls)</span>
+                  <span className="text-[9px] text-slate-400">Pastikan file memiliki kolom Produk Nama & Jumlah (Qty)</span>
+                  <input 
+                    type="file" 
+                    accept=".xlsx, .xls" 
+                    onChange={handleImportPurchasesExcel} 
+                    className="hidden" 
+                  />
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-4 mt-6">
+                <button 
+                  type="button" 
+                  onClick={() => setIsOpenImportModal(false)} 
+                  className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all"
+                >
+                  Batal
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {importStatus && (
+        <div className="fixed inset-0 z-55 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200/80 animate-in slide-in-from-bottom-3 duration-250 flex flex-col max-h-[85vh]">
+            <div className="p-6 pb-0 flex items-start justify-between shrink-0">
+              <div>
+                <h3 className="text-base font-black text-slate-950">
+                  {importStatus.isFinished ? 'Proses Import Selesai' : 'Sedang Mengimport Pembelian...'}
+                </h3>
+                <p className="text-[10.5px] font-semibold text-slate-400 mt-0.5">
+                  {importStatus.isFinished 
+                    ? 'Proses import transaksi pembelian massal telah rampung dilaksanakan' 
+                    : 'Mohon tidak menutup halaman ini hingga proses selesai'}
+                </p>
+              </div>
+              {importStatus.isFinished && (
+                <button 
+                  type="button" 
+                  onClick={() => setImportStatus(null)}
+                  className="h-8 w-8 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  <X size={15} />
+                </button>
+              )}
+            </div>
+
+            <div className="h-px bg-slate-100 my-4 mx-6 shrink-0" />
+
+            <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-5">
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs font-bold text-slate-700">
+                  <span>Progres</span>
+                  <span className="font-mono">
+                    {importStatus.current} / {importStatus.total} ({Math.round((importStatus.current / importStatus.total) * 100)}%)
+                  </span>
+                </div>
+                
+                <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
+                  <div 
+                    className="h-full bg-indigo-600 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${(importStatus.current / importStatus.total) * 100}%` }}
+                  />
+                </div>
+                
+                {!importStatus.isFinished && (
+                  <p className="text-[10.5px] text-slate-505 font-semibold truncate animate-pulse">
+                    Memproses Nota: <span className="font-bold text-slate-800">{importStatus.currentName}</span>
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-emerald-50/50 border border-emerald-200/50 rounded-xl p-3 flex items-center gap-3">
+                  <div className="h-8 w-8 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600 shrink-0">
+                    <CheckCircle size={16} />
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block leading-none">Berhasil</span>
+                    <span className="font-mono text-base font-black text-emerald-700">{importStatus.successCount}</span>
+                  </div>
+                </div>
+
+                <div className="bg-rose-50/50 border border-rose-200/50 rounded-xl p-3 flex items-center gap-3">
+                  <div className="h-8 w-8 bg-rose-100 rounded-lg flex items-center justify-center text-rose-600 shrink-0">
+                    <AlertCircle size={16} />
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block leading-none">Gagal</span>
+                    <span className="font-mono text-base font-black text-rose-700">{importStatus.errors.length}</span>
+                  </div>
+                </div>
+              </div>
+
+              {importStatus.errors.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-[9px] font-extrabold uppercase tracking-widest text-rose-600 block">Daftar Kesalahan ({importStatus.errors.length})</label>
+                  <div className="border border-rose-100 bg-rose-50/20 rounded-xl p-3 max-h-[180px] overflow-y-auto space-y-1.5 text-[10.5px] text-rose-700 font-semibold scrollbar-thin">
+                    {importStatus.errors.map((err, idx) => (
+                      <div key={idx} className="flex items-start gap-1.5 leading-relaxed">
+                        <span className="text-rose-400 mt-0.5 shrink-0">•</span>
+                        <span>{err}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {importStatus.isFinished && (
+              <div className="p-6 border-t border-slate-100 bg-slate-50/50 shrink-0 flex justify-end">
+                <button 
+                  type="button" 
+                  onClick={() => setImportStatus(null)} 
+                  className="w-full sm:w-auto rounded-xl bg-indigo-600 hover:bg-indigo-700 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/10 transition-all active:scale-98 cursor-pointer flex justify-center items-center gap-1.5"
+                >
+                  <span>Selesai & Tutup</span>
+                  <CheckCircle size={14} />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
