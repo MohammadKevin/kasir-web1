@@ -65,13 +65,36 @@ export default function AdminLayout({
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      const storedToken = localStorage.getItem('token')
       const storedUser = localStorage.getItem('user')
-      if (storedUser) {
-        try {
-          setUser(JSON.parse(storedUser))
-        } catch (e) {
-          console.error(e)
+
+      if (!storedToken || !storedUser) {
+        localStorage.clear()
+        document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+        document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+        document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+        window.location.href = '/login'
+        return
+      }
+
+      try {
+        const parsedUser = JSON.parse(storedUser)
+        if (parsedUser.type !== 'ADMIN') {
+          localStorage.clear()
+          document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+          document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+          document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+          window.location.href = '/login'
+          return
         }
+        setUser(parsedUser)
+      } catch (e) {
+        console.error(e)
+        localStorage.clear()
+        document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+        document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+        document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+        window.location.href = '/login'
       }
     }
   }, [])

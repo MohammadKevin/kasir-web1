@@ -15,17 +15,26 @@ const ROLE_ROUTES = {
   STORE: '/dashboard/store',
 }
 
-function isTokenValid(
-  token?: string,
-) {
+function isTokenValid(token?: string) {
   if (!token) return false
 
   try {
-    return (
-      token
-        .split('.')
-        .length === 3
+    const parts = token.split('.')
+    if (parts.length !== 3) return false
+
+    // Decode JWT payload
+    const payload = JSON.parse(
+      Buffer.from(parts[1], 'base64').toString('utf-8')
     )
+    
+    if (payload.exp) {
+      const currentTime = Math.floor(Date.now() / 1000)
+      if (payload.exp < currentTime) {
+        return false // Token expired
+      }
+    }
+
+    return true
   } catch {
     return false
   }
@@ -71,12 +80,9 @@ export function proxy(
         ),
       )
 
-    res.cookies.delete(
-      'token',
-    )
-    res.cookies.delete(
-      'userRole',
-    )
+    res.cookies.delete('token')
+    res.cookies.delete('userRole')
+    res.cookies.delete('user')
 
     return res
   }
@@ -85,14 +91,18 @@ export function proxy(
     isLoggedIn &&
     pathname === '/login'
   ) {
-    return NextResponse.redirect(
-      new URL(
-        ROLE_ROUTES[
-          role as keyof typeof ROLE_ROUTES
-        ] ?? '/login',
-        request.url,
-      ),
-    )
+    const targetRoute = ROLE_ROUTES[role as keyof typeof ROLE_ROUTES]
+    if (targetRoute) {
+      return NextResponse.redirect(
+        new URL(
+          targetRoute,
+          request.url,
+        ),
+      )
+    }
+    // Fallback if role is not recognized or matching targetRoute is undefined
+    const res = NextResponse.next()
+    return res
   }
 
   if (
@@ -101,12 +111,16 @@ export function proxy(
     ) &&
     role !== 'ADMIN'
   ) {
-    return NextResponse.redirect(
+    const res = NextResponse.redirect(
       new URL(
         '/login',
         request.url,
       ),
     )
+    res.cookies.delete('token')
+    res.cookies.delete('userRole')
+    res.cookies.delete('user')
+    return res
   }
 
   if (
@@ -115,12 +129,16 @@ export function proxy(
     ) &&
     role !== 'STORE'
   ) {
-    return NextResponse.redirect(
+    const res = NextResponse.redirect(
       new URL(
         '/login',
         request.url,
       ),
     )
+    res.cookies.delete('token')
+    res.cookies.delete('userRole')
+    res.cookies.delete('user')
+    return res
   }
 
   return NextResponse.next()

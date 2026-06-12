@@ -38,7 +38,11 @@ export default function StoreLayout({
     try {
       const userToken = localStorage.getItem('token')
       if (!userToken) {
-        router.replace('/')
+        localStorage.clear()
+        document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+        document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+        document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+        router.replace('/login')
         return
       }
 
@@ -71,15 +75,20 @@ export default function StoreLayout({
         })
       }
     } catch {
-      router.replace('/')
+      localStorage.clear()
+      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      router.replace('/login')
     }
   }, [pathname, router])
 
   function logout() {
     localStorage.clear()
-    document.cookie = 'token=; Max-Age=0; path=/'
-    document.cookie = 'userRole=; Max-Age=0; path=/'
-    router.replace('/')
+    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    router.replace('/login')
   }
 
   return (

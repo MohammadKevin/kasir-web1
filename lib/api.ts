@@ -44,16 +44,20 @@ api.interceptors.response.use(
         ?.status === 401
     ) {
 
-      localStorage.removeItem(
-        'token'
-      )
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      localStorage.removeItem('storeId')
+      localStorage.removeItem('cashier')
+      localStorage.removeItem('cashierActive')
+      localStorage.removeItem('currentShiftId')
 
-      window.location.href =
-        '/login'
+      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+
+      window.location.href = '/login'
     }
 
-    return Promise.reject(
-      error
-    )
+    return Promise.reject(error)
   },
 )
