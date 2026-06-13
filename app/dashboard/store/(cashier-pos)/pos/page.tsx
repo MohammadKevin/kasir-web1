@@ -19,7 +19,11 @@ import {
   ShoppingCart,
   CheckCircle2,
   ArrowLeft,
-  ChevronDown
+  ChevronDown,
+  Layers,
+  Sparkles,
+  FolderOpen,
+  Tag
 } from 'lucide-react'
 import { api } from '@/lib/api'
 
@@ -106,12 +110,73 @@ const getReceiptUniqueCode = (invoice: string, createdAt: string | Date) => {
   return `${prefix}${yyyy}${mm}${dd}${hh}${min}${ss}`
 }
 
+const getCategoryStyles = (name: string, index: number) => {
+  const lowercaseName = name.toLowerCase()
+  let bg = 'bg-indigo-50 text-indigo-600 border-indigo-100/80'
+  let gradient = 'from-indigo-500 to-purple-600'
+  let hoverRing = 'focus-within:ring-indigo-500 group-hover:border-indigo-400'
+  
+  if (lowercaseName.includes('atasan') || lowercaseName.includes('baju')) {
+    bg = 'bg-sky-50 text-sky-600 border-sky-100/80'
+    gradient = 'from-sky-400 to-blue-500'
+    hoverRing = 'focus-within:ring-sky-500 group-hover:border-sky-400'
+  } else if (lowercaseName.includes('celana') || lowercaseName.includes('bawahan')) {
+    bg = 'bg-amber-50 text-amber-600 border-amber-100/80'
+    gradient = 'from-amber-400 to-orange-500'
+    hoverRing = 'focus-within:ring-amber-500 group-hover:border-amber-400'
+  } else if (lowercaseName.includes('aksesoris')) {
+    bg = 'bg-emerald-50 text-emerald-600 border-emerald-100/80'
+    gradient = 'from-emerald-400 to-teal-500'
+    hoverRing = 'focus-within:ring-emerald-500 group-hover:border-emerald-400'
+  } else if (
+    lowercaseName.includes('bergo') || 
+    lowercaseName.includes('khimar') || 
+    lowercaseName.includes('mukena') || 
+    lowercaseName.includes('gamis')
+  ) {
+    bg = 'bg-rose-50 text-rose-600 border-rose-100/80'
+    gradient = 'from-rose-400 to-pink-500'
+    hoverRing = 'focus-within:ring-rose-500 group-hover:border-rose-400'
+  } else {
+    const presets = [
+      { bg: 'bg-violet-50 text-violet-600 border-violet-100/80', gradient: 'from-violet-400 to-fuchsia-500', hoverRing: 'focus-within:ring-violet-500 group-hover:border-violet-400' },
+      { bg: 'bg-teal-50 text-teal-600 border-teal-100/80', gradient: 'from-teal-400 to-emerald-500', hoverRing: 'focus-within:ring-teal-500 group-hover:border-teal-400' },
+      { bg: 'bg-cyan-50 text-cyan-600 border-cyan-100/80', gradient: 'from-cyan-400 to-blue-500', hoverRing: 'focus-within:ring-cyan-500 group-hover:border-cyan-400' },
+      { bg: 'bg-fuchsia-50 text-fuchsia-600 border-fuchsia-100/80', gradient: 'from-fuchsia-400 to-pink-500', hoverRing: 'focus-within:ring-fuchsia-500 group-hover:border-fuchsia-400' },
+    ]
+    const preset = presets[index % presets.length]
+    bg = preset.bg
+    gradient = preset.gradient
+    hoverRing = preset.hoverRing
+  }
+  return { bg, gradient, hoverRing }
+}
+
+const getCategoryIcon = (name: string) => {
+  const lowercaseName = name.toLowerCase()
+  if (lowercaseName.includes('atasan') || lowercaseName.includes('baju')) {
+    return Layers
+  } else if (lowercaseName.includes('celana') || lowercaseName.includes('bawahan')) {
+    return Layers
+  } else if (lowercaseName.includes('aksesoris')) {
+    return Tag
+  } else if (
+    lowercaseName.includes('bergo') || 
+    lowercaseName.includes('khimar') || 
+    lowercaseName.includes('mukena') || 
+    lowercaseName.includes('gamis')
+  ) {
+    return FolderOpen
+  }
+  return FolderOpen
+}
+
 export default function PosPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [cart, setCart] = useState<CartItem[]>([])
   const [search, setSearch] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [payment, setPayment] = useState<PaymentMethod>('CASH')
@@ -506,6 +571,8 @@ export default function PosPage() {
     setIsOpenReceipt(false)
     setReceiptData(null)
     setMobileView('catalog')
+    setCategoryFilter(null)
+    setSearch('')
     loadData()
   }
 
@@ -513,10 +580,22 @@ export default function PosPage() {
     if (receiptData) autoPrintReceipt(receiptData, payment)
   }
 
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    products.forEach(p => {
+      if (p.categoryId) {
+        counts[p.categoryId] = (counts[p.categoryId] || 0) + 1
+      }
+    })
+    return counts
+  }, [products])
+
   const filtered = products.filter(x => {
     const matchSearch = x.name.toLowerCase().includes(search.toLowerCase()) ||
       x.barcode.includes(search) || x.sku.toLowerCase().includes(search.toLowerCase())
-    const matchCat = categoryFilter === 'all' || x.categoryId === categoryFilter
+    const matchCat = categoryFilter
+      ? (categoryFilter === 'all' || x.categoryId === categoryFilter)
+      : true
     return matchSearch && matchCat
   })
 
@@ -565,110 +644,159 @@ export default function PosPage() {
           </button>
         </div>
 
-        <div className="flex flex-nowrap gap-1.5 flex-shrink-0 overflow-x-auto pb-1.5 scrollbar-none">
-          <button
-            onClick={() => setCategoryFilter('all')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all whitespace-nowrap cursor-pointer ${
-              categoryFilter === 'all'
-                ? 'bg-indigo-600 border-indigo-600 text-white shadow-3xs'
-                : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
-            }`}
-          >
-            Semua produk
-          </button>
-          {categories.map(cat => (
+        {(categoryFilter !== null || search.trim() !== '') && (
+          <div className="flex flex-nowrap gap-1.5 flex-shrink-0 overflow-x-auto pb-1.5 scrollbar-none">
             <button
-              key={cat.id}
-              onClick={() => setCategoryFilter(cat.id)}
+              onClick={() => {
+                setCategoryFilter(null)
+                setSearch('')
+              }}
+              className="px-3.5 py-2 rounded-xl text-xs font-extrabold border bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-800 transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 shadow-3xs"
+            >
+              <ArrowLeft size={13} className="shrink-0" />
+              <span>Kategori</span>
+            </button>
+            <button
+              onClick={() => setCategoryFilter('all')}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all whitespace-nowrap cursor-pointer ${
-                categoryFilter === cat.id
+                categoryFilter === 'all'
                   ? 'bg-indigo-600 border-indigo-600 text-white shadow-3xs'
                   : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
               }`}
             >
-              {cat.name}
+              Semua produk
             </button>
-          ))}
-        </div>
+            {categories.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setCategoryFilter(cat.id)}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all whitespace-nowrap cursor-pointer ${
+                  categoryFilter === cat.id
+                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-3xs'
+                    : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+                }`}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto pr-1 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 content-start pb-24 sm:pb-6 scrollbar-thin">
-          {loading
-            ? Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="h-48 sm:h-56 rounded-xl sm:rounded-3xl bg-slate-100 animate-pulse border border-slate-150" />
-              ))
-            : filtered.length === 0
-            ? (
-                <div className="col-span-full py-24 text-center text-slate-500 border border-dashed border-slate-200 bg-white rounded-2xl text-xs font-bold">
-                  Produk tidak ditemukan
+          {loading ? (
+            Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="h-48 sm:h-56 rounded-xl sm:rounded-3xl bg-slate-100 animate-pulse border border-slate-150" />
+            ))
+          ) : categoryFilter === null && search.trim() === '' ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setCategoryFilter('all')}
+                className="group bg-white border border-slate-200/80 rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-3xs flex flex-col justify-between items-start text-left hover:border-indigo-400 hover:shadow-sm transition-all duration-300 cursor-pointer active:scale-[0.98]"
+              >
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Sparkles size={18} className="shrink-0" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-slate-800 text-xs sm:text-sm group-hover:text-indigo-600 transition-colors">Semua Produk</h3>
+                  <p className="text-[10px] sm:text-xs text-slate-400 font-bold mt-1 sm:mt-1.5">{products.length} Produk</p>
+                </div>
+              </button>
+
+              {categories.map((cat, idx) => {
+                const { bg, hoverRing } = getCategoryStyles(cat.name, idx)
+                const Icon = getCategoryIcon(cat.name)
+                const count = categoryCounts[cat.id] || 0
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setCategoryFilter(cat.id)}
+                    className={`group bg-white border border-slate-200/80 rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-3xs flex flex-col justify-between items-start text-left hover:shadow-sm transition-all duration-300 cursor-pointer active:scale-[0.98] ${hoverRing}`}
+                  >
+                    <div className={`h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform ${bg}`}>
+                      <Icon size={18} className="shrink-0" />
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-slate-800 text-xs sm:text-sm group-hover:text-indigo-600 transition-colors line-clamp-1">{cat.name}</h3>
+                      <p className="text-[10px] sm:text-xs text-slate-400 font-bold mt-1 sm:mt-1.5">{count} Produk</p>
+                    </div>
+                  </button>
+                )
+              })}
+            </>
+          ) : filtered.length === 0 ? (
+            <div className="col-span-full py-24 text-center text-slate-500 border border-dashed border-slate-200 bg-white rounded-2xl text-xs font-bold">
+              Produk tidak ditemukan
+            </div>
+          ) : (
+            filtered.map(p => {
+              const masterDiscount = getProductMasterDiscount(p)
+              const discountedPrice = p.sellingPrice - masterDiscount
+              const hasDiscount = masterDiscount > 0
+              const outOfStock = p.stock <= 0
+              const isLowStock = !outOfStock && p.stock <= 5
+
+              return (
+                <div
+                  key={p.id}
+                  className={`group bg-white border rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-3xs flex flex-col justify-between relative overflow-hidden transition-all duration-300 ${
+                    outOfStock 
+                      ? 'opacity-60 border-slate-200' 
+                      : 'border-slate-200/80 hover:border-indigo-400 hover:shadow-sm'
+                  }`}
+                >
+                  <div className="aspect-video w-full overflow-hidden rounded-lg sm:rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 relative">
+                    {p.image ? (
+                      <img src={p.image} alt={p.name} className="w-full h-full object-cover transition-transform duration-350 group-hover:scale-105" />
+                    ) : (
+                      <Package size={20} className="text-slate-350" />
+                    )}
+                    
+                    <span className="absolute top-1.5 right-1.5 bg-indigo-50/90 text-indigo-700 text-[8px] sm:text-[8.5px] font-black px-1.5 sm:px-2 py-0.5 rounded-lg border border-indigo-150 leading-none backdrop-blur-xs">
+                      {getCategoryName(p.categoryId || '')}
+                    </span>
+
+                    {hasDiscount && (
+                      <span className="absolute top-1.5 left-1.5 bg-gradient-to-r from-rose-500 to-rose-600 text-white text-[8px] sm:text-[8.5px] font-black px-1.5 sm:px-2 py-0.5 rounded-lg shadow-3xs leading-none border border-rose-400/20">
+                        PROMO
+                      </span>
+                    )}
+
+                    {outOfStock && (
+                      <div className="absolute inset-0 bg-white/70 flex items-center justify-center backdrop-blur-[1px]">
+                        <span className="text-[10px] font-black text-rose-700 bg-white border border-rose-200 px-2.5 py-1 rounded-xl shadow-3xs">Habis</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-2.5">
+                    <p className="text-[8px] sm:text-[8.5px] font-mono text-slate-500 uppercase tracking-widest font-semibold">{p.sku || '–'}</p>
+                    <h3 className="font-extrabold text-slate-900 text-[11px] sm:text-xs mt-0.5 line-clamp-2 leading-snug group-hover:text-indigo-600 transition-colors" title={p.name}>{p.name}</h3>
+                  </div>
+
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-end justify-between gap-1.5">
+                    <div className="min-w-0 flex-1">
+                      <span className="text-[11px] sm:text-xs font-black font-mono text-indigo-600 block truncate">{fmt(discountedPrice)}</span>
+                      {hasDiscount && (
+                        <span className="block text-[8px] sm:text-[8.5px] text-slate-400 font-mono line-through mt-0.5 truncate">{fmt(p.sellingPrice)}</span>
+                      )}
+                      <span className={`block text-[8.5px] sm:text-[9px] mt-1 sm:mt-1.5 font-bold truncate ${isLowStock ? 'text-rose-600' : 'text-slate-500'}`}>
+                        Stok: {p.stock}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => addToCart(p)}
+                      disabled={outOfStock}
+                      className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg sm:rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center shadow-3xs transition-all active:scale-95 disabled:bg-slate-100 disabled:text-slate-400 cursor-pointer shrink-0"
+                    >
+                      <Plus size={13} />
+                    </button>
+                  </div>
                 </div>
               )
-            : filtered.map(p => {
-                const masterDiscount = getProductMasterDiscount(p)
-                const discountedPrice = p.sellingPrice - masterDiscount
-                const hasDiscount = masterDiscount > 0
-                const outOfStock = p.stock <= 0
-                const isLowStock = !outOfStock && p.stock <= 5
-
-                return (
-                  <div
-                    key={p.id}
-                    className={`group bg-white border rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-3xs flex flex-col justify-between relative overflow-hidden transition-all duration-300 ${
-                      outOfStock 
-                        ? 'opacity-60 border-slate-200' 
-                        : 'border-slate-200/80 hover:border-indigo-400 hover:shadow-sm'
-                    }`}
-                  >
-                    <div className="aspect-video w-full overflow-hidden rounded-lg sm:rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 relative">
-                      {p.image ? (
-                        <img src={p.image} alt={p.name} className="w-full h-full object-cover transition-transform duration-350 group-hover:scale-105" />
-                      ) : (
-                        <Package size={20} className="text-slate-350" />
-                      )}
-                      
-                      <span className="absolute top-1.5 right-1.5 bg-indigo-50/90 text-indigo-700 text-[8px] sm:text-[8.5px] font-black px-1.5 sm:px-2 py-0.5 rounded-lg border border-indigo-150 leading-none backdrop-blur-xs">
-                        {getCategoryName(p.categoryId || '')}
-                      </span>
-
-                      {hasDiscount && (
-                        <span className="absolute top-1.5 left-1.5 bg-gradient-to-r from-rose-500 to-rose-600 text-white text-[8px] sm:text-[8.5px] font-black px-1.5 sm:px-2 py-0.5 rounded-lg shadow-3xs leading-none border border-rose-400/20">
-                          PROMO
-                        </span>
-                      )}
-
-                      {outOfStock && (
-                        <div className="absolute inset-0 bg-white/70 flex items-center justify-center backdrop-blur-[1px]">
-                          <span className="text-[10px] font-black text-rose-700 bg-white border border-rose-200 px-2.5 py-1 rounded-xl shadow-3xs">Habis</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="mt-2.5">
-                      <p className="text-[8px] sm:text-[8.5px] font-mono text-slate-500 uppercase tracking-widest font-semibold">{p.sku || '–'}</p>
-                      <h3 className="font-extrabold text-slate-900 text-[11px] sm:text-xs mt-0.5 line-clamp-2 leading-snug group-hover:text-indigo-600 transition-colors" title={p.name}>{p.name}</h3>
-                    </div>
-
-                    <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-end justify-between gap-1.5">
-                      <div className="min-w-0 flex-1">
-                        <span className="text-[11px] sm:text-xs font-black font-mono text-indigo-600 block truncate">{fmt(discountedPrice)}</span>
-                        {hasDiscount && (
-                          <span className="block text-[8px] sm:text-[8.5px] text-slate-400 font-mono line-through mt-0.5 truncate">{fmt(p.sellingPrice)}</span>
-                        )}
-                        <span className={`block text-[8.5px] sm:text-[9px] mt-1 sm:mt-1.5 font-bold truncate ${isLowStock ? 'text-rose-600' : 'text-slate-500'}`}>
-                          Stok: {p.stock}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => addToCart(p)}
-                        disabled={outOfStock}
-                        className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg sm:rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center shadow-3xs transition-all active:scale-95 disabled:bg-slate-100 disabled:text-slate-400 cursor-pointer shrink-0"
-                      >
-                        <Plus size={13} />
-                      </button>
-                    </div>
-                  </div>
-                )
-              })
-            }
+            })
+          )}
         </div>
       </div>
 
