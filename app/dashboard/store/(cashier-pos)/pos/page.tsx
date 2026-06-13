@@ -115,19 +115,23 @@ const getCategoryStyles = (name: string, index: number) => {
   let bg = 'bg-indigo-50 text-indigo-600 border-indigo-100/80'
   let gradient = 'from-indigo-500 to-purple-600'
   let hoverRing = 'focus-within:ring-indigo-500 group-hover:border-indigo-400'
+  let glow = 'glow-violet hover:border-indigo-400'
   
   if (lowercaseName.includes('atasan') || lowercaseName.includes('baju')) {
     bg = 'bg-sky-50 text-sky-600 border-sky-100/80'
     gradient = 'from-sky-400 to-blue-500'
     hoverRing = 'focus-within:ring-sky-500 group-hover:border-sky-400'
+    glow = 'glow-blue hover:border-sky-400'
   } else if (lowercaseName.includes('celana') || lowercaseName.includes('bawahan')) {
     bg = 'bg-amber-50 text-amber-600 border-amber-100/80'
     gradient = 'from-amber-400 to-orange-500'
     hoverRing = 'focus-within:ring-amber-500 group-hover:border-amber-400'
+    glow = 'glow-amber hover:border-amber-400'
   } else if (lowercaseName.includes('aksesoris')) {
     bg = 'bg-emerald-50 text-emerald-600 border-emerald-100/80'
     gradient = 'from-emerald-400 to-teal-500'
     hoverRing = 'focus-within:ring-emerald-500 group-hover:border-emerald-400'
+    glow = 'glow-emerald hover:border-emerald-400'
   } else if (
     lowercaseName.includes('bergo') || 
     lowercaseName.includes('khimar') || 
@@ -137,19 +141,21 @@ const getCategoryStyles = (name: string, index: number) => {
     bg = 'bg-rose-50 text-rose-600 border-rose-100/80'
     gradient = 'from-rose-400 to-pink-500'
     hoverRing = 'focus-within:ring-rose-500 group-hover:border-rose-400'
+    glow = 'glow-violet hover:border-rose-400'
   } else {
     const presets = [
-      { bg: 'bg-violet-50 text-violet-600 border-violet-100/80', gradient: 'from-violet-400 to-fuchsia-500', hoverRing: 'focus-within:ring-violet-500 group-hover:border-violet-400' },
-      { bg: 'bg-teal-50 text-teal-600 border-teal-100/80', gradient: 'from-teal-400 to-emerald-500', hoverRing: 'focus-within:ring-teal-500 group-hover:border-teal-400' },
-      { bg: 'bg-cyan-50 text-cyan-600 border-cyan-100/80', gradient: 'from-cyan-400 to-blue-500', hoverRing: 'focus-within:ring-cyan-500 group-hover:border-cyan-400' },
-      { bg: 'bg-fuchsia-50 text-fuchsia-600 border-fuchsia-100/80', gradient: 'from-fuchsia-400 to-pink-500', hoverRing: 'focus-within:ring-fuchsia-500 group-hover:border-fuchsia-400' },
+      { bg: 'bg-violet-50 text-violet-600 border-violet-100/80', gradient: 'from-violet-400 to-fuchsia-500', hoverRing: 'focus-within:ring-violet-500 group-hover:border-violet-400', glow: 'glow-violet hover:border-violet-400' },
+      { bg: 'bg-teal-50 text-teal-600 border-teal-100/80', gradient: 'from-teal-400 to-emerald-500', hoverRing: 'focus-within:ring-teal-500 group-hover:border-teal-400', glow: 'glow-emerald hover:border-teal-400' },
+      { bg: 'bg-cyan-50 text-cyan-600 border-cyan-100/80', gradient: 'from-cyan-400 to-blue-500', hoverRing: 'focus-within:ring-cyan-500 group-hover:border-cyan-400', glow: 'glow-blue hover:border-cyan-400' },
+      { bg: 'bg-fuchsia-50 text-fuchsia-600 border-fuchsia-100/80', gradient: 'from-fuchsia-400 to-pink-500', hoverRing: 'focus-within:ring-fuchsia-500 group-hover:border-fuchsia-400', glow: 'glow-violet hover:border-fuchsia-400' },
     ]
     const preset = presets[index % presets.length]
     bg = preset.bg
     gradient = preset.gradient
     hoverRing = preset.hoverRing
+    glow = preset.glow
   }
-  return { bg, gradient, hoverRing }
+  return { bg, gradient, hoverRing, glow }
 }
 
 const getCategoryIcon = (name: string) => {
@@ -617,16 +623,17 @@ export default function PosPage() {
       <div className={`flex flex-col h-full overflow-hidden space-y-3 sm:space-y-4 ${mobileView === 'catalog' ? 'flex' : 'hidden lg:flex'}`}>
 
         <div className="flex items-center gap-2 flex-shrink-0">
-          <div className="flex-1 flex items-center gap-3 bg-white border border-slate-200/80 px-4 py-3 rounded-2xl shadow-3xs relative overflow-hidden group transition-all duration-200">
+          <div className="flex-1 flex items-center gap-3 bg-white border border-slate-200/80 px-4 py-3 rounded-2xl shadow-3xs relative overflow-hidden group transition-all duration-200 focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100/50">
+            <div className="laser-beam opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
             <Search size={15} className="text-slate-400 shrink-0 group-focus-within:text-indigo-600 transition-colors" />
             <input
               ref={searchInputRef}
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Cari nama produk, SKU, atau scan... (F2)"
-              className="w-full text-xs outline-none bg-transparent text-slate-800 placeholder:text-slate-400 font-semibold"
+              className="w-full text-xs outline-none bg-transparent text-slate-800 placeholder:text-slate-400 font-semibold z-10"
             />
-            <ScanLine size={15} className="text-rose-500 shrink-0 animate-pulse" />
+            <ScanLine size={15} className="text-rose-500 shrink-0 animate-pulse z-10" />
           </div>
 
           <button
@@ -691,7 +698,7 @@ export default function PosPage() {
               <button
                 type="button"
                 onClick={() => setCategoryFilter('all')}
-                className="group bg-white border border-slate-200/80 rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-3xs flex flex-col justify-between items-start text-left hover:border-indigo-400 hover:shadow-sm transition-all duration-300 cursor-pointer active:scale-[0.98]"
+                className="group bg-white border border-slate-200/80 rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-3xs flex flex-col justify-between items-start text-left hover:scale-[1.02] hover:-translate-y-0.5 hover:border-indigo-400 glow-violet transition-all duration-300 cursor-pointer active:scale-[0.98]"
               >
                 <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <Sparkles size={18} className="shrink-0" />
@@ -703,7 +710,7 @@ export default function PosPage() {
               </button>
 
               {categories.map((cat, idx) => {
-                const { bg, hoverRing } = getCategoryStyles(cat.name, idx)
+                const { bg, hoverRing, glow } = getCategoryStyles(cat.name, idx)
                 const Icon = getCategoryIcon(cat.name)
                 const count = categoryCounts[cat.id] || 0
                 return (
@@ -711,7 +718,7 @@ export default function PosPage() {
                     key={cat.id}
                     type="button"
                     onClick={() => setCategoryFilter(cat.id)}
-                    className={`group bg-white border border-slate-200/80 rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-3xs flex flex-col justify-between items-start text-left hover:shadow-sm transition-all duration-300 cursor-pointer active:scale-[0.98] ${hoverRing}`}
+                    className={`group bg-white border border-slate-200/80 rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-3xs flex flex-col justify-between items-start text-left hover:scale-[1.02] hover:-translate-y-0.5 transition-all duration-300 cursor-pointer active:scale-[0.98] ${hoverRing} ${glow}`}
                   >
                     <div className={`h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform ${bg}`}>
                       <Icon size={18} className="shrink-0" />
@@ -739,10 +746,10 @@ export default function PosPage() {
               return (
                 <div
                   key={p.id}
-                  className={`group bg-white border rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-3xs flex flex-col justify-between relative overflow-hidden transition-all duration-300 ${
+                  className={`group bg-white border rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-3xs flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 hover:shadow-sm ${
                     outOfStock 
                       ? 'opacity-60 border-slate-200' 
-                      : 'border-slate-200/80 hover:border-indigo-400 hover:shadow-sm'
+                      : 'border-slate-200/80 hover:border-indigo-400'
                   }`}
                 >
                   <div className="aspect-video w-full overflow-hidden rounded-lg sm:rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 relative">
