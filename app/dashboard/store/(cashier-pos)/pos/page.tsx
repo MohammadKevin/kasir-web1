@@ -66,12 +66,13 @@ type CartItem = Product & {
   cashierDiscount: number
 }
 
-type PaymentMethod = 'CASH' | 'QRIS' | 'DEBIT'
+type PaymentMethod = 'CASH' | 'QRIS' | 'DEBIT' | 'SPLIT'
 
 const PAYMENT_METHOD_MAP: Record<string, string> = {
   CASH: 'Tunai',
   QRIS: 'QRIS',
-  DEBIT: 'Debit'
+  DEBIT: 'Debit',
+  SPLIT: 'Split'
 }
 
 const formatDate = (dateInput: string | Date) => {
@@ -193,6 +194,17 @@ export default function PosPage() {
   const [globalDiscountType, setGlobalDiscountType] = useState<'PERCENT' | 'FIXED'>('PERCENT')
   const [globalDiscountValue, setGlobalDiscountValue] = useState(0)
 
+  // New States for POS enterprise features
+  const [orderType, setOrderType] = useState<'TAKEAWAY' | 'DINEIN'>('TAKEAWAY')
+  const [tables, setTables] = useState<any[]>([])
+  const [selectedTableId, setSelectedTableId] = useState<string>('')
+  const [customerPoints, setCustomerPoints] = useState<number>(0)
+  const [customerTier, setCustomerTier] = useState<string>('BRONZE')
+  const [isRedeemingPoints, setIsRedeemingPoints] = useState(false)
+  const [pointsToRedeem, setPointsToRedeem] = useState(0)
+  const [isSplitPaymentModalOpen, setIsSplitPaymentModalOpen] = useState(false)
+  const [splitAmounts, setSplitAmounts] = useState<Record<string, number>>({ CASH: 0, QRIS: 0, DEBIT: 0 })
+
   const [isCustomerMode, setIsCustomerMode] = useState(false)
   const [customerName, setCustomerName] = useState('')
   const [customerPhone, setCustomerPhone] = useState('')
@@ -264,14 +276,16 @@ export default function PosPage() {
       const storeId = localStorage.getItem('storeId')
       const token = localStorage.getItem('token')
       const headers = { Authorization: `Bearer ${token}` }
-      const [productsRes, categoriesRes, storeRes] = await Promise.all([
+      const [productsRes, categoriesRes, storeRes, tablesRes] = await Promise.all([
         api.get(`/products/store/${storeId}`, { headers }),
         api.get(`/categories/store/${storeId}`, { headers }),
-        api.get(`/stores/${storeId}`, { headers })
+        api.get(`/stores/${storeId}`, { headers }),
+        api.get(`/tables/store/${storeId}`, { headers }).catch(() => ({ data: [] }))
       ])
       setProducts(productsRes.data || [])
       setCategories(categoriesRes.data || [])
       setCurrentStore(storeRes.data || null)
+      setTables(tablesRes.data || [])
     } catch (err) {
       console.error('Gagal memuat data POS:', err)
     } finally {
@@ -288,6 +302,8 @@ export default function PosPage() {
       })
       if (res.data) {
         setCustomerName(res.data.name)
+        setCustomerPoints(res.data.points || 0)
+        setCustomerTier(res.data.memberTier || 'BRONZE')
         setSaveCustomer(false)
       }
     } catch { }
@@ -375,13 +391,28 @@ export default function PosPage() {
       : globalDiscountValue,
   [rawSubtotal, globalDiscountType, globalDiscountValue])
 
+  const pointsDiscount = useMemo(() =>
+    isRedeemingPoints ? Math.min(customerPoints * 1000, rawSubtotal - globalCalculatedDiscount) : 0,
+  [isRedeemingPoints, customerPoints, rawSubtotal, globalCalculatedDiscount])
+
+  const discountTotal = useMemo(() =>
+    globalCalculatedDiscount + pointsDiscount,
+  [globalCalculatedDiscount, pointsDiscount])
+
+  const servicePercent = currentStore?.serviceRate || 0
+  const taxPercent = currentStore?.taxRate || 0
+
+  const serviceAmount = useMemo(() =>
+    orderType === 'DINEIN' ? Math.floor((rawSubtotal - discountTotal) * (servicePercent / 100)) : 0,
+  [orderType, rawSubtotal, discountTotal, servicePercent])
+
   const ppnAmount = useMemo(() =>
-    isPPN ? Math.floor((rawSubtotal - globalCalculatedDiscount) * 0.11) : 0,
-  [isPPN, rawSubtotal, globalCalculatedDiscount])
+    isPPN ? Math.floor((rawSubtotal - discountTotal + serviceAmount) * (taxPercent / 100)) : 0,
+  [isPPN, rawSubtotal, discountTotal, serviceAmount, taxPercent])
 
   const finalTotal = useMemo(() =>
-    Math.max(0, rawSubtotal - globalCalculatedDiscount + ppnAmount),
-  [rawSubtotal, globalCalculatedDiscount, ppnAmount])
+    Math.max(0, rawSubtotal - discountTotal + serviceAmount + ppnAmount),
+  [rawSubtotal, discountTotal, serviceAmount, ppnAmount])
 
   useEffect(() => {
     if (payment !== 'CASH') setPaid(finalTotal)
@@ -398,13 +429,24 @@ export default function PosPage() {
     const totalQty = data.items.reduce((s: number, i: any) => s + i.quantity, 0)
     const uniqueCode = getReceiptUniqueCode(data.invoice, data.createdAt)
     const branchAddress = currentStore?.address?.split(',').slice(-1)[0]?.trim() || 'Sby'
+    
+    // Parse split payments if it exists
+    let parsedSplit: any = null
+    if (data.splitPayments) {
+      try {
+        parsedSplit = typeof data.splitPayments === 'string' ? JSON.parse(data.splitPayments) : data.splitPayments
+      } catch (e) {
+        console.error('Gagal memproses split payments:', e)
+      }
+    }
+
     printWindow.document.write(`
       <html>
       <head>
       <title>Nota #${data.invoice}</title>
       <style>
-      @media print { @page { margin: 0; size: 58mm auto; } body { margin: 0; padding: 4px 6px; } }
-      body { font-family: 'Courier New', Courier, monospace; font-size: 10px; max-width: 210px; margin: 0 auto; padding: 4px 6px; color: #000; background: #fff; line-height: 1.3; }
+      @media print { @page { margin: 0; size: ${currentStore?.receiptSize || '58mm'} auto; } body { margin: 0; padding: 4px 6px; } }
+      body { font-family: 'Courier New', Courier, monospace; font-size: 10px; max-width: ${currentStore?.receiptSize === '80mm' ? '290px' : '210px'}; margin: 0 auto; padding: 4px 6px; color: #000; background: #fff; line-height: 1.3; }
       .tc { text-align: center; }
       .tl { text-align: left; }
       .tr { text-align: right; }
@@ -426,7 +468,6 @@ export default function PosPage() {
       .summary-block { font-size: 9px; margin-top: 4px; line-height: 1.35; }
       .total-row { font-size: 11px; font-weight: bold; }
       .footer-block { margin-top: 12px; font-size: 8px; line-height: 1.3; }
-      .grey-box { width: 100px; height: 16px; background-color: #e2e8f0; margin: 6px auto 0; }
       </style>
       </head>
       <body>
@@ -437,6 +478,7 @@ export default function PosPage() {
         <div class="brand">${data.store}</div>
         <div class="store-detail">${currentStore?.address || 'Jl. Dr. Ir. H. Soekarno No.19, Medokan Semampir Surabaya'}</div>
         <div class="store-detail">No. Telp ${currentStore?.phone || '0812345678'}</div>
+        ${currentStore?.receiptHeader ? `<div class="store-detail b" style="margin-top: 4px; font-style: italic;">${currentStore.receiptHeader}</div>` : ''}
         <div class="unique-code">${uniqueCode}</div>
       </div>
       <div class="hr-dotted"></div>
@@ -446,9 +488,10 @@ export default function PosPage() {
             <div>${formatDate(data.createdAt)}</div>
             <div>${formatTime(data.createdAt)}</div>
             <div class="b">No. ${data.invoice}</div>
+            <div class="b">${data.orderType === 'DINEIN' ? `Dine In (Meja ${data.tableNumber || '-'})` : 'Take Away'}</div>
           </div>
           <div class="meta-right">
-            <div>${data.customer || '-'}</div>
+            ${currentStore?.receiptShowCustomer !== false ? `<div>${data.customer || '-'}</div>` : ''}
             <div>${data.cashier}</div>
             <div>${branchAddress}</div>
           </div>
@@ -481,16 +524,42 @@ export default function PosPage() {
         <div class="flex-row"><span>Total QTY : ${totalQty}</span></div>
         <div class="flex-row"><span>Sub Total</span><span>Rp ${data.subtotal.toLocaleString('id-ID')}</span></div>
         <div class="flex-row"><span>Diskon</span><span>Rp ${data.discount.toLocaleString('id-ID')}</span></div>
+        ${data.serviceAmount > 0 ? `<div class="flex-row"><span>Service Charge</span><span>Rp ${data.serviceAmount.toLocaleString('id-ID')}</span></div>` : ''}
+        ${data.taxAmount > 0 ? `<div class="flex-row"><span>Pajak</span><span>Rp ${data.taxAmount.toLocaleString('id-ID')}</span></div>` : ''}
         <div class="flex-row total-row"><span>Total</span><span>Rp ${data.total.toLocaleString('id-ID')}</span></div>
-        <div class="flex-row"><span>Bayar (${PAYMENT_METHOD_MAP[paymentMethod] || paymentMethod})</span><span>Rp ${data.paidAmount.toLocaleString('id-ID')}</span></div>
+        
+        ${parsedSplit ? `
+          <div class="flex-row b" style="margin-top: 4px;"><span>Pembayaran Terpisah:</span></div>
+          ${Object.entries(parsedSplit).filter(([_, val]) => Number(val) > 0).map(([method, val]) => `
+            <div class="flex-row" style="padding-left: 10px;"><span>- ${PAYMENT_METHOD_MAP[method] || method}</span><span>Rp ${Number(val).toLocaleString('id-ID')}</span></div>
+          `).join('')}
+        ` : `
+          <div class="flex-row"><span>Bayar (${PAYMENT_METHOD_MAP[paymentMethod] || paymentMethod})</span><span>Rp ${data.paidAmount.toLocaleString('id-ID')}</span></div>
+        `}
+        
         <div class="flex-row"><span>Kembali</span><span>Rp ${data.changeAmount.toLocaleString('id-ID')}</span></div>
       </div>
+      
+      ${data.pointsEarned > 0 || data.pointsRedeemed > 0 ? `
+        <div class="hr-dotted"></div>
+        <div class="tc font-bold" style="font-size: 8.5px;">
+          ${data.pointsEarned > 0 ? `<div>Loyalti: +${data.pointsEarned} Poin</div>` : ''}
+          ${data.pointsRedeemed > 0 ? `<div>Ditukar: -${data.pointsRedeemed} Poin</div>` : ''}
+        </div>
+      ` : ''}
+ 
       <div class="hr-dotted"></div>
       <div class="tc footer-block b">
-        <div>Terimakasih Telah Berbelanja</div>
+        <div>${currentStore?.receiptFooter || 'Terimakasih Telah Berbelanja'}</div>
         <div style="font-weight: normal; margin-top: 4px;">Link Kritik dan Saran:</div>
         <div style="font-weight: normal; word-break: break-all;">lailacollections.com/e-receipt/${data.invoice}</div>
-        <div class="grey-box"></div>
+        
+        ${currentStore?.receiptShowBarcode !== false ? `
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 2px; margin-top: 8px; opacity: 0.85;">
+            <div style="height: 20px; width: 120px; background: repeating-linear-gradient(90deg, #000, #000 1px, transparent 1px, transparent 3px, #000 3px, #000 4px); margin: 0 auto;"></div>
+            <span style="font-size: 7.5px; letter-spacing: 0.15em; font-weight: bold;">${data.invoice}</span>
+          </div>
+        ` : ''}
       </div>
       <script>
       window.onload = function() {
@@ -506,7 +575,13 @@ export default function PosPage() {
 
   async function checkout() {
     if (cart.length === 0) return alert('Keranjang kosong')
+    
     if (payment === 'CASH' && Number(paid || 0) < finalTotal) return alert('Uang yang dibayarkan kurang')
+    if (payment === 'SPLIT') {
+      const splitSum = Object.values(splitAmounts).reduce((a, b) => a + b, 0)
+      if (splitSum < finalTotal) return alert('Jumlah pembayaran terbagi kurang dari total belanja')
+    }
+    if (orderType === 'DINEIN' && !selectedTableId) return alert('Silakan pilih meja untuk Dine In')
     if (submitting) return
 
     const storeId = localStorage.getItem('storeId')
@@ -528,13 +603,19 @@ export default function PosPage() {
         storeId: String(finalStoreId),
         cashierId: String(finalCashierId),
         paymentMethod: payment,
-        paidAmount: payment === 'CASH' ? Math.round(Number(paid)) : Math.round(finalTotal),
+        paidAmount: payment === 'CASH' ? Math.round(Number(paid)) : (payment === 'SPLIT' ? Math.round(Object.values(splitAmounts).reduce((a, b) => a + b, 0)) : Math.round(finalTotal)),
         subtotal: Math.round(originalSubtotal),
         totalDiscount: Math.round(computedTotalDiscount),
         total: Math.round(finalTotal),
         phone: isCustomerMode && customerPhone.trim() ? customerPhone.trim() : undefined,
         customerName: isCustomerMode && customerName.trim() ? customerName.trim() : undefined,
         saveCustomer: isCustomerMode ? saveCustomer : false,
+        orderType,
+        tableId: orderType === 'DINEIN' ? selectedTableId : undefined,
+        taxAmount: Math.round(ppnAmount),
+        serviceAmount: Math.round(serviceAmount),
+        splitPayments: payment === 'SPLIT' ? splitAmounts : undefined,
+        pointsRedeemed: isRedeemingPoints ? pointsToRedeem : undefined,
         items: cart.map(x => {
           return {
             productId: x.id,
@@ -578,6 +659,16 @@ export default function PosPage() {
     setMobileView('catalog')
     setCategoryFilter(null)
     setSearch('')
+    
+    // Reset new states
+    setOrderType('TAKEAWAY')
+    setSelectedTableId('')
+    setCustomerPoints(0)
+    setCustomerTier('BRONZE')
+    setIsRedeemingPoints(false)
+    setPointsToRedeem(0)
+    setSplitAmounts({ CASH: 0, QRIS: 0, DEBIT: 0 })
+    
     loadData()
   }
 
@@ -615,6 +706,7 @@ export default function PosPage() {
     { id: 'CASH', icon: Wallet, label: 'Tunai' },
     { id: 'QRIS', icon: QrCode, label: 'QRIS' },
     { id: 'DEBIT', icon: CreditCard, label: 'Debit' },
+    { id: 'SPLIT', icon: Layers, label: 'Split' },
   ]
 
   return (
@@ -828,6 +920,56 @@ export default function PosPage() {
           <span className="text-[10px] font-bold text-slate-700 ">{cashier?.name || 'Kasir'}</span>
         </div>        
         <div className="flex-1 overflow-y-auto pr-0.5 space-y-3 mb-4 scrollbar-thin">
+          {/* Order Type Selector */}
+          {tables && tables.length > 0 && (
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => { setOrderType('TAKEAWAY'); setSelectedTableId('') }}
+                className={`flex-1 py-2 rounded-xl text-xs font-bold border text-center transition-all cursor-pointer ${
+                  orderType === 'TAKEAWAY'
+                    ? 'border-indigo-600 bg-indigo-50/40 text-indigo-700 shadow-3xs'
+                    : 'border-slate-205 bg-white text-slate-500 hover:border-slate-350'
+                }`}
+              >
+                Take Away
+              </button>
+              <button
+                type="button"
+                onClick={() => setOrderType('DINEIN')}
+                className={`flex-1 py-2 rounded-xl text-xs font-bold border text-center transition-all cursor-pointer ${
+                  orderType === 'DINEIN'
+                    ? 'border-indigo-600 bg-indigo-50/40 text-indigo-700 shadow-3xs'
+                    : 'border-slate-205 bg-white text-slate-500 hover:border-slate-350'
+                }`}
+              >
+                Dine In
+              </button>
+            </div>
+          )}
+
+          {/* Table Picker if Dine In */}
+          {tables && tables.length > 0 && orderType === 'DINEIN' && (
+            <div className="space-y-1 mb-2.5 animate-in slide-in-from-top-1 duration-150">
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Pilih Meja</span>
+              <div className="relative">
+                <select
+                  value={selectedTableId}
+                  onChange={e => setSelectedTableId(e.target.value)}
+                  className="w-full appearance-none bg-white border border-slate-250/70 pl-3.5 pr-10 py-2.5 rounded-xl text-xs font-bold text-slate-800 focus:border-indigo-500 outline-none cursor-pointer"
+                >
+                  <option value="">-- Pilih Meja --</option>
+                  {tables.map(table => (
+                    <option key={table.id} value={table.id} disabled={table.status !== 'AVAILABLE'}>
+                      Meja {table.number} ({table.capacity} pax) {table.status !== 'AVAILABLE' ? '[Terisi]' : ''}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={13} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+          )}
+
           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Item Dipilih</p>
           
           {cart.length === 0 ? (
@@ -901,6 +1043,29 @@ export default function PosPage() {
                     className="rounded border-slate-300 h-3.5 w-3.5 text-indigo-600 cursor-pointer" />
                   Daftarkan sebagai member baru
                 </label>
+
+                {!saveCustomer && customerPhone.trim().length >= 10 && (
+                  <div className="text-[10px] font-bold text-slate-650 flex flex-col gap-1 border-t border-slate-200/60 pt-2 mt-1">
+                    <div className="flex justify-between">
+                      <span>Tier Member: <span className="text-indigo-600 font-black">{customerTier}</span></span>
+                      <span>Poin Aktif: <span className="text-indigo-600 font-black">{customerPoints}</span></span>
+                    </div>
+                    {customerPoints > 0 && (
+                      <label className="flex items-center gap-1.5 text-slate-600 cursor-pointer mt-1">
+                        <input
+                          type="checkbox"
+                          checked={isRedeemingPoints}
+                          onChange={e => {
+                            setIsRedeemingPoints(e.target.checked)
+                            setPointsToRedeem(e.target.checked ? customerPoints : 0)
+                          }}
+                          className="rounded border-slate-300 h-3.5 w-3.5 text-indigo-600 cursor-pointer"
+                        />
+                        <span>Tukarkan Poin (Potongan {fmt(Math.min(customerPoints * 1000, rawSubtotal - globalCalculatedDiscount))})</span>
+                      </label>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -911,6 +1076,13 @@ export default function PosPage() {
               <span>Sub total</span>
               <span className="font-mono text-slate-900">{fmt(rawSubtotal)}</span>
             </div>
+
+            {pointsDiscount > 0 && (
+              <div className="flex justify-between text-xs text-rose-500 font-bold">
+                <span>Loyalti Poin</span>
+                <span className="font-mono">-{fmt(pointsDiscount)}</span>
+              </div>
+            )}
 
             <div>
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">Diskon Transaksi (F7)</span>
@@ -933,8 +1105,15 @@ export default function PosPage() {
               </div>
             </div>
 
+            {orderType === 'DINEIN' && serviceAmount > 0 && (
+              <div className="flex justify-between text-xs text-slate-500 font-bold">
+                <span>Service Charge ({servicePercent}%)</span>
+                <span className="font-mono text-slate-950">{fmt(serviceAmount)}</span>
+              </div>
+            )}
+
             <div className="flex items-center justify-between text-xs font-bold text-slate-500">
-              <span>PPN 11%</span>
+              <span>Pajak PPN ({taxPercent}%)</span>
               <div className="flex items-center gap-3">
                 {isPPN && <span className="font-mono text-slate-700 text-xs">{fmt(ppnAmount)}</span>}
                 <button
@@ -953,7 +1132,7 @@ export default function PosPage() {
 
             <div>
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Metode Bayar</span>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-4 gap-1.5">
                 {paymentMethods.map(m => {
                   const Icon = m.icon
                   const active = payment === m.id
@@ -962,13 +1141,13 @@ export default function PosPage() {
                       key={m.id}
                       type="button"
                       onClick={() => setPayment(m.id as PaymentMethod)}
-                      className={`flex items-center justify-center gap-1.5 py-2.5 border rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      className={`flex flex-col items-center justify-center gap-1 py-2 border rounded-xl text-[10px] font-bold transition-all cursor-pointer ${
                         active
                           ? 'border-indigo-500 bg-indigo-50/30 text-indigo-600'
                           : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
                       }`}
                     >
-                      <Icon size={14} className="shrink-0" />
+                      <Icon size={13} className="shrink-0" />
                       <span>{m.label}</span>
                     </button>
                   )
@@ -998,7 +1177,59 @@ export default function PosPage() {
               </div>
             )}
 
-            {payment !== 'CASH' && (
+            {payment === 'SPLIT' && (
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-3xs space-y-2 font-mono text-xs">
+                <span className="font-sans font-bold text-slate-500 text-[9px] uppercase block mb-1">Rincian Split Payment</span>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <div>
+                    <label className="block text-[8px] font-sans font-extrabold uppercase text-slate-400 mb-0.5">Tunai (Rp)</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={splitAmounts.CASH || ''}
+                      onChange={e => setSplitAmounts({ ...splitAmounts, CASH: Number(e.target.value) })}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-1.5 py-1 text-[10px] outline-none text-right font-bold text-slate-800"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[8px] font-sans font-extrabold uppercase text-slate-400 mb-0.5">QRIS (Rp)</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={splitAmounts.QRIS || ''}
+                      onChange={e => setSplitAmounts({ ...splitAmounts, QRIS: Number(e.target.value) })}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-1.5 py-1 text-[10px] outline-none text-right font-bold text-slate-800"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[8px] font-sans font-extrabold uppercase text-slate-400 mb-0.5">Debit (Rp)</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={splitAmounts.DEBIT || ''}
+                      onChange={e => setSplitAmounts({ ...splitAmounts, DEBIT: Number(e.target.value) })}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-1.5 py-1 text-[10px] outline-none text-right font-bold text-slate-800"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-between items-center border-t border-slate-100 pt-1.5">
+                  <span className="font-sans font-bold text-slate-450 text-[9px] uppercase">Total Dibayar</span>
+                  <span className="font-bold text-xs text-slate-850">
+                    {fmt(Object.values(splitAmounts).reduce((a, b) => a + b, 0))}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-[9px]">
+                  <span className="font-sans font-bold text-slate-450 uppercase">Sisa Tagihan</span>
+                  <span className={`font-bold ${
+                    Object.values(splitAmounts).reduce((a, b) => a + b, 0) >= finalTotal ? 'text-emerald-600' : 'text-rose-600'
+                  }`}>
+                    {fmt(Math.max(0, finalTotal - Object.values(splitAmounts).reduce((a, b) => a + b, 0)))}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {(payment === 'QRIS' || payment === 'DEBIT') && (
               <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-150 rounded-xl px-3 py-2 text-[10px] text-emerald-700 font-bold shadow-3xs leading-none">
                 <CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
                 <span>Pembayaran pas — tidak ada kembalian</span>
@@ -1108,10 +1339,28 @@ export default function PosPage() {
                 <div className="flex justify-between"><span>Total QTY : {receiptData.items.reduce((s: number, i: any) => s + i.quantity, 0)}</span></div>
                 <div className="flex justify-between"><span>Sub Total</span><span>Rp {receiptData.subtotal.toLocaleString('id-ID')}</span></div>
                 <div className="flex justify-between"><span>Diskon</span><span>Rp {receiptData.discount.toLocaleString('id-ID')}</span></div>
+                {receiptData.serviceAmount > 0 && (
+                  <div className="flex justify-between"><span>Service Charge</span><span>Rp {receiptData.serviceAmount.toLocaleString('id-ID')}</span></div>
+                )}
+                {receiptData.taxAmount > 0 && (
+                  <div className="flex justify-between"><span>Pajak PPN</span><span>Rp {receiptData.taxAmount.toLocaleString('id-ID')}</span></div>
+                )}
                 <div className="flex justify-between font-bold text-slate-950 text-xs border-t border-dashed border-slate-300 pt-1.5">
                   <span>Total</span><span>Rp {receiptData.total.toLocaleString('id-ID')}</span>
                 </div>
-                <div className="flex justify-between"><span>Bayar ({PAYMENT_METHOD_MAP[payment] || payment})</span><span>Rp {receiptData.paidAmount.toLocaleString('id-ID')}</span></div>
+                {receiptData.splitPayments ? (
+                  <>
+                    <div className="flex justify-between font-bold text-slate-800 mt-1"><span>Pembayaran:</span></div>
+                    {Object.entries(receiptData.splitPayments).filter(([_, val]) => Number(val) > 0).map(([method, val]) => (
+                      <div key={method} className="flex justify-between pl-2.5">
+                        <span>- {PAYMENT_METHOD_MAP[method] || method}</span>
+                        <span>Rp {Number(val).toLocaleString('id-ID')}</span>
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  <div className="flex justify-between"><span>Bayar ({PAYMENT_METHOD_MAP[payment] || payment})</span><span>Rp {receiptData.paidAmount.toLocaleString('id-ID')}</span></div>
+                )}
                 <div className="flex justify-between font-bold text-slate-950"><span>Kembali</span><span>Rp {receiptData.changeAmount.toLocaleString('id-ID')}</span></div>
               </div>
 

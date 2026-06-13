@@ -23,13 +23,16 @@ import {
   Menu,
   X,
   ChevronDown,
-  LogOut
+  LogOut,
+  Printer
 } from 'lucide-react'
 
 const managementMenus = [
   { name: 'Cabang Toko', path: '/dashboard/admin/stores', icon: Building2 },
+  { name: 'Desain Struk', path: '/dashboard/admin/receipt-design', icon: Printer },
   { name: 'Kasir', path: '/dashboard/admin/cashier', icon: Users },
   { name: 'Produk', path: '/dashboard/admin/products', icon: Package },
+  { name: 'Resep & Bahan', path: '/dashboard/admin/recipes', icon: Boxes },
   { name: 'Barcode', path: '/dashboard/admin/barcode', icon: BarcodeIcon },
   { name: 'Kategori', path: '/dashboard/admin/categories', icon: Tag },
   { name: 'Pelanggan', path: '/dashboard/admin/customers', icon: UserCheck },

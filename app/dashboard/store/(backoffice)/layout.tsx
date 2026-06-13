@@ -11,13 +11,18 @@ import {
   Menu,
   X,
   Store,
-  ArrowLeft
+  ArrowLeft,
+  UserCheck,
+  ChefHat,
+  Printer
 } from 'lucide-react'
 import { api } from '@/lib/api'
 
 const menus = [
   { name: 'Dashboard', path: '/dashboard/store', icon: LayoutDashboard },
   { name: 'Terminal Kasir', path: '/dashboard/store/cashier', icon: Wallet },
+  { name: 'Layar Dapur (KDS)', path: '/dashboard/store/kds', icon: ChefHat },
+  { name: 'Absensi Staff', path: '/dashboard/store/attendance', icon: UserCheck },
   { name: 'Riwayat Shift', path: '/dashboard/store/shifts', icon: Clock3 },
 ]
 
@@ -31,6 +36,7 @@ export default function StoreLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [storeName, setStoreName] = useState('')
   const [staffName, setStaffName] = useState('Staff Laila')
+  const [hasTables, setHasTables] = useState(false)
 
   useEffect(() => {
     setSidebarOpen(false)
@@ -73,6 +79,16 @@ export default function StoreLayout({
         .catch((err) => {
           console.error('Gagal mengambil detail nama outlet:', err)
           setStoreName('Outlet Aktif')
+        })
+
+        api.get(`/tables/store/${currentStoreId}`, {
+          headers: { Authorization: `Bearer ${userToken}` }
+        })
+        .then((res) => {
+          setHasTables(res.data && res.data.length > 0)
+        })
+        .catch(() => {
+          setHasTables(false)
         })
       }
     } catch {
@@ -131,24 +147,26 @@ export default function StoreLayout({
             </div>
 
             <nav className="space-y-1.5">
-              {menus.map((m) => {
-                const Icon = m.icon
-                const isActive = pathname === m.path
-                return (
-                  <Link
-                    key={m.path}
-                    href={m.path}
-                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 ${
-                      isActive
-                        ? 'bg-indigo-600 text-white shadow-3xs scale-[1.01]'
-                        : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 hover:translate-x-1'
-                    }`}
-                  >
-                    <Icon size={14} />
-                    <span>{m.name}</span>
-                  </Link>
-                )
-              })}
+              {menus
+                .filter((m) => m.path !== '/dashboard/store/kds' || hasTables)
+                .map((m) => {
+                  const Icon = m.icon
+                  const isActive = pathname === m.path
+                  return (
+                    <Link
+                      key={m.path}
+                      href={m.path}
+                      className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 ${
+                        isActive
+                          ? 'bg-indigo-600 text-white shadow-3xs scale-[1.01]'
+                          : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 hover:translate-x-1'
+                      }`}
+                    >
+                      <Icon size={14} />
+                      <span>{m.name}</span>
+                    </Link>
+                  )
+                })}
             </nav>
 
             {/* Store Information */}
