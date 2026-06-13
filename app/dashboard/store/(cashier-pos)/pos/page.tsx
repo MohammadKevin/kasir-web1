@@ -688,7 +688,7 @@ export default function PosPage() {
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto pr-1 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 content-start pb-24 sm:pb-6 scrollbar-thin">
+        <div className="flex-1 overflow-y-auto pr-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 content-start pb-24 sm:pb-6 scrollbar-thin">
           {loading ? (
             Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="h-48 sm:h-56 rounded-xl sm:rounded-3xl bg-slate-100 animate-pulse border border-slate-150" />
@@ -699,7 +699,7 @@ export default function PosPage() {
               <button
                 type="button"
                 onClick={() => setCategoryFilter('all')}
-                className="group relative overflow-hidden bg-white border border-slate-200/80 rounded-2xl h-32 sm:h-36 p-4 sm:p-5 shadow-3xs flex flex-col justify-between items-start text-left hover:scale-[1.02] hover:-translate-y-0.5 hover:border-indigo-400 glow-violet transition-all duration-300 cursor-pointer active:scale-[0.98]"
+                className="group relative overflow-hidden bg-white border border-slate-200/80 rounded-2xl h-28 sm:h-32 p-4 sm:p-5 shadow-3xs flex flex-col justify-between items-start text-left hover:scale-[1.02] hover:-translate-y-0.5 hover:border-indigo-400 glow-violet transition-all duration-300 cursor-pointer active:scale-[0.98]"
               >
                 <div className="absolute -right-6 -bottom-6 w-20 h-20 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500 opacity-20 bg-gradient-to-br from-indigo-500 to-purple-600"></div>
                 <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl sm:rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform relative z-10">
@@ -721,7 +721,7 @@ export default function PosPage() {
                     key={cat.id}
                     type="button"
                     onClick={() => setCategoryFilter(cat.id)}
-                    className={`group relative overflow-hidden bg-white border border-slate-200/80 rounded-2xl h-32 sm:h-36 p-4 sm:p-5 shadow-3xs flex flex-col justify-between items-start text-left hover:scale-[1.02] hover:-translate-y-0.5 transition-all duration-300 cursor-pointer active:scale-[0.98] ${hoverRing} ${glow}`}
+                    className={`group relative overflow-hidden bg-white border border-slate-200/80 rounded-2xl h-28 sm:h-32 p-4 sm:p-5 shadow-3xs flex flex-col justify-between items-start text-left hover:scale-[1.02] hover:-translate-y-0.5 transition-all duration-300 cursor-pointer active:scale-[0.98] ${hoverRing} ${glow}`}
                   >
                     <div className={`absolute -right-6 -bottom-6 w-20 h-20 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500 opacity-20 bg-gradient-to-br ${gradient}`}></div>
                     <div className={`h-10 w-10 sm:h-11 sm:w-11 rounded-xl sm:rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform relative z-10 ${bg}`}>
@@ -782,7 +782,9 @@ export default function PosPage() {
 
                   <div className="mt-2.5">
                     <p className="text-[8px] sm:text-[8.5px] font-mono text-slate-500 uppercase tracking-widest font-semibold">{p.sku || '–'}</p>
-                    <h3 className="font-extrabold text-slate-900 text-[11px] sm:text-xs mt-0.5 line-clamp-2 leading-snug group-hover:text-indigo-600 transition-colors" title={p.name}>{p.name}</h3>
+                    <div className="h-8 sm:h-9 overflow-hidden mt-0.5">
+                      <h3 className="font-extrabold text-slate-900 text-[11px] sm:text-xs line-clamp-2 leading-snug group-hover:text-indigo-600 transition-colors" title={p.name}>{p.name}</h3>
+                    </div>
                   </div>
 
                   <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-end justify-between gap-1.5">
@@ -1005,44 +1007,28 @@ export default function PosPage() {
 
           </div>
 
-          <div className="bg-slate-900 text-white rounded-2xl p-4 border border-slate-950/20 shadow-md space-y-3.5 mt-2">
-            <div className="flex justify-between items-center">
-              <div className="space-y-0.5">
-                <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest block">Total Pembayaran</span>
-                {cart.length > 0 && (
-                  <span className="text-[9px] text-emerald-400 font-bold block animate-pulse">
-                    {cart.reduce((sum, item) => sum + item.qty, 0)} Items Selected
-                  </span>
-                )}
-              </div>
-              <span className="text-2xl font-black font-mono text-indigo-300">{fmt(finalTotal)}</span>
+          <div className="border-t border-slate-200 pt-3 space-y-3">
+            <div className="flex justify-between items-center px-1">
+              <span className="text-xs text-slate-400 font-extrabold uppercase tracking-wide">Total Pembayaran</span>
+              <span className="text-xl font-black font-mono text-indigo-600">{fmt(finalTotal)}</span>
             </div>
 
             <div className="space-y-2">
               <button
                 onClick={checkout}
                 disabled={cart.length === 0 || submitting}
-                className="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white py-3.5 text-xs font-black flex items-center justify-center gap-2 disabled:opacity-40 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-500 shadow-md shadow-indigo-500/10 transition-all cursor-pointer duration-200 active:scale-[0.99]"
+                className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white py-3 text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-40 shadow-indigo-500/10 transition-all cursor-pointer animate-none"
               >
-                {submitting ? (
-                  <Loader2 className="animate-spin text-white" size={14} />
-                ) : (
-                  <>
-                    <span>Bayar Sekarang (F9)</span>
-                    <ArrowRight size={13} className="shrink-0" />
-                  </>
-                )}
+                {submitting
+                  ? <Loader2 className="animate-spin text-white" size={14} />
+                  : <><span>Bayar Sekarang (F9)</span><ArrowRight size={13} /></>
+                }
               </button>
               {cart.length > 0 && (
                 <button
                   type="button"
-                  onClick={() => {
-                    if (confirm('Hapus semua item dari keranjang?')) {
-                      setCart([])
-                      setPaid('')
-                    }
-                  }}
-                  className="w-full rounded-xl border border-slate-800 text-slate-400 hover:text-slate-200 py-2.5 text-xs hover:bg-slate-800/50 transition-colors cursor-pointer font-bold"
+                  onClick={() => { if (confirm('Hapus semua item dari keranjang?')) { setCart([]); setPaid('') } }}
+                  className="w-full rounded-xl border border-slate-200 text-slate-400 hover:text-slate-600 py-2 text-xs hover:bg-slate-50 transition-colors cursor-pointer"
                 >
                   Hapus keranjang
                 </button>
