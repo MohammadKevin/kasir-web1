@@ -391,7 +391,6 @@ export default function PosPage() {
     if (!printWindow) return
     const totalQty = data.items.reduce((s: number, i: any) => s + i.quantity, 0)
     const uniqueCode = getReceiptUniqueCode(data.invoice, data.createdAt)
-    const storeEmailPrefix = currentStore?.email ? currentStore.email.split('@')[0] : 'karis'
     const branchAddress = currentStore?.address?.split(',').slice(-1)[0]?.trim() || 'Sby'
     printWindow.document.write(`
       <html>
@@ -443,7 +442,7 @@ export default function PosPage() {
             <div class="b">No. ${data.invoice}</div>
           </div>
           <div class="meta-right">
-            <div>${storeEmailPrefix}</div>
+            <div>${data.customer || '-'}</div>
             <div>${data.cashier}</div>
             <div>${branchAddress}</div>
           </div>
@@ -995,28 +994,44 @@ export default function PosPage() {
 
           </div>
 
-          <div className="border-t border-slate-200 pt-3 space-y-3">
-            <div className="flex justify-between items-center px-1">
-              <span className="text-xs text-slate-400 font-extrabold uppercase tracking-wide">Total Pembayaran</span>
-              <span className="text-xl font-black font-mono text-indigo-600">{fmt(finalTotal)}</span>
+          <div className="bg-slate-900 text-white rounded-2xl p-4 border border-slate-950/20 shadow-md space-y-3.5 mt-2">
+            <div className="flex justify-between items-center">
+              <div className="space-y-0.5">
+                <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest block">Total Pembayaran</span>
+                {cart.length > 0 && (
+                  <span className="text-[9px] text-emerald-400 font-bold block animate-pulse">
+                    {cart.reduce((sum, item) => sum + item.qty, 0)} Items Selected
+                  </span>
+                )}
+              </div>
+              <span className="text-2xl font-black font-mono text-indigo-300">{fmt(finalTotal)}</span>
             </div>
 
             <div className="space-y-2">
               <button
                 onClick={checkout}
                 disabled={cart.length === 0 || submitting}
-                className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white py-3 text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-40 shadow-indigo-500/10 transition-all cursor-pointer animate-none"
+                className="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white py-3.5 text-xs font-black flex items-center justify-center gap-2 disabled:opacity-40 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-500 shadow-md shadow-indigo-500/10 transition-all cursor-pointer duration-200 active:scale-[0.99]"
               >
-                {submitting
-                  ? <Loader2 className="animate-spin text-white" size={14} />
-                  : <><span>Bayar Sekarang (F9)</span><ArrowRight size={13} /></>
-                }
+                {submitting ? (
+                  <Loader2 className="animate-spin text-white" size={14} />
+                ) : (
+                  <>
+                    <span>Bayar Sekarang (F9)</span>
+                    <ArrowRight size={13} className="shrink-0" />
+                  </>
+                )}
               </button>
               {cart.length > 0 && (
                 <button
                   type="button"
-                  onClick={() => { if (confirm('Hapus semua item dari keranjang?')) { setCart([]); setPaid('') } }}
-                  className="w-full rounded-xl border border-slate-200 text-slate-400 hover:text-slate-600 py-2 text-xs hover:bg-slate-50 transition-colors cursor-pointer"
+                  onClick={() => {
+                    if (confirm('Hapus semua item dari keranjang?')) {
+                      setCart([])
+                      setPaid('')
+                    }
+                  }}
+                  className="w-full rounded-xl border border-slate-800 text-slate-400 hover:text-slate-200 py-2.5 text-xs hover:bg-slate-800/50 transition-colors cursor-pointer font-bold"
                 >
                   Hapus keranjang
                 </button>
@@ -1060,7 +1075,7 @@ export default function PosPage() {
                   <p className="font-bold">No. {receiptData.invoice}</p>
                 </div>
                 <div className="text-right">
-                  <p>{currentStore?.email ? currentStore.email.split('@')[0] : 'karis'}</p>
+                  <p>{receiptData.customer || '-'}</p>
                   <p>{receiptData.cashier}</p>
                   <p>{currentStore?.address?.split(',').slice(-1)[0]?.trim() || 'Sby'}</p>
                 </div>
