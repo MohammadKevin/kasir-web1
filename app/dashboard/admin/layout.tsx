@@ -24,7 +24,8 @@ import {
   X,
   ChevronDown,
   LogOut,
-  Printer
+  Printer,
+  Coins
 } from 'lucide-react'
 
 const managementMenus = [
@@ -32,7 +33,6 @@ const managementMenus = [
   { name: 'Desain Struk', path: '/dashboard/admin/receipt-design', icon: Printer },
   { name: 'Kasir', path: '/dashboard/admin/cashier', icon: Users },
   { name: 'Produk', path: '/dashboard/admin/products', icon: Package },
-  { name: 'Resep & Bahan', path: '/dashboard/admin/recipes', icon: Boxes },
   { name: 'Barcode', path: '/dashboard/admin/barcode', icon: BarcodeIcon },
   { name: 'Kategori', path: '/dashboard/admin/categories', icon: Tag },
   { name: 'Pelanggan', path: '/dashboard/admin/customers', icon: UserCheck },
@@ -54,6 +54,7 @@ const menus = [
     items: [
       { name: 'Pengeluaran', path: '/dashboard/admin/expenses', icon: CreditCard },
       { name: 'Laporan', path: '/dashboard/admin/reports', icon: BarChart3 },
+      { name: 'Gaji Karyawan', path: '/dashboard/admin/salaries', icon: Coins },
     ],
   },
 ]

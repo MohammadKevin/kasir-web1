@@ -87,7 +87,16 @@ export default function CashierPage() {
     }
   }
 
-  function logout() {
+  async function logout() {
+    if (activeCashier) {
+      try {
+        const token = localStorage.getItem('token')
+        const headers = { Authorization: `Bearer ${token}` }
+        await api.post('/attendance/clock-out', { userId: activeCashier.id }, { headers })
+      } catch (err) {
+        console.error('Gagal mencatat Clock-Out otomatis:', err)
+      }
+    }
     localStorage.removeItem('cashier')
     localStorage.removeItem('cashierActive')
     window.location.reload()
