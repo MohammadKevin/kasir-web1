@@ -14,13 +14,15 @@ import {
   ArrowLeft,
   UserCheck,
   ChefHat,
-  Printer
+  Printer,
+  Barcode
 } from 'lucide-react'
 import { api } from '@/lib/api'
 
 const menus = [
   { name: 'Dashboard', path: '/dashboard/store', icon: LayoutDashboard },
   { name: 'Terminal Kasir', path: '/dashboard/store/cashier', icon: Wallet },
+  { name: 'Barcode SKU', path: '/dashboard/store/barcode', icon: Barcode },
   { name: 'Layar Dapur (KDS)', path: '/dashboard/store/kds', icon: ChefHat },
   { name: 'Riwayat Shift', path: '/dashboard/store/shifts', icon: Clock3 },
 ]

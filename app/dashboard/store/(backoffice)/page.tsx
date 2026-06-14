@@ -11,7 +11,8 @@ import {
   ShieldCheck,
   Clock,
   AlertTriangle,
-  Lock
+  Lock,
+  Barcode
 } from 'lucide-react'
 import { api } from '@/lib/api'
 
@@ -226,7 +227,7 @@ export default function StoreDashboard() {
         </div>
       </div>
 
-      <div className="grid gap-5 grid-cols-1 sm:grid-cols-3">
+      <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {storeOpen ? (
           <Link
             href="/dashboard/store/cashier"
@@ -267,6 +268,20 @@ export default function StoreDashboard() {
               <h2 className="text-xs font-black text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-wider">Katalog Produk</h2>
             </div>
             <p className="text-[11px] font-semibold text-slate-400 leading-relaxed">Pantau ketersediaan stok barang dan penataan master list data.</p>
+          </div>
+          <ArrowUpRight size={14} className="text-slate-400 group-hover:text-indigo-600 transition-colors shrink-0" />
+        </Link>
+
+        <Link
+          href="/dashboard/store/barcode"
+          className="group border border-slate-200 bg-white p-5 rounded-2xl hover:bg-slate-50/50 hover:border-slate-350 transition-all flex justify-between items-start shadow-3xs cursor-pointer"
+        >
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Barcode size={16} className="text-indigo-600" />
+              <h2 className="text-xs font-black text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-wider">Barcode SKU</h2>
+            </div>
+            <p className="text-[11px] font-semibold text-slate-400 leading-relaxed">Generate kode barcode baru untuk produk dan cetak tag label thermal.</p>
           </div>
           <ArrowUpRight size={14} className="text-slate-400 group-hover:text-indigo-600 transition-colors shrink-0" />
         </Link>
