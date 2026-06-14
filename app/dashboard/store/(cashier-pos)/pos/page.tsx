@@ -407,9 +407,11 @@ export default function PosPage() {
       : globalDiscountValue,
   [rawSubtotal, globalDiscountType, globalDiscountValue])
 
-  const pointsDiscount = useMemo(() =>
-    isRedeemingPoints ? Math.min(customerPoints * 1000, rawSubtotal - globalCalculatedDiscount) : 0,
-  [isRedeemingPoints, customerPoints, rawSubtotal, globalCalculatedDiscount])
+  const pointsDiscount = useMemo(() => {
+    if (currentStore?.pointsEnabled === false) return 0
+    const pointVal = currentStore?.pointValue || 1000
+    return isRedeemingPoints ? Math.min(customerPoints * pointVal, rawSubtotal - globalCalculatedDiscount) : 0
+  }, [isRedeemingPoints, customerPoints, rawSubtotal, globalCalculatedDiscount, currentStore])
 
   const discountTotal = useMemo(() =>
     globalCalculatedDiscount + pointsDiscount,
@@ -1058,7 +1060,7 @@ export default function PosPage() {
                   Daftarkan sebagai member baru
                 </label>
 
-                {!saveCustomer && customerPhone.trim().length >= 10 && (
+                {!saveCustomer && customerPhone.trim().length >= 10 && currentStore?.pointsEnabled !== false && (
                   <div className="text-[10px] font-bold text-slate-650 flex flex-col gap-1 border-t border-slate-200/60 pt-2 mt-1">
                     <div className="flex justify-between">
                       <span>Tier Member: <span className="text-indigo-600 font-black">{customerTier}</span></span>
@@ -1075,7 +1077,7 @@ export default function PosPage() {
                           }}
                           className="rounded border-slate-300 h-3.5 w-3.5 text-indigo-600 cursor-pointer"
                         />
-                        <span>Tukarkan Poin (Potongan {fmt(Math.min(customerPoints * 1000, rawSubtotal - globalCalculatedDiscount))})</span>
+                        <span>Tukarkan Poin (Potongan {fmt(Math.min(customerPoints * (currentStore?.pointValue || 1000), rawSubtotal - globalCalculatedDiscount))})</span>
                       </label>
                     )}
                   </div>

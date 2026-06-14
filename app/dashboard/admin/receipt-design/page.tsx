@@ -32,6 +32,8 @@ type Store = {
   receiptShowBarcode: boolean
   receiptShowCustomer: boolean
   receiptSize: string
+  pointsEnabled: boolean
+  pointValue: number
 }
 
 export default function AdminReceiptDesignPage() {
@@ -52,6 +54,8 @@ export default function AdminReceiptDesignPage() {
   const [receiptShowBarcode, setReceiptShowBarcode] = useState(true)
   const [receiptShowCustomer, setReceiptShowCustomer] = useState(true)
   const [receiptSize, setReceiptSize] = useState('58mm')
+  const [pointsEnabled, setPointsEnabled] = useState(true)
+  const [pointValue, setPointValue] = useState(1000)
 
   useEffect(() => {
     loadStores()
@@ -91,6 +95,8 @@ export default function AdminReceiptDesignPage() {
       setReceiptShowBarcode(data.receiptShowBarcode !== false)
       setReceiptShowCustomer(data.receiptShowCustomer !== false)
       setReceiptSize(data.receiptSize || '58mm')
+      setPointsEnabled(data.pointsEnabled !== false)
+      setPointValue(data.pointValue ?? 1000)
     } catch (err) {
       console.error('Gagal mengambil detail cabang:', err)
       toast.error('Gagal memuat rincian cabang')
@@ -119,7 +125,9 @@ export default function AdminReceiptDesignPage() {
         receiptFooter,
         receiptShowBarcode,
         receiptShowCustomer,
-        receiptSize
+        receiptSize,
+        pointsEnabled,
+        pointValue
       }
 
       await api.patch(`/stores/${selectedStoreId}`, payload)
@@ -331,6 +339,48 @@ export default function AdminReceiptDesignPage() {
                   }`} />
                 </button>
               </div>
+            </div>
+
+            <hr className="border-slate-100" />
+
+            {/* Loyalty Points Section */}
+            <div className="space-y-4">
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">Sistem Loyalti Poin Member</span>
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xs font-bold text-slate-800">Aktifkan Loyalti Poin</h3>
+                  <p className="text-[9.5px] font-semibold text-slate-400">Izinkan pelanggan mengumpulkan dan menukarkan poin belanja.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPointsEnabled(!pointsEnabled)}
+                  className={`relative inline-flex h-5.5 w-10.5 cursor-pointer rounded-full transition-colors duration-200 ${
+                    pointsEnabled ? 'bg-blue-600' : 'bg-slate-200'
+                  }`}
+                >
+                  <span className={`inline-block h-4.5 w-4.5 mt-0.5 transform rounded-full bg-white transition duration-200 shadow-xs ${
+                    pointsEnabled ? 'translate-x-5.5' : 'translate-x-0.5'
+                  }`} />
+                </button>
+              </div>
+
+              {pointsEnabled && (
+                <div className="space-y-1.5 animate-in slide-in-from-top-1 duration-150">
+                  <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 flex items-center gap-1.5">Nilai Tukar 1 Poin (Rupiah)</label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Rp</span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={pointValue}
+                      onChange={e => setPointValue(Number(e.target.value))}
+                      className="w-full rounded-xl border border-slate-200 pl-9 pr-3.5 py-2.5 text-xs text-slate-950 font-mono font-bold focus:border-blue-500 focus:outline-none"
+                    />
+                  </div>
+                  <span className="text-[9px] font-bold text-slate-400 italic">Nilai potongan belanja untuk setiap 1 poin yang ditukarkan (contoh: 1000 = Rp1.000).</span>
+                </div>
+              )}
             </div>
 
             <hr className="border-slate-100" />
