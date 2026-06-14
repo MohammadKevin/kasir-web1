@@ -62,6 +62,7 @@ type StoreType = {
   address?: string | null
   phone?: string | null
   email?: string | null
+  receiptFooter?: string | null
 }
 
 const PAYMENT_METHOD_MAP: Record<string, string> = {
@@ -590,9 +591,9 @@ export default function TransactionAdminPage() {
 
               {/* Footer Block */}
               <div className="text-center space-y-0.5 text-[8px] font-bold text-slate-900 pt-1">
-                <p>Terimakasih Telah Berbelanja</p>
-                <p className="font-normal text-slate-500">Link Kritik dan Saran:</p>
-                <p className="font-normal text-slate-600 select-all">lailacollections.com/e-receipt/{selectedTransaction.invoiceNumber}</p>
+                <p>
+                  {stores.find((s) => s.id === (selectedTransaction.storeId || selectedStoreId))?.receiptFooter || 'Terimakasih Telah Berbelanja'}
+                </p>
                 <div className="w-24 h-4 bg-slate-200 mx-auto mt-2 print:border print:border-slate-300"></div>
               </div>
             </div>

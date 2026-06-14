@@ -23,6 +23,7 @@ type StoreData = {
   phone: string
   address: string
   createdAt: string
+  isOpen?: boolean
 }
 
 const EMPTY = { name: '', email: '', password: '', phone: '', address: '' }
@@ -174,8 +175,16 @@ export default function StorePage() {
             >
               <div>
                 <div className="flex justify-between items-start">
-                  <div className="h-10 w-10 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-sm shadow-blue-500/10">
-                    <Building2 size={18} />
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-sm shadow-blue-500/10">
+                      <Building2 size={18} />
+                    </div>
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-bold border text-[9px] uppercase tracking-wider ${
+                      s.isOpen ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-slate-50 border-slate-200 text-slate-400'
+                    }`}>
+                      <span className={`h-1 w-1 rounded-full ${s.isOpen ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                      {s.isOpen ? 'Buka' : 'Tutup'}
+                    </span>
                   </div>
                   
                   <div className="flex gap-1.5 opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-all duration-200">

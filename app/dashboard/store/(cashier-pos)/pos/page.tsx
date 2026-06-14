@@ -567,8 +567,6 @@ export default function PosPage() {
       <div class="hr-dotted"></div>
       <div class="tc footer-block b">
         <div>${currentStore?.receiptFooter || 'Terimakasih Telah Berbelanja'}</div>
-        <div style="font-weight: normal; margin-top: 4px;">Link Kritik dan Saran:</div>
-        <div style="font-weight: normal; word-break: break-all;">lailacollections.com/e-receipt/${data.invoice}</div>
         
         ${currentStore?.receiptShowBarcode !== false ? `
           <div style="display: flex; flex-direction: column; align-items: center; gap: 2px; margin-top: 8px; opacity: 0.85;">
@@ -1383,9 +1381,7 @@ export default function PosPage() {
               <div className="border-t border-dotted border-slate-400 my-1"></div>
 
               <div className="text-center space-y-0.5 text-[8px] font-bold text-slate-900 pt-1">
-                <p>Terimakasih Telah Berbelanja</p>
-                <p className="font-normal text-slate-500">Link Kritik dan Saran:</p>
-                <p className="font-normal text-slate-600 select-all">lailacollections.com/e-receipt/{receiptData.invoice}</p>
+                <p>{currentStore?.receiptFooter || 'Terimakasih Telah Berbelanja'}</p>
                 <div className="w-24 h-4 bg-slate-200 mx-auto mt-2"></div>
               </div>
             </div>
