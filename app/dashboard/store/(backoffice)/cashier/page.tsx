@@ -32,6 +32,7 @@ export default function CashierPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [activeCashier, setActiveCashier] = useState<any>(null)
+  const [storeOpen, setStoreOpen] = useState<boolean | null>(null)
 
   useEffect(() => {
     const session = localStorage.getItem('cashier')
@@ -39,7 +40,20 @@ export default function CashierPage() {
       setActiveCashier(JSON.parse(session))
     }
     loadCashiersData()
+    checkStoreOpenStatus()
   }, [])
+
+  async function checkStoreOpenStatus() {
+    try {
+      const token = localStorage.getItem('token')
+      const headers = { Authorization: `Bearer ${token}` }
+      const res = await api.get('/attendance/store/status', { headers })
+      setStoreOpen(res.data.isOpen)
+    } catch (err) {
+      console.error(err)
+      setStoreOpen(false)
+    }
+  }
 
   async function loadCashiersData() {
     try {
@@ -105,6 +119,33 @@ export default function CashierPage() {
   const filtered = cashiers.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase())
   )
+
+  if (storeOpen === null) {
+    return (
+      <div className="py-24 flex flex-col items-center justify-center gap-2">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-650" />
+        <p className="text-xs font-bold text-slate-500">Memverifikasi status operasional toko...</p>
+      </div>
+    )
+  }
+
+  if (!storeOpen) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-slate-200 rounded-3xl bg-white space-y-4 max-w-lg mx-auto p-6 shadow-3xs">
+        <Lock size={36} className="text-amber-500 animate-bounce" />
+        <h2 className="text-xs font-black text-slate-800 uppercase tracking-wider">Akses Terkunci: Toko Belum Buka</h2>
+        <p className="text-[11px] font-semibold text-slate-400 max-w-sm">
+          Maaf, Anda belum dapat mengaktifkan terminal kasir atau mulai transaksi penjualan karena status operasional toko masih **TUTUP**.
+        </p>
+        <button
+          onClick={() => router.push('/dashboard/store')}
+          className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 text-xs font-bold shadow-3xs cursor-pointer active:scale-97 transition-all"
+        >
+          <span>Kembali ke Dashboard Utama</span>
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">

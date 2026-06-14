@@ -22,7 +22,6 @@ const menus = [
   { name: 'Dashboard', path: '/dashboard/store', icon: LayoutDashboard },
   { name: 'Terminal Kasir', path: '/dashboard/store/cashier', icon: Wallet },
   { name: 'Layar Dapur (KDS)', path: '/dashboard/store/kds', icon: ChefHat },
-  { name: 'Absensi Staff', path: '/dashboard/store/attendance', icon: UserCheck },
   { name: 'Riwayat Shift', path: '/dashboard/store/shifts', icon: Clock3 },
 ]
 

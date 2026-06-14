@@ -10,7 +10,8 @@ import {
   Users,
   ShieldCheck,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  Lock
 } from 'lucide-react'
 import { api } from '@/lib/api'
 
@@ -27,6 +28,13 @@ type Summary = {
 export default function StoreDashboard() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
+  
+  // Store Attendance States
+  const [storeOpen, setStoreOpen] = useState(false)
+  const [storeAttendance, setStoreAttendance] = useState<any>(null)
+  const [checkingStore, setCheckingStore] = useState(true)
+  const [actionLoading, setActionLoading] = useState(false)
+
   const [summary, setSummary] = useState<Summary>({
     todaySales: 0,
     todayTransactions: 0,
@@ -43,6 +51,7 @@ export default function StoreDashboard() {
       setUser(JSON.parse(u))
     }
     loadDashboardData()
+    checkStoreStatus()
   }, [])
 
   async function loadDashboardData() {
@@ -73,6 +82,60 @@ export default function StoreDashboard() {
     }
   }
 
+  async function checkStoreStatus() {
+    try {
+      const token = localStorage.getItem('token')
+      const headers = { Authorization: `Bearer ${token}` }
+      const res = await api.get('/attendance/store/status', { headers })
+      setStoreOpen(res.data.isOpen)
+      setStoreAttendance(res.data.attendance)
+      if (res.data.isOpen) {
+        localStorage.setItem('storeOpen', 'true')
+      } else {
+        localStorage.removeItem('storeOpen')
+      }
+    } catch (err) {
+      console.error('Gagal memuat status buka toko:', err)
+    } finally {
+      setCheckingStore(false)
+    }
+  }
+
+  async function handleOpenStore() {
+    setActionLoading(true)
+    try {
+      const token = localStorage.getItem('token')
+      const headers = { Authorization: `Bearer ${token}` }
+      const res = await api.post('/attendance/store/open', {}, { headers })
+      setStoreOpen(true)
+      setStoreAttendance(res.data)
+      localStorage.setItem('storeOpen', 'true')
+      alert('Toko berhasil dibuka! Selamat bekerja.')
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Gagal membuka toko')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  async function handleCloseStore() {
+    if (!confirm('Apakah Anda yakin ingin menutup toko hari ini?')) return
+    setActionLoading(true)
+    try {
+      const token = localStorage.getItem('token')
+      const headers = { Authorization: `Bearer ${token}` }
+      await api.post('/attendance/store/close', {}, { headers })
+      setStoreOpen(false)
+      setStoreAttendance(null)
+      localStorage.removeItem('storeOpen')
+      alert('Toko berhasil ditutup! Sampai jumpa besok.')
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Gagal menutup toko')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
   const formatIDR = (num: number) => `Rp ${num.toLocaleString('id-ID')}`
 
   const isCashierActive = summary.activeShift > 0 || (typeof window !== 'undefined' && localStorage.getItem('cashierActive') === 'true')
@@ -90,6 +153,45 @@ export default function StoreDashboard() {
         <div className="text-right text-[10px] text-slate-400 font-bold tracking-wider uppercase bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-md">
           Sesi: Terotentikasi
         </div>
+      </div>
+
+      {/* Store Attendance Block */}
+      <div className={`p-5 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-200 ${
+        storeOpen 
+          ? 'bg-emerald-50/40 border-emerald-150 text-slate-800 animate-in fade-in duration-300' 
+          : 'bg-amber-50/40 border-amber-150 text-slate-800 animate-in fade-in duration-300'
+      }`}>
+        <div className="flex gap-3 items-start">
+          <div className={`p-2.5 rounded-xl border shrink-0 ${
+            storeOpen 
+              ? 'bg-emerald-100/50 border-emerald-200 text-emerald-600' 
+              : 'bg-amber-100/50 border-amber-200 text-amber-600'
+          }`}>
+            <Clock size={18} />
+          </div>
+          <div>
+            <h3 className="text-xs font-black uppercase tracking-wider">
+              Status Operasional Toko: {storeOpen ? 'BUKA' : 'TUTUP'}
+            </h3>
+            <p className="text-[11px] font-semibold text-slate-500 mt-1">
+              {storeOpen 
+                ? `Toko dibuka sejak: ${storeAttendance?.openTime ? new Date(storeAttendance.openTime).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'}. Terminal kasir kini aktif.`
+                : 'Toko belum dibuka. Silakan klik "Mulai Buka Toko" untuk mengaktifkan terminal kasir dan mulai absensi toko.'
+              }
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={storeOpen ? handleCloseStore : handleOpenStore}
+          disabled={actionLoading || checkingStore}
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold shadow-3xs transition-all active:scale-97 cursor-pointer shrink-0 disabled:opacity-50 ${
+            storeOpen 
+              ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/10' 
+              : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/10'
+          }`}
+        >
+          {actionLoading ? 'Memproses...' : storeOpen ? 'Tutup Toko' : 'Mulai Buka Toko'}
+        </button>
       </div>
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
@@ -125,19 +227,35 @@ export default function StoreDashboard() {
       </div>
 
       <div className="grid gap-5 grid-cols-1 sm:grid-cols-3">
-        <Link
-          href="/dashboard/store/cashier"
-          className="group border border-slate-200 bg-white p-5 rounded-2xl hover:bg-slate-50/50 hover:border-slate-350 transition-all flex justify-between items-start shadow-3xs cursor-pointer"
-        >
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <ShieldCheck size={16} className="text-indigo-600" />
-              <h2 className="text-xs font-black text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-wider">Terminal Kasir</h2>
+        {storeOpen ? (
+          <Link
+            href="/dashboard/store/cashier"
+            className="group border border-slate-200 bg-white p-5 rounded-2xl hover:bg-slate-50/50 hover:border-slate-350 transition-all flex justify-between items-start shadow-3xs cursor-pointer"
+          >
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <ShieldCheck size={16} className="text-indigo-600" />
+                <h2 className="text-xs font-black text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-wider">Terminal Kasir</h2>
+              </div>
+              <p className="text-[11px] font-semibold text-slate-400 leading-relaxed">Buka sesi kerja, pilih personil, dan verifikasi PIN laci POS.</p>
             </div>
-            <p className="text-[11px] font-semibold text-slate-400 leading-relaxed">Buka sesi kerja, pilih personil, dan verifikasi PIN laci POS.</p>
-          </div>
-          <ArrowUpRight size={14} className="text-slate-400 group-hover:text-indigo-600 transition-colors shrink-0" />
-        </Link>
+            <ArrowUpRight size={14} className="text-slate-400 group-hover:text-indigo-600 transition-colors shrink-0" />
+          </Link>
+        ) : (
+          <button
+            onClick={() => alert('Silakan klik "Mulai Buka Toko" terlebih dahulu untuk mengakses Terminal Kasir!')}
+            className="group border border-slate-200 bg-slate-50/50 opacity-60 p-5 rounded-2xl flex justify-between items-start shadow-3xs cursor-not-allowed text-left w-full"
+          >
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <ShieldCheck size={16} className="text-slate-450" />
+                <h2 className="text-xs font-black text-slate-500 uppercase tracking-wider">Terminal Kasir</h2>
+              </div>
+              <p className="text-[11px] font-semibold text-slate-400 leading-relaxed">Buka sesi kerja, pilih personil, dan verifikasi PIN laci POS.</p>
+            </div>
+            <Lock size={14} className="text-slate-400 shrink-0 mt-0.5" />
+          </button>
+        )}
 
         <Link
           href="/dashboard/store/products"

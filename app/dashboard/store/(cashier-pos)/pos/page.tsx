@@ -228,7 +228,23 @@ export default function PosPage() {
       if (cached) setCashier(JSON.parse(cached))
     }
     loadData()
+    checkStoreOpenStatus()
   }, [])
+
+  async function checkStoreOpenStatus() {
+    try {
+      const token = localStorage.getItem('token')
+      const headers = { Authorization: `Bearer ${token}` }
+      const res = await api.get('/attendance/store/status', { headers })
+      if (!res.data.isOpen) {
+        alert('Akses POS Terkunci! Operasional Toko belum dibuka.')
+        window.location.href = '/dashboard/store'
+      }
+    } catch (err) {
+      console.error(err)
+      window.location.href = '/dashboard/store'
+    }
+  }
 
   useEffect(() => {
     const handleKeydown = (e: KeyboardEvent) => {
