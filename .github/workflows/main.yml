@@ -19,7 +19,7 @@ jobs:
           git reset --hard
           git pull origin main
           npm install
-          export NODE_OPTIONS="--max-old-space-size=512"
+          export NODE_OPTIONS="--max-old-space-size=1024"
           npm run build
           pm2 reload kasir-frontend || pm2 start npm --name "kasir-frontend" -- run start -- -p 3001
           pm2 save
