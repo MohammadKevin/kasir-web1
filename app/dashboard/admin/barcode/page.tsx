@@ -248,19 +248,6 @@ export default function BarcodePage() {
             <p className="text-xs font-semibold text-slate-400 mt-0.5">Generate kode barcode baru untuk produk dan cetak tag label thermal</p>
           </div>
         </div>
-
-        <button
-          onClick={handleGenerateAll}
-          disabled={isProcessing}
-          className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2.5 text-xs font-bold text-white transition-all shadow-3xs active:scale-97 cursor-pointer disabled:opacity-40"
-        >
-          {isProcessing ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
-          ) : (
-            <Sparkles className="w-3.5 h-3.5" />
-          )}
-          <span>Generate Barcode Kosong</span>
-        </button>
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">

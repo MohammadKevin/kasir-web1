@@ -239,6 +239,10 @@ export default function TransactionAdminPage() {
     return matchesSearch && matchesStatus && matchesPayment && matchesDate
   })
 
+  const totalPaymentAmount = useMemo(() => {
+    return filteredTransactions.reduce((sum, t) => sum + t.total, 0)
+  }, [filteredTransactions])
+
   const activeStoreName = stores.find((s) => s.id === selectedStoreId)?.name || 'Laila Collections'
 
   function getStatusBadge(status: string) {
@@ -356,20 +360,29 @@ export default function TransactionAdminPage() {
           )}
         </div>
 
-        <div className="flex border border-slate-200/80 rounded-xl p-1 bg-slate-50/50 shrink-0">
-          {['ALL', 'PAID', 'CANCELLED', 'PENDING'].map((status) => (
-            <button
-              key={status}
-              onClick={() => setStatusFilter(status)}
-              className={`px-3 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                statusFilter === status 
-                  ? 'bg-indigo-600 text-white shadow-3xs' 
-                  : 'text-slate-500 hover:text-slate-900'
-              }`}
-            >
-              {status === 'ALL' ? 'Semua' : status === 'PAID' ? 'Lunas' : status === 'CANCELLED' ? 'Void' : 'Pending'}
-            </button>
-          ))}
+        <div className="flex items-center gap-3 shrink-0">
+          {paymentMethodFilter !== 'ALL' && (
+            <div className="bg-emerald-50 border border-emerald-150 text-emerald-700 px-3.5 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-3xs">
+              <span className="text-[10px] text-emerald-500 uppercase tracking-wider font-bold">Total {PAYMENT_METHOD_MAP[paymentMethodFilter] || paymentMethodFilter}:</span>
+              <span className="font-mono text-emerald-800">Rp {totalPaymentAmount.toLocaleString('id-ID')}</span>
+            </div>
+          )}
+
+          <div className="flex border border-slate-200/80 rounded-xl p-1 bg-slate-50/50 shrink-0">
+            {['ALL', 'PAID', 'CANCELLED', 'PENDING'].map((status) => (
+              <button
+                key={status}
+                onClick={() => setStatusFilter(status)}
+                className={`px-3 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                  statusFilter === status 
+                    ? 'bg-indigo-600 text-white shadow-3xs' 
+                    : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                {status === 'ALL' ? 'Semua' : status === 'PAID' ? 'Lunas' : status === 'CANCELLED' ? 'Void' : 'Pending'}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

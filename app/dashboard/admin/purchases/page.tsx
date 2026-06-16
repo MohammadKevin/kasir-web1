@@ -72,6 +72,7 @@ export default function PurchasePage() {
   const [supplierId, setSupplierId] = useState('')
   const [cart, setCart] = useState<CartItem[]>([])
   const [selectedProd, setSelectedProd] = useState('')
+  const [costPrice, setCostPrice] = useState(0)
   const [qty, setQty] = useState(1)
   const [submitting, setSubmitting] = useState(false)
 
@@ -501,13 +502,15 @@ export default function PurchasePage() {
     if (existingIndex > -1) {
       const newCart = [...cart]
       newCart[existingIndex].quantity += qty
+      newCart[existingIndex].costPrice = costPrice
       setCart(newCart)
     } else {
-      setCart([...cart, { productId: p.id, name: p.name, quantity: qty, costPrice: p.costPrice }])
+      setCart([...cart, { productId: p.id, name: p.name, quantity: qty, costPrice: costPrice }])
     }
     
     setSelectedProd('')
     setQty(1)
+    setCostPrice(0)
   }
 
   function removeFromCart(productId: string) {
@@ -762,24 +765,46 @@ export default function PurchasePage() {
             </div>
 
             <div className="border-t border-slate-100 pt-4">
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Pilih Barang & Kuantitas</label>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Pilih Barang, Harga & Kuantitas</label>
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex-1 relative">
                   <Package className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                   <select 
                     className="w-full rounded-xl border border-slate-200/80 bg-slate-50/50 pl-10 pr-10 py-3 text-xs font-semibold text-slate-800 outline-none transition-all appearance-none cursor-pointer focus:border-indigo-500 focus:bg-white" 
                     value={selectedProd} 
-                    onChange={e => setSelectedProd(e.target.value)}
+                    onChange={e => {
+                      const prodId = e.target.value
+                      setSelectedProd(prodId)
+                      const p = products.find(prod => prod.id === prodId)
+                      if (p) {
+                        setCostPrice(p.costPrice || 0)
+                      } else {
+                        setCostPrice(0)
+                      }
+                    }}
                   >
                     <option value="">Pilih Produk</option>
                     {products.map(p => <option key={p.id} value={p.id}>{p.name} (Modal: Rp {p.costPrice.toLocaleString('id-ID')})</option>)}
                   </select>
                   <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
                 </div>
+                
+                <div className="w-full sm:w-40 relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Rp</span>
+                  <input 
+                    type="number" 
+                    min="0"
+                    className="w-full rounded-xl border border-slate-200/80 bg-slate-50/50 pl-10 pr-3 py-3 text-xs font-semibold outline-none transition-all focus:border-indigo-500 focus:bg-white" 
+                    value={costPrice} 
+                    onChange={e => setCostPrice(Number(e.target.value))} 
+                    placeholder="Harga Beli"
+                  />
+                </div>
+
                 <input 
                   type="number" 
                   min="1"
-                  className="w-full sm:w-28 rounded-xl border border-slate-200/80 bg-slate-50/50 px-3 py-3 text-xs font-semibold outline-none transition-all focus:border-indigo-500 focus:bg-white" 
+                  className="w-full sm:w-24 rounded-xl border border-slate-200/80 bg-slate-50/50 px-3 py-3 text-xs font-semibold outline-none transition-all focus:border-indigo-500 focus:bg-white" 
                   value={qty} 
                   onChange={e => setQty(Number(e.target.value))} 
                   placeholder="Qty"

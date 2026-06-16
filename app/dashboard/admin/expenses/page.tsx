@@ -52,6 +52,7 @@ export default function ExpensePage() {
     title: '',
     amount: 0,
     category: 'OPERATIONAL' as Expense['category'],
+    createdAt: '',
   })
 
   useEffect(() => {
@@ -118,23 +119,35 @@ export default function ExpensePage() {
       title: '',
       amount: 0,
       category: 'OPERATIONAL',
+      createdAt: '',
     })
     setIsOpenModal(true)
   }
 
   function handleOpenEdit(expense: Expense) {
     setEditingId(expense.id)
+    
+    // Format the expense.createdAt to yyyy-mm-dd for input type="date"
+    const d = new Date(expense.createdAt)
+    const yyyy = d.getFullYear()
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const dd = String(d.getDate()).padStart(2, '0')
+    const dateStr = `${yyyy}-${mm}-${dd}`
+
     setFormData({
       storeId: expense.storeId,
       title: expense.title,
       amount: expense.amount,
       category: expense.category,
+      createdAt: dateStr,
     })
     setIsOpenModal(true)
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!formData.createdAt) return alert('Silakan pilih tanggal terlebih dahulu!')
+
     setIsSubmitting(true)
     const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` }
 
@@ -144,6 +157,7 @@ export default function ExpensePage() {
           title: formData.title.trim(),
           amount: Number(formData.amount),
           category: formData.category,
+          createdAt: new Date(formData.createdAt).toISOString(),
         }, { headers })
       } else {
         await api.post('/expenses', {
@@ -151,6 +165,7 @@ export default function ExpensePage() {
           title: formData.title.trim(),
           amount: Number(formData.amount),
           category: formData.category,
+          createdAt: new Date(formData.createdAt).toISOString(),
         }, { headers })
       }
       setIsOpenModal(false)
@@ -438,6 +453,20 @@ export default function ExpensePage() {
                     ))}
                   </select>
                   <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Tanggal Pengeluaran</label>
+                <div className="relative">
+                  <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                  <input
+                    type="date"
+                    required
+                    value={formData.createdAt}
+                    onChange={(e) => setFormData({ ...formData, createdAt: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200/80 bg-slate-50/50 pl-10 pr-4 py-3 text-xs font-semibold outline-none transition-all focus:border-indigo-500 focus:bg-white"
+                  />
                 </div>
               </div>
 

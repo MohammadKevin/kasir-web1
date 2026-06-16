@@ -33,6 +33,14 @@ type Transaction = {
   } | null
 }
 
+type StoreStat = {
+  id: string
+  name: string
+  cashiersCount: number
+  transactionsCount: number
+  revenue: number
+}
+
 type DashboardData = {
   totalStores: number
   totalCashiers: number
@@ -40,6 +48,7 @@ type DashboardData = {
   totalRevenue: number
   allTransactions: Transaction[]
   recentTransactions: Transaction[]
+  storeStats: StoreStat[]
 }
 
 type FilterPeriod = '1d' | '1w' | '1m' | '1y'
@@ -55,6 +64,7 @@ export default function AdminDashboard() {
     totalRevenue: 0,
     allTransactions: [],
     recentTransactions: [],
+    storeStats: [],
   })
 
   useEffect(() => {
@@ -75,6 +85,7 @@ export default function AdminDashboard() {
       let totalTransactions = 0
       let totalRevenue = 0
       let allTransactions: Transaction[] = []
+      let storeStats: StoreStat[] = []
 
       await Promise.all(
         stores.map(async (store: StoreType) => {
@@ -85,9 +96,21 @@ export default function AdminDashboard() {
               api.get(`/reports/profit/${store.id}`, { headers }),
             ])
 
-            totalCashiers += cashier.data?.length ?? 0
-            totalTransactions += transaction.data?.length ?? 0
-            totalRevenue += Number(profit.data?.totalSales ?? 0)
+            const cashiersCount = cashier.data?.length ?? 0
+            const transactionsCount = transaction.data?.length ?? 0
+            const revenue = Number(profit.data?.totalSales ?? 0)
+
+            totalCashiers += cashiersCount
+            totalTransactions += transactionsCount
+            totalRevenue += revenue
+
+            storeStats.push({
+              id: store.id,
+              name: store.name,
+              cashiersCount,
+              transactionsCount,
+              revenue
+            })
 
             if (Array.isArray(transaction.data)) {
               const txWithStore = transaction.data.map((tx: any) => ({
@@ -105,6 +128,9 @@ export default function AdminDashboard() {
       const sortedTransactions = [...allTransactions]
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
+      const sortedStoreStats = [...storeStats]
+        .sort((a, b) => b.revenue - a.revenue)
+
       setData({
         totalStores: stores.length,
         totalCashiers,
@@ -112,6 +138,7 @@ export default function AdminDashboard() {
         totalRevenue,
         allTransactions: sortedTransactions,
         recentTransactions: sortedTransactions.slice(0, 5),
+        storeStats: sortedStoreStats,
       })
     } catch (err) {
       console.error(err)
@@ -481,6 +508,54 @@ export default function AdminDashboard() {
         </div>
 
       </div>
+
+      {/* Pendapatan per Cabang Toko */}
+      <div className="rounded-2xl border border-slate-200/70 bg-white shadow-3xs flex flex-col overflow-hidden">
+        <div className="border-b border-slate-100 p-5 bg-slate-50/50 flex items-center justify-between">
+          <div>
+            <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Pendapatan per Cabang Toko</h3>
+            <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Kontribusi omset penjualan riil dari setiap cabang toko</p>
+          </div>
+          <Store className="h-4 w-4 text-slate-400" />
+        </div>
+        
+        <div className="overflow-x-auto">
+          {data.storeStats.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-12 text-center">
+              <p className="text-xs font-bold text-slate-500">Belum ada data cabang toko</p>
+            </div>
+          ) : (
+            <table className="w-full min-w-[600px] text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-55/25 font-bold uppercase tracking-wider text-slate-400 text-[9px]">
+                  <th className="p-4 pl-6">Nama Cabang</th>
+                  <th className="p-4">Total Operator Kasir</th>
+                  <th className="p-4">Total Transaksi Sukses</th>
+                  <th className="p-4 pr-6 text-right">Total Pendapatan</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-600 font-semibold">
+                {data.storeStats.map((stat) => (
+                  <tr key={stat.id} className="group hover:bg-slate-50/45 transition-colors">
+                    <td className="p-4 pl-6 font-bold text-slate-900 flex items-center gap-2.5">
+                      <div className="h-7 w-7 rounded-lg bg-blue-50 border border-blue-100/50 flex items-center justify-center text-blue-600 shrink-0 group-hover:scale-105 transition-transform">
+                        <Store className="h-3.5 w-3.5" />
+                      </div>
+                      <span>{stat.name}</span>
+                    </td>
+                    <td className="p-4 text-slate-500 font-medium">{stat.cashiersCount.toLocaleString('id-ID')} Kasir</td>
+                    <td className="p-4 text-slate-500 font-medium">{stat.transactionsCount.toLocaleString('id-ID')} Transaksi</td>
+                    <td className="p-4 pr-6 text-right font-mono font-black text-emerald-600 text-sm">
+                      Rp {stat.revenue.toLocaleString('id-ID')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
     </div>
   )
 }

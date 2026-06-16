@@ -288,25 +288,6 @@ export default function Home() {
                 Buka Terminal Kasir
               </Link>
             </div>
-
-            <div className="bg-slate-50/80 rounded-2xl border border-slate-200 p-6.5 flex flex-col justify-between shadow-xs">
-              <div className="space-y-4">
-                <div className="h-10 w-10 rounded-xl bg-indigo-50 border border-indigo-150 text-indigo-600 flex items-center justify-center">
-                  <KeyRound size={18} />
-                </div>
-                <h3 className="font-extrabold text-slate-950 text-sm">Store Backoffice Outlet</h3>
-                <p className="text-slate-555 text-xs leading-relaxed font-medium">
-                  Akses pengelola cabang untuk mengedit data stok lokal toko, melakukan cash opname laci kasir, memantau riwayat pembukaan shift kasir harian, dan mutasi barang masuk.
-                </p>
-              </div>
-              <Link
-                href="/dashboard/store"
-                className="w-full text-center py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs active:scale-97 transition-all mt-6 block cursor-pointer"
-              >
-                Masuk Store Backoffice
-              </Link>
-            </div>
-
           </div>
 
         </div>
