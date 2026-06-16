@@ -147,7 +147,6 @@ export default function PosLayout({
           `Modal Awal: Rp ${summary.openingCash.toLocaleString('id-ID')}\n` +
           `Penjualan Tunai: Rp ${summary.cashSales.toLocaleString('id-ID')}\n` +
           `Penjualan QRIS: Rp ${(summary.qrisSales || 0).toLocaleString('id-ID')}\n` +
-          `Penjualan Debit: Rp ${(summary.debitSales || 0).toLocaleString('id-ID')}\n` +
           `Ekspektasi Laci: Rp ${summary.expectedCash.toLocaleString('id-ID')}\n` +
           `Uang Fisik Aktual: Rp ${summary.closingCash.toLocaleString('id-ID')}\n` +
           `Selisih Laci: Rp ${summary.difference.toLocaleString('id-ID')}`

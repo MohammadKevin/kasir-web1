@@ -251,7 +251,7 @@ export default function Home() {
             <p className="text-slate-500 text-xs font-semibold">Gunakan wewenang akun Anda untuk mengakses fitur sistem.</p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto items-stretch">
+          <div className="grid gap-6 md:grid-cols-2 max-w-3xl mx-auto items-stretch">
 
             <div className="bg-slate-50/80 rounded-2xl border border-slate-200 p-6.5 flex flex-col justify-between shadow-xs">
               <div className="space-y-4">
@@ -278,7 +278,7 @@ export default function Home() {
                 </div>
                 <h3 className="font-extrabold text-slate-950 text-sm">Terminal POS Kasir</h3>
                 <p className="text-slate-555 text-xs leading-relaxed font-medium">
-                  Layar antarmuka kasir toko untuk melakukan scanning belanjaan, menerima pembayaran tunai/QRIS/debit, input member pelanggan, serta mencetak struk thermal nota penjualan.
+                  Layar antarmuka kasir toko untuk melakukan scanning belanjaan, menerima pembayaran tunai/QRIS, input member pelanggan, serta mencetak struk thermal nota penjualan.
                 </p>
               </div>
               <Link

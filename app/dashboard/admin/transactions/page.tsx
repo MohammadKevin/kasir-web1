@@ -399,7 +399,6 @@ export default function TransactionAdminPage() {
               <option value="ALL">Semua Metode</option>
               <option value="CASH">Cash / Tunai</option>
               <option value="QRIS">QRIS</option>
-              <option value="DEBIT">Kartu Debit</option>
             </select>
             <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
           </div>

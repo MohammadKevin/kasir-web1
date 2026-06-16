@@ -721,7 +721,6 @@ export default function PosPage() {
   const paymentMethods = [
     { id: 'CASH', icon: Wallet, label: 'Tunai' },
     { id: 'QRIS', icon: QrCode, label: 'QRIS' },
-    { id: 'DEBIT', icon: CreditCard, label: 'Debit' },
     { id: 'SPLIT', icon: Layers, label: 'Split' },
   ]
 
@@ -1196,7 +1195,7 @@ export default function PosPage() {
             {payment === 'SPLIT' && (
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-3xs space-y-2 font-mono text-xs">
                 <span className="font-sans font-bold text-slate-500 text-[9px] uppercase block mb-1">Rincian Split Payment</span>
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-2 gap-1.5">
                   <div>
                     <label className="block text-[8px] font-sans font-extrabold uppercase text-slate-400 mb-0.5">Tunai (Rp)</label>
                     <input
@@ -1214,16 +1213,6 @@ export default function PosPage() {
                       placeholder="0"
                       value={splitAmounts.QRIS || ''}
                       onChange={e => setSplitAmounts({ ...splitAmounts, QRIS: Number(e.target.value) })}
-                      className="w-full bg-white border border-slate-200 rounded-lg px-1.5 py-1 text-[10px] outline-none text-right font-bold text-slate-800"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[8px] font-sans font-extrabold uppercase text-slate-400 mb-0.5">Debit (Rp)</label>
-                    <input
-                      type="number"
-                      placeholder="0"
-                      value={splitAmounts.DEBIT || ''}
-                      onChange={e => setSplitAmounts({ ...splitAmounts, DEBIT: Number(e.target.value) })}
                       className="w-full bg-white border border-slate-200 rounded-lg px-1.5 py-1 text-[10px] outline-none text-right font-bold text-slate-800"
                     />
                   </div>
@@ -1245,7 +1234,7 @@ export default function PosPage() {
               </div>
             )}
 
-            {(payment === 'QRIS' || payment === 'DEBIT') && (
+            {payment === 'QRIS' && (
               <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-150 rounded-xl px-3 py-2 text-[10px] text-emerald-700 font-bold shadow-3xs leading-none">
                 <CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
                 <span>Pembayaran pas — tidak ada kembalian</span>
