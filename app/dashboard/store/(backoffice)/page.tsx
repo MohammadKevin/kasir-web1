@@ -129,6 +129,9 @@ export default function StoreDashboard() {
       setStoreOpen(false)
       setStoreAttendance(null)
       localStorage.removeItem('storeOpen')
+      localStorage.removeItem('cashier')
+      localStorage.removeItem('cashierActive')
+      localStorage.removeItem('currentShiftId')
       alert('Toko berhasil ditutup! Sampai jumpa besok.')
     } catch (err: any) {
       alert(err.response?.data?.message || 'Gagal menutup toko')
@@ -139,7 +142,7 @@ export default function StoreDashboard() {
 
   const formatIDR = (num: number) => `Rp ${num.toLocaleString('id-ID')}`
 
-  const isCashierActive = summary.activeShift > 0 || (typeof window !== 'undefined' && localStorage.getItem('cashierActive') === 'true')
+  const isCashierActive = summary.activeShift > 0 && (typeof window !== 'undefined' && localStorage.getItem('cashierActive') === 'true')
 
   return (
     <div className="space-y-6">
@@ -230,7 +233,7 @@ export default function StoreDashboard() {
       <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {storeOpen ? (
           <Link
-            href="/dashboard/store/cashier"
+            href={isCashierActive ? "/dashboard/store/pos" : "/dashboard/store/cashier"}
             className="group border border-slate-200 bg-white p-5 rounded-2xl hover:bg-slate-50/50 hover:border-slate-350 transition-all flex justify-between items-start shadow-3xs cursor-pointer"
           >
             <div className="space-y-2">
