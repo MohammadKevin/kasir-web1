@@ -20,10 +20,10 @@ import {
   ChevronDown
 } from 'lucide-react'
 
-type Cashier = { id: string; name: string; phone: string; isActive: boolean }
+type Cashier = { id: string; name: string; phone: string; isActive: boolean; isStoreAdmin: boolean }
 type StoreType = { id: string; name: string }
 
-const EMPTY_FORM = { name: '', phone: '', pin: '' }
+const EMPTY_FORM = { name: '', phone: '', pin: '', isStoreAdmin: false }
 
 export default function CashierPage() {
   const [cashiers, setCashiers] = useState<Cashier[]>([])
@@ -243,7 +243,14 @@ export default function CashierPage() {
                         }`}>
                           <User size={14} />
                         </div>
-                        <span className="font-extrabold text-slate-900 text-xs">{c.name}</span>
+                        <div className="flex flex-col">
+                          <span className="font-extrabold text-slate-900 text-xs">{c.name}</span>
+                          {c.isStoreAdmin && (
+                            <span className="text-[9px] font-extrabold text-amber-600 bg-amber-50 border border-amber-200/50 rounded px-1.5 py-0.5 mt-0.5 w-max">
+                              ADMIN STORE
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="p-4">
@@ -263,7 +270,7 @@ export default function CashierPage() {
                     <td className="p-4 pr-6">
                       <div className="flex gap-1.5 opacity-80 md:opacity-0 md:group-hover:opacity-100 justify-end transition-all duration-200">
                         <button 
-                          onClick={() => { setEditingId(c.id); setFormData({ name: c.name, phone: c.phone, pin: '' }); setIsOpenModal(true) }}
+                          onClick={() => { setEditingId(c.id); setFormData({ name: c.name, phone: c.phone || '', pin: '', isStoreAdmin: c.isStoreAdmin || false }); setIsOpenModal(true) }}
                           className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-slate-50 text-blue-600 hover:text-blue-700 transition-colors"
                           title="Edit Kasir"
                         >
@@ -380,6 +387,21 @@ export default function CashierPage() {
                     className="w-full rounded-xl border border-slate-200 pl-11 pr-4 py-3 text-xs text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 transition-all font-semibold"
                   />
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-200/60 rounded-xl mt-2">
+                <div className="space-y-0.5">
+                  <span className="text-xs font-bold text-slate-800">Admin Store</span>
+                  <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
+                    Diberikan wewenang Void & Cetak SKU Barcode
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={formData.isStoreAdmin}
+                  onChange={e => setFormData({ ...formData, isStoreAdmin: e.target.checked })}
+                  className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer"
+                />
               </div>
 
               <button 

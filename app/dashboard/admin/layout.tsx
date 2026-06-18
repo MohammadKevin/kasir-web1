@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { api } from '@/lib/api'
 
 import {
@@ -25,49 +25,29 @@ import {
   ChevronDown,
   LogOut,
   Printer,
-  Coins
+  Coins,
+  Star,
+  Bell,
+  ChevronLeft,
+  ChevronRight,
+  Loader2
 } from 'lucide-react'
 
-const managementMenus = [
-  { name: 'Cabang Toko', path: '/dashboard/admin/stores', icon: Building2 },
-  { name: 'Desain Struk', path: '/dashboard/admin/receipt-design', icon: Printer },
-  { name: 'Kasir', path: '/dashboard/admin/cashier', icon: Users },
-  { name: 'Produk', path: '/dashboard/admin/products', icon: Package },
-  { name: 'Barcode', path: '/dashboard/admin/barcode', icon: BarcodeIcon },
-  { name: 'Kategori', path: '/dashboard/admin/categories', icon: Tag },
-  { name: 'Pelanggan', path: '/dashboard/admin/customers', icon: UserCheck },
-  { name: 'Supplier', path: '/dashboard/admin/suppliers', icon: Truck },
-]
-
-const menus = [
-  {
-    title: 'Penjualan',
-    items: [
-      { name: 'Riwayat Transaksi', path: '/dashboard/admin/transactions', icon: Receipt },
-      { name: 'Kulakan / Pembelian', path: '/dashboard/admin/purchases', icon: ShoppingCart },
-      { name: 'Diskon / Promo', path: '/dashboard/admin/discounts', icon: Percent },
-      { name: 'Stok Barang', path: '/dashboard/admin/stock', icon: Boxes },
-    ],
-  },
-  {
-    title: 'Keuangan',
-    items: [
-      { name: 'Pengeluaran', path: '/dashboard/admin/expenses', icon: CreditCard },
-      { name: 'Laporan', path: '/dashboard/admin/reports', icon: BarChart3 },
-      { name: 'Gaji Karyawan', path: '/dashboard/admin/salaries', icon: Coins },
-    ],
-  },
-]
-
-export default function AdminLayout({
+function AdminLayoutContent({
   children,
 }: {
   children: React.ReactNode
 }) {
   const pathname = usePathname()
-  const [open, setOpen] = useState<string[]>([])
+  const searchParams = useSearchParams()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false) // Desktop collapse
   const [user, setUser] = useState<{ name: string; type: string } | null>(null)
+
+  // Submenu states
+  const [isLaporanOpen, setIsLaporanOpen] = useState(false)
+  const [isInventoriOpen, setIsInventoriOpen] = useState(false)
+  const [isPembelianOpen, setIsPembelianOpen] = useState(false)
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -107,22 +87,21 @@ export default function AdminLayout({
   }, [])
 
   useEffect(() => {
-    const active = menus.find((section) =>
-      section.items.some((item) => item.path === pathname)
-    )
-    if (active && !open.includes(active.title)) {
-      setOpen((prev) => [...prev, active.title])
+    if (pathname.includes('/reports')) {
+      setIsLaporanOpen(true)
+    }
+    if (pathname.includes('/stock')) {
+      setIsInventoriOpen(true)
+    }
+    if (
+      pathname.includes('/suppliers') ||
+      pathname.includes('/purchases') ||
+      pathname.includes('/expenses')
+    ) {
+      setIsPembelianOpen(true)
     }
     setIsSidebarOpen(false)
   }, [pathname])
-
-  function toggle(section: string) {
-    if (open.includes(section)) {
-      setOpen(open.filter((x) => x !== section))
-      return
-    }
-    setOpen([...open, section])
-  }
 
   async function logout() {
     try {
@@ -138,153 +117,508 @@ export default function AdminLayout({
     }
   }
 
+  // Helper to determine breadcrumb title
+  const getBreadcrumbs = () => {
+    const parts = []
+    if (pathname === '/dashboard/admin') {
+      parts.push('Dashboard')
+    } else if (pathname.includes('/reports')) {
+      parts.push('Laporan')
+      const menuParam = searchParams.get('menu')
+      if (menuParam === 'sales-menu') parts.push('Laporan Penjualan')
+      else if (menuParam === 'operational-menu') parts.push('Laporan Operasional')
+      else if (menuParam === 'profit-menu') parts.push('Laporan Laba & Rugi')
+      else parts.push('Laporan Penjualan')
+    } else if (pathname.includes('/products')) {
+      parts.push('Produk')
+      parts.push('Daftar Produk')
+    } else if (pathname.includes('/categories')) {
+      parts.push('Produk')
+      parts.push('Kategori')
+    } else if (pathname.includes('/discounts')) {
+      parts.push('Produk')
+      parts.push('Diskon & Promo')
+    } else if (pathname.includes('/barcode')) {
+      parts.push('Produk')
+      parts.push('Cetak Barcode')
+    } else if (pathname.includes('/salaries')) {
+      parts.push('Bisnis')
+      parts.push('Gaji Staf')
+    } else if (pathname.includes('/stock')) {
+      parts.push('Inventori')
+      parts.push('Kartu Stok')
+    } else if (pathname.includes('/suppliers')) {
+      parts.push('Pembelian')
+      parts.push('Supplier')
+    } else if (pathname.includes('/purchases')) {
+      parts.push('Pembelian')
+      parts.push('Purchase Order')
+    } else if (pathname.includes('/expenses')) {
+      parts.push('Pembelian')
+      parts.push('Daftar Pengeluaran')
+    } else if (pathname.includes('/stores')) {
+      parts.push('Bisnis')
+      parts.push('Outlet')
+    } else if (pathname.includes('/cashier')) {
+      parts.push('Bisnis')
+      parts.push('Karyawan')
+    } else if (pathname.includes('/customers')) {
+      parts.push('Bisnis')
+      parts.push('Pelanggan')
+    } else if (pathname.includes('/receipt-design')) {
+      parts.push('Bisnis')
+      parts.push('Perangkat')
+    } else {
+      parts.push('Backoffice')
+    }
+
+    return (
+      <div className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
+        {parts.map((part, index) => (
+          <span key={part} className="flex items-center gap-1.5">
+            {index > 0 && <span className="text-[10px] text-slate-300">/</span>}
+            <span className={index === parts.length - 1 ? 'text-slate-700 font-bold' : ''}>
+              {part}
+            </span>
+          </span>
+        ))}
+      </div>
+    )
+  }
+
+  const isLaporanActive = pathname.includes('/reports')
+  const activeMenu = searchParams.get('menu')
 
   return (
-    <div className="flex min-h-screen bg-slate-50 text-slate-800 antialiased font-sans">
+    <div className="flex min-h-screen bg-[#f4f6f9] text-slate-800 antialiased font-sans">
       
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-xs md:hidden"
+          className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-xs md:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar navigation */}
-      <aside className={`fixed inset-y-0 left-0 z-50 flex h-full w-64 flex-col border-r border-slate-200/80 bg-white px-5 py-6 justify-between transition-transform duration-300 md:sticky md:top-0 md:h-screen md:translate-x-0 ${
-        isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 flex h-full flex-col bg-[#1a202c] justify-between transition-all duration-300 md:sticky md:top-0 md:h-screen md:translate-x-0 ${
+        isSidebarCollapsed ? 'w-20 px-2' : 'w-64 px-4'
+      } ${
+        isSidebarOpen ? 'translate-x-0 w-64 px-4' : '-translate-x-full'
+      } py-5 border-r border-[#262f3f] shadow-xl`}>
         
-        <div className="flex flex-col flex-1 overflow-y-auto pr-1">
+        <div className="flex flex-col flex-1 overflow-y-auto pr-0.5 scrollbar-thin">
           
           {/* Sidebar Header Brand */}
-          <div className="mb-8 px-2 flex items-center justify-between">
+          <div className={`mb-6 flex items-center justify-between ${isSidebarCollapsed ? 'px-2 justify-center' : 'px-3'}`}>
             <div className="flex items-center gap-2">
-              <div className="h-6 w-6 rounded-md bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-xs shadow-md shadow-blue-500/20">
-                L
-              </div>
-              <div>
-                <h1 className="text-sm font-black tracking-tight text-slate-900 leading-none">
-                  laila<span className="text-blue-600 font-extrabold">collections</span>
-                </h1>
-                <p className="text-[9px] font-bold text-slate-400 mt-1">v.1.0</p>
-              </div>
+              {!isSidebarCollapsed && (
+                <div className="flex items-baseline gap-1">
+                  <h1 className="text-xl font-light tracking-tight text-sky-400 font-sans">
+                    laila<span className="text-sky-400 font-bold">collections</span>
+                  </h1>
+                </div>
+              )}
+              {isSidebarCollapsed && (
+                <div className="h-8 w-8 rounded-full bg-sky-500 flex items-center justify-center text-white font-extrabold text-sm">
+                  L
+                </div>
+              )}
             </div>
+            
+            {/* Mobile close button */}
             <button 
               onClick={() => setIsSidebarOpen(false)}
-              className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 md:hidden"
+              className="rounded-lg p-1 text-slate-400 hover:bg-[#2b3546] hover:text-white md:hidden"
             >
               <X size={18} />
             </button>
           </div>
 
           {/* Menus */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             
             {/* Dashboard Overview */}
             <div>
               <Link
                 href="/dashboard/admin"
-                className={`flex items-center gap-3 rounded-xl px-4 py-2.5 text-xs font-bold transition-all duration-200 ${
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200 ${
                   pathname === '/dashboard/admin'
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 scale-[1.01]'
-                    : 'text-slate-600 hover:bg-slate-55/70 hover:text-slate-900 hover:translate-x-1'
-                }`}
+                    ? 'bg-[#2b3546] text-sky-400 shadow-inner'
+                    : 'text-slate-400 hover:bg-[#202836] hover:text-white'
+                } ${isSidebarCollapsed ? 'justify-center' : ''}`}
+                title="Dashboard"
               >
-                <LayoutDashboard size={15} />
-                <span>Ringkasan Dashboard</span>
+                <LayoutDashboard size={16} className={pathname === '/dashboard/admin' ? 'text-sky-400' : 'text-slate-400'} />
+                {!isSidebarCollapsed && <span>Dashboard</span>}
               </Link>
             </div>
 
-            {/* Management Section */}
+            {/* Laporan Submenu */}
+            <div className="space-y-1">
+              <button
+                onClick={() => setIsLaporanOpen(!isLaporanOpen)}
+                className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-xs font-bold text-slate-400 hover:bg-[#202836] hover:text-white transition-all cursor-pointer ${
+                  isLaporanActive ? 'text-white' : ''
+                } ${isSidebarCollapsed ? 'justify-center' : ''}`}
+                title="Laporan"
+              >
+                <div className="flex items-center gap-3">
+                  <BarChart3 size={16} className={isLaporanActive ? 'text-sky-400' : 'text-slate-400'} />
+                  {!isSidebarCollapsed && <span>Laporan</span>}
+                </div>
+                {!isSidebarCollapsed && (
+                  <ChevronDown 
+                    size={13} 
+                    className={`text-slate-400 transition-transform duration-200 ${isLaporanOpen ? 'rotate-180' : ''}`} 
+                  />
+                )}
+              </button>
+
+              {isLaporanOpen && !isSidebarCollapsed && (
+                <div className="space-y-1 pl-4 ml-3 border-l border-slate-700">
+                  <Link
+                    href="/dashboard/admin/reports?menu=sales-menu"
+                    className={`flex items-center gap-3 px-3 py-1.5 text-[11px] font-bold rounded-md transition-all ${
+                      isLaporanActive && (activeMenu === 'sales-menu' || !activeMenu)
+                        ? 'text-sky-400 font-extrabold'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <span>Laporan Penjualan</span>
+                  </Link>
+                  <Link
+                    href="/dashboard/admin/reports?menu=operational-menu"
+                    className={`flex items-center gap-3 px-3 py-1.5 text-[11px] font-bold rounded-md transition-all ${
+                      isLaporanActive && activeMenu === 'operational-menu'
+                        ? 'text-sky-400 font-extrabold'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <span>Laporan Operasional</span>
+                  </Link>
+                  <Link
+                    href="/dashboard/admin/reports?menu=profit-menu"
+                    className={`flex items-center gap-3 px-3 py-1.5 text-[11px] font-bold rounded-md transition-all ${
+                      isLaporanActive && activeMenu === 'profit-menu'
+                        ? 'text-sky-400 font-extrabold'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <span>Laporan Laba & Rugi</span>
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* PRODUK Section */}
             <div>
-              <div className="mb-2.5 px-4 text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
-                Manajemen
-              </div>
+              {!isSidebarCollapsed ? (
+                <div className="mb-2 px-3 text-[9px] font-extrabold uppercase tracking-wider text-slate-500">
+                  Produk
+                </div>
+              ) : (
+                <div className="h-px bg-slate-800 my-3" />
+              )}
+              
               <div className="space-y-1">
-                {managementMenus.map((item) => {
-                  const isActive = pathname === item.path
-                  const Icon = item.icon
-                  return (
-                    <Link
-                      key={item.path}
-                      href={item.path}
-                      className={`flex items-center gap-3 px-4 py-2 text-xs font-bold transition-all duration-205 ${
-                        isActive
-                          ? 'bg-blue-50/80 text-blue-600 border-l-4 border-blue-600 pl-3 rounded-r-xl rounded-l-none'
-                          : 'text-slate-600 hover:bg-slate-55/70 hover:text-slate-955 hover:translate-x-1 rounded-xl'
-                      }`}
-                    >
-                      <Icon size={14} className={isActive ? 'text-blue-600' : 'text-slate-400'} />
-                      <span>{item.name}</span>
-                    </Link>
-                  )
-                })}
+                {/* Catalog Produk */}
+                <Link
+                  href="/dashboard/admin/products"
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200 ${
+                    pathname === '/dashboard/admin/products'
+                      ? 'bg-[#2b3546] text-sky-400 shadow-inner'
+                      : 'text-slate-400 hover:bg-[#202836] hover:text-white'
+                  } ${isSidebarCollapsed ? 'justify-center' : ''}`}
+                  title="Daftar Produk"
+                >
+                  <Package size={16} className={pathname === '/dashboard/admin/products' ? 'text-sky-400' : 'text-slate-400'} />
+                  {!isSidebarCollapsed && <span>Daftar Produk</span>}
+                </Link>
+
+                {/* Kategori */}
+                <Link
+                  href="/dashboard/admin/categories"
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200 ${
+                    pathname === '/dashboard/admin/categories'
+                      ? 'bg-[#2b3546] text-sky-400 shadow-inner'
+                      : 'text-slate-400 hover:bg-[#202836] hover:text-white'
+                  } ${isSidebarCollapsed ? 'justify-center' : ''}`}
+                  title="Kategori"
+                >
+                  <Tag size={16} className={pathname === '/dashboard/admin/categories' ? 'text-sky-400' : 'text-slate-400'} />
+                  {!isSidebarCollapsed && <span>Kategori</span>}
+                </Link>
+
+                {/* Diskon */}
+                <Link
+                  href="/dashboard/admin/discounts"
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200 ${
+                    pathname === '/dashboard/admin/discounts'
+                      ? 'bg-[#2b3546] text-sky-400 shadow-inner'
+                      : 'text-slate-400 hover:bg-[#202836] hover:text-white'
+                  } ${isSidebarCollapsed ? 'justify-center' : ''}`}
+                  title="Diskon & Promo"
+                >
+                  <Percent size={16} className={pathname === '/dashboard/admin/discounts' ? 'text-sky-400' : 'text-slate-400'} />
+                  {!isSidebarCollapsed && <span>Diskon & Promo</span>}
+                </Link>
+
+                {/* Cetak Barcode */}
+                <Link
+                  href="/dashboard/admin/barcode"
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200 ${
+                    pathname === '/dashboard/admin/barcode'
+                      ? 'bg-[#2b3546] text-sky-400 shadow-inner'
+                      : 'text-slate-400 hover:bg-[#202836] hover:text-white'
+                  } ${isSidebarCollapsed ? 'justify-center' : ''}`}
+                  title="Cetak Barcode"
+                >
+                  <BarcodeIcon size={16} className={pathname === '/dashboard/admin/barcode' ? 'text-sky-400' : 'text-slate-400'} />
+                  {!isSidebarCollapsed && <span>Cetak Barcode</span>}
+                </Link>
+
+                {/* Inventori Dropdown */}
+                <div className="space-y-1">
+                  <button
+                    onClick={() => setIsInventoriOpen(!isInventoriOpen)}
+                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-xs font-bold text-slate-400 hover:bg-[#202836] hover:text-white transition-all cursor-pointer ${
+                      pathname.includes('/stock') ? 'text-white' : ''
+                    } ${isSidebarCollapsed ? 'justify-center' : ''}`}
+                    title="Inventori"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Boxes size={16} className={pathname.includes('/stock') ? 'text-sky-400' : 'text-slate-400'} />
+                      {!isSidebarCollapsed && <span>Inventori</span>}
+                    </div>
+                    {!isSidebarCollapsed && (
+                      <ChevronDown 
+                        size={13} 
+                        className={`text-slate-400 transition-transform duration-200 ${isInventoriOpen ? 'rotate-180' : ''}`} 
+                      />
+                    )}
+                  </button>
+
+                  {isInventoriOpen && !isSidebarCollapsed && (
+                    <div className="space-y-1 pl-4 ml-3 border-l border-slate-700">
+                      <Link
+                        href="/dashboard/admin/stock"
+                        className={`flex items-center gap-3 px-3 py-1.5 text-[11px] font-bold rounded-md transition-all ${
+                          pathname === '/dashboard/admin/stock' && !searchParams.get('type')
+                            ? 'text-sky-400 font-extrabold'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        <span>Kartu Stok</span>
+                      </Link>
+                      <Link
+                        href="/dashboard/admin/stock?type=IN"
+                        className={`flex items-center gap-3 px-3 py-1.5 text-[11px] font-bold rounded-md transition-all ${
+                          pathname === '/dashboard/admin/stock' && searchParams.get('type') === 'IN'
+                            ? 'text-sky-400 font-extrabold'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        <span>Stok Masuk</span>
+                      </Link>
+                      <Link
+                        href="/dashboard/admin/stock?type=OUT"
+                        className={`flex items-center gap-3 px-3 py-1.5 text-[11px] font-bold rounded-md transition-all ${
+                          pathname === '/dashboard/admin/stock' && searchParams.get('type') === 'OUT'
+                            ? 'text-sky-400 font-extrabold'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        <span>Stok Keluar</span>
+                      </Link>
+                      <Link
+                        href="/dashboard/admin/stock?type=TRANSFER"
+                        className={`flex items-center gap-3 px-3 py-1.5 text-[11px] font-bold rounded-md transition-all ${
+                          pathname === '/dashboard/admin/stock' && searchParams.get('type') === 'TRANSFER'
+                            ? 'text-sky-400 font-extrabold'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        <span>Transfer Stok</span>
+                      </Link>
+                      <Link
+                        href="/dashboard/admin/stock?type=OPNAME"
+                        className={`flex items-center gap-3 px-3 py-1.5 text-[11px] font-bold rounded-md transition-all ${
+                          pathname === '/dashboard/admin/stock' && searchParams.get('type') === 'OPNAME'
+                            ? 'text-sky-400 font-extrabold'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        <span>Stok Opname</span>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+
+                {/* Pembelian Dropdown */}
+                <div className="space-y-1">
+                  <button
+                    onClick={() => setIsPembelianOpen(!isPembelianOpen)}
+                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-xs font-bold text-slate-400 hover:bg-[#202836] hover:text-white transition-all cursor-pointer ${
+                      pathname.includes('/suppliers') || pathname.includes('/purchases') || pathname.includes('/expenses')
+                        ? 'text-white'
+                        : ''
+                    } ${isSidebarCollapsed ? 'justify-center' : ''}`}
+                    title="Pembelian"
+                  >
+                    <div className="flex items-center gap-3">
+                      <ShoppingCart size={16} className={
+                        pathname.includes('/suppliers') || pathname.includes('/purchases') || pathname.includes('/expenses')
+                          ? 'text-sky-400'
+                          : 'text-slate-400'
+                      } />
+                      {!isSidebarCollapsed && <span>Pembelian</span>}
+                    </div>
+                    {!isSidebarCollapsed && (
+                      <ChevronDown 
+                        size={13} 
+                        className={`text-slate-400 transition-transform duration-200 ${isPembelianOpen ? 'rotate-180' : ''}`} 
+                      />
+                    )}
+                  </button>
+
+                  {isPembelianOpen && !isSidebarCollapsed && (
+                    <div className="space-y-1 pl-4 ml-3 border-l border-slate-700">
+                      <Link
+                        href="/dashboard/admin/suppliers"
+                        className={`flex items-center gap-3 px-3 py-1.5 text-[11px] font-bold rounded-md transition-all ${
+                          pathname === '/dashboard/admin/suppliers'
+                            ? 'text-sky-400 font-extrabold'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        <span>Supplier</span>
+                      </Link>
+                      <Link
+                        href="/dashboard/admin/purchases"
+                        className={`flex items-center gap-3 px-3 py-1.5 text-[11px] font-bold rounded-md transition-all ${
+                          pathname === '/dashboard/admin/purchases'
+                            ? 'text-sky-400 font-extrabold'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        <span>Purchase Order</span>
+                      </Link>
+                      <div className="px-3 py-1.5 text-[11px] font-bold text-slate-600 select-none">
+                        Daftar Belanja
+                      </div>
+                      <Link
+                        href="/dashboard/admin/expenses"
+                        className={`flex items-center gap-3 px-3 py-1.5 text-[11px] font-bold rounded-md transition-all ${
+                          pathname === '/dashboard/admin/expenses'
+                            ? 'text-sky-400 font-extrabold'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        <span>Daftar Pengeluaran</span>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+
               </div>
             </div>
 
-            {/* Dynamic Dropdown sections */}
-            <div className="space-y-4">
-              {menus.map((section) => {
-                const isSectionOpen = open.includes(section.title)
-                
-                return (
-                  <div key={section.title} className="space-y-1.5">
-                    <button
-                      onClick={() => toggle(section.title)}
-                      className="flex w-full items-center justify-between px-4 py-2 text-[9px] font-extrabold uppercase tracking-widest text-slate-400 transition-colors hover:text-slate-600 cursor-pointer"
-                    >
-                      <span>{section.title}</span>
-                      <ChevronDown 
-                        size={12} 
-                        className={`text-slate-400 transition-transform duration-200 ${isSectionOpen ? 'rotate-180' : ''}`} 
-                      />
-                    </button>
+            {/* BISNIS Section */}
+            <div>
+              {!isSidebarCollapsed ? (
+                <div className="mb-2 px-3 text-[9px] font-extrabold uppercase tracking-wider text-slate-500">
+                  Bisnis
+                </div>
+              ) : (
+                <div className="h-px bg-slate-800 my-3" />
+              )}
+              
+              <div className="space-y-1">
+                {/* Outlet */}
+                <Link
+                  href="/dashboard/admin/stores"
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200 ${
+                    pathname === '/dashboard/admin/stores'
+                      ? 'bg-[#2b3546] text-sky-400 shadow-inner'
+                      : 'text-slate-400 hover:bg-[#202836] hover:text-white'
+                  } ${isSidebarCollapsed ? 'justify-center' : ''}`}
+                  title="Outlet"
+                >
+                  <Building2 size={16} className={pathname === '/dashboard/admin/stores' ? 'text-sky-400' : 'text-slate-400'} />
+                  {!isSidebarCollapsed && <span>Outlet</span>}
+                </Link>
 
-                    <div 
-                      className={`grid transition-all duration-250 ease-in-out ${
-                        isSectionOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
-                      }`}
-                    >
-                      <div className="overflow-hidden space-y-1 pl-1 border-l border-slate-100 ml-3">
-                        {section.items.map((item) => {
-                          const isActive = pathname === item.path
-                          const Icon = item.icon
-                          return (
-                            <Link
-                              key={item.path}
-                              href={item.path}
-                              className={`flex items-center gap-3 px-4 py-2 text-xs font-bold transition-all duration-205 ${
-                                isActive
-                                  ? 'bg-blue-50/80 text-blue-600 border-l-4 border-blue-600 pl-3 rounded-r-xl rounded-l-none'
-                                  : 'text-slate-600 hover:bg-slate-55/70 hover:text-slate-955 hover:translate-x-1 rounded-xl'
-                              }`}
-                            >
-                              <Icon size={13} className={isActive ? 'text-blue-600' : 'text-slate-400'} />
-                              <span>{item.name}</span>
-                            </Link>
-                          )
-                        })}
-                      </div>
-                    </div>
+                {/* Karyawan */}
+                <Link
+                  href="/dashboard/admin/cashier"
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200 ${
+                    pathname === '/dashboard/admin/cashier'
+                      ? 'bg-[#2b3546] text-sky-400 shadow-inner'
+                      : 'text-slate-400 hover:bg-[#202836] hover:text-white'
+                  } ${isSidebarCollapsed ? 'justify-center' : ''}`}
+                  title="Karyawan"
+                >
+                  <Users size={16} className={pathname === '/dashboard/admin/cashier' ? 'text-sky-400' : 'text-slate-400'} />
+                  {!isSidebarCollapsed && <span>Karyawan</span>}
+                </Link>
 
-                  </div>
-                )
-              })}
+                {/* Gaji Staf */}
+                <Link
+                  href="/dashboard/admin/salaries"
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200 ${
+                    pathname === '/dashboard/admin/salaries'
+                      ? 'bg-[#2b3546] text-sky-400 shadow-inner'
+                      : 'text-slate-400 hover:bg-[#202836] hover:text-white'
+                  } ${isSidebarCollapsed ? 'justify-center' : ''}`}
+                  title="Gaji Staf"
+                >
+                  <Coins size={16} className={pathname === '/dashboard/admin/salaries' ? 'text-sky-400' : 'text-slate-400'} />
+                  {!isSidebarCollapsed && <span>Gaji Staf</span>}
+                </Link>
+
+                {/* Pelanggan */}
+                <Link
+                  href="/dashboard/admin/customers"
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200 ${
+                    pathname === '/dashboard/admin/customers'
+                      ? 'bg-[#2b3546] text-sky-400 shadow-inner'
+                      : 'text-slate-400 hover:bg-[#202836] hover:text-white'
+                  } ${isSidebarCollapsed ? 'justify-center' : ''}`}
+                  title="Pelanggan"
+                >
+                  <UserCheck size={16} className={pathname === '/dashboard/admin/customers' ? 'text-sky-400' : 'text-slate-400'} />
+                  {!isSidebarCollapsed && <span>Pelanggan</span>}
+                </Link>
+
+                {/* Pengaturan Meja / Receipt design */}
+                <Link
+                  href="/dashboard/admin/receipt-design"
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200 ${
+                    pathname === '/dashboard/admin/receipt-design'
+                      ? 'bg-[#2b3546] text-sky-400 shadow-inner'
+                      : 'text-slate-400 hover:bg-[#202836] hover:text-white'
+                  } ${isSidebarCollapsed ? 'justify-center' : ''}`}
+                  title="Perangkat"
+                >
+                  <Printer size={16} className={pathname === '/dashboard/admin/receipt-design' ? 'text-sky-400' : 'text-slate-400'} />
+                  {!isSidebarCollapsed && <span>Perangkat</span>}
+                </Link>
+              </div>
             </div>
 
           </div>
         </div>
 
         {/* User profile & Logout footer */}
-        <div className="pt-4 border-t border-slate-100 space-y-4">
-          {user && (
+        <div className="pt-4 border-t border-slate-700/60 space-y-3 shrink-0">
+          {!isSidebarCollapsed && user && (
             <div className="flex items-center gap-3 px-2 py-1">
-              <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-blue-100 to-indigo-55 bg-blue-50 text-blue-600 border border-blue-200/50 flex items-center justify-center font-black text-xs">
+              <div className="h-9 w-9 rounded-full bg-slate-800 text-sky-400 border border-slate-700 flex items-center justify-center font-black text-xs shrink-0">
                 {user.name.slice(0, 2).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-extrabold text-slate-900 truncate leading-tight">{user.name}</p>
+                <p className="text-xs font-extrabold text-slate-100 truncate leading-tight">{user.name}</p>
                 <p className="text-[8.5px] font-black uppercase text-slate-400 tracking-wider mt-0.5 leading-none">{user.type}</p>
               </div>
             </div>
@@ -292,37 +626,90 @@ export default function AdminLayout({
           
           <button
             onClick={logout}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-600 transition-all hover:bg-red-50 hover:text-red-600 hover:border-red-200 active:scale-97 cursor-pointer"
+            className={`flex w-full items-center justify-center gap-2 rounded-lg bg-slate-800 border border-slate-700/65 px-3 py-2.5 text-xs font-bold text-slate-300 hover:bg-rose-950/45 hover:text-red-400 hover:border-red-900/50 active:scale-97 transition-all cursor-pointer ${
+              isSidebarCollapsed ? 'justify-center' : ''
+            }`}
+            title="Keluar Sesi"
           >
-            <LogOut size={13} />
-            <span>Keluar Sesi</span>
+            <LogOut size={14} className="text-slate-400 hover:text-red-400" />
+            {!isSidebarCollapsed && <span>Keluar</span>}
           </button>
           
-          <div className="text-center text-[10px] text-slate-400 font-bold tracking-wider pt-1">
-            Laila Collections v.1.0
-          </div>
+          {!isSidebarCollapsed && (
+            <div className="text-center text-[9px] text-slate-500 font-semibold pt-1">
+              +62 888 1500 360 | Cara Pakai
+            </div>
+          )}
         </div>
 
       </aside>
 
       {/* Main Frame content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="flex h-16 items-center border-b border-slate-200/80 bg-white px-6 md:hidden flex-shrink-0 justify-between">
-          <div className="flex items-center">
+        
+        {/* Top Header Navigation */}
+        <header className="flex h-14 items-center bg-white px-5 border-b border-slate-200/80 justify-between sticky top-0 z-35 shadow-3xs flex-shrink-0">
+          
+          <div className="flex items-center gap-3">
+            {/* Sidebar toggle button (Mobile) */}
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100"
+              className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 md:hidden"
             >
-              <Menu size={22} />
+              <Menu size={20} />
             </button>
-            <span className="ml-3 text-xs font-black tracking-tight text-slate-900">
-              laila<span className="text-blue-600 font-extrabold">collections</span>
-            </span>
+
+            {/* Sidebar toggle button (Desktop collapse) */}
+            <button
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hidden md:block"
+            >
+              <ChevronLeft size={18} className={`transition-transform duration-250 ${isSidebarCollapsed ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Star and BASIC premium tier badge */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 bg-amber-50 border border-amber-200/80 rounded-md px-1.5 py-0.5 text-amber-600 font-extrabold text-[10px] uppercase shadow-3xs select-none">
+                <Star size={11} className="fill-amber-500 stroke-amber-500" />
+                <span>BASIC</span>
+              </div>
+            </div>
+
+            <div className="h-4 w-px bg-slate-200 hidden md:block" />
+
+            {/* Breadcrumbs */}
+            <div className="hidden sm:block">
+              {getBreadcrumbs()}
+            </div>
           </div>
-          <span className="text-[8px] font-black bg-blue-50 text-blue-600 border border-blue-150 rounded px-2 py-0.5 uppercase tracking-widest">ADMIN</span>
+
+          <div className="flex items-center gap-4">
+            <button className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50 relative">
+              <Bell size={18} />
+              <span className="absolute top-1 right-1 h-1.5 w-1.5 bg-sky-500 rounded-full" />
+            </button>
+
+            <div className="h-5 w-px bg-slate-200" />
+
+            <div className="flex items-center gap-2.5">
+              <div className="text-right hidden md:block">
+                <p className="text-xs font-bold text-slate-900 leading-tight">
+                  Hi, {user ? user.name : 'Kasir'}
+                </p>
+                <p className="text-[9px] text-slate-400 font-semibold leading-none mt-0.5">
+                  Laila Collections
+                </p>
+              </div>
+              <div className="h-8 w-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-xs text-slate-600">
+                {user ? user.name.slice(0, 2).toUpperCase() : 'U'}
+              </div>
+            </div>
+          </div>
+
         </header>
 
-        <main className="flex-1 p-6 md:p-10 overflow-y-auto">
+        {/* Main Content Area */}
+        <main className="flex-1 p-5 md:p-8 overflow-y-auto">
           <div className="mx-auto w-full max-w-7xl">
             {children}
           </div>
@@ -330,5 +717,21 @@ export default function AdminLayout({
       </div>
 
     </div>
+  )
+}
+
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen w-full items-center justify-center bg-[#f4f6f9]">
+        <Loader2 className="h-8 w-8 animate-spin text-sky-500" />
+      </div>
+    }>
+      <AdminLayoutContent>{children}</AdminLayoutContent>
+    </Suspense>
   )
 }

@@ -15,15 +15,16 @@ import {
   UserCheck,
   ChefHat,
   Printer,
-  Barcode
+  Barcode,
+  ShieldCheck
 } from 'lucide-react'
 import { api } from '@/lib/api'
 
 const menus = [
   { name: 'Dashboard', path: '/dashboard/store', icon: LayoutDashboard },
   { name: 'Terminal Kasir', path: '/dashboard/store/cashier', icon: Wallet },
+  { name: 'Admin Store', path: '/dashboard/store/admin-portal', icon: ShieldCheck },
   { name: 'Barcode SKU', path: '/dashboard/store/barcode', icon: Barcode },
-  { name: 'Layar Dapur (KDS)', path: '/dashboard/store/kds', icon: ChefHat },
   { name: 'Riwayat Shift', path: '/dashboard/store/shifts', icon: Clock3 },
 ]
 
@@ -75,11 +76,11 @@ export default function StoreLayout({
           const cashierObj = JSON.parse(cachedCashier)
           if (cashierObj?.name) {
             setStaffName(cashierObj.name)
-            if (cashierObj.name.toLowerCase().includes('admin')) {
-              setIsAdminKasir(true)
-            } else {
-              setIsAdminKasir(false)
-            }
+          }
+          if (cashierObj && (cashierObj.isStoreAdmin || (cashierObj.name && cashierObj.name.toLowerCase().includes('admin')))) {
+            setIsAdminKasir(true)
+          } else {
+            setIsAdminKasir(false)
           }
         } catch {
           setIsAdminKasir(false)

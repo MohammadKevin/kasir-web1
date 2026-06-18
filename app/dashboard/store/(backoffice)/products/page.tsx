@@ -94,7 +94,7 @@ export default function ProductsPage() {
     if (cachedCashier) {
       try {
         const cashierObj = JSON.parse(cachedCashier)
-        if (cashierObj?.name && cashierObj.name.toLowerCase().includes('admin')) {
+        if (cashierObj && (cashierObj.isStoreAdmin || (cashierObj.name && cashierObj.name.toLowerCase().includes('admin')))) {
           setIsAdminKasir(true)
         }
       } catch (e) {

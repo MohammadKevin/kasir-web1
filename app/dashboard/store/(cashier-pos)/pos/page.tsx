@@ -511,7 +511,7 @@ export default function PosPage() {
             <div>${formatDate(data.createdAt)}</div>
             <div>${formatTime(data.createdAt)}</div>
             <div class="b">No. ${data.invoice}</div>
-            <div class="b">${data.orderType === 'DINEIN' ? `Dine In (Meja ${data.tableNumber || '-'})` : 'Take Away'}</div>
+            <div class="b">Penjualan Retail</div>
           </div>
           <div class="meta-right">
             ${currentStore?.receiptShowCustomer !== false ? `<div>${data.customer || '-'}</div>` : ''}
@@ -863,9 +863,10 @@ export default function PosPage() {
               return (
                 <div
                   key={p.id}
-                  className={`group bg-white border rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-3xs flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 hover:shadow-sm ${
+                  onClick={() => { if (!outOfStock) addToCart(p) }}
+                  className={`group bg-white border rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-3xs flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 hover:shadow-sm cursor-pointer select-none ${
                     outOfStock 
-                      ? 'opacity-60 border-slate-200' 
+                      ? 'opacity-60 border-slate-200 cursor-not-allowed' 
                       : 'border-slate-200/80 hover:border-indigo-400'
                   }`}
                 >
@@ -896,7 +897,7 @@ export default function PosPage() {
                   <div className="mt-2.5">
                     <p className="text-[8px] sm:text-[8.5px] font-mono text-slate-500 uppercase tracking-widest font-semibold">{p.sku || '–'}</p>
                     <div className="h-8 sm:h-9 overflow-hidden mt-0.5">
-                      <h3 className="font-extrabold text-slate-900 text-[11px] sm:text-xs line-clamp-2 leading-snug group-hover:text-indigo-600 transition-colors" title={p.name}>{p.name}</h3>
+                      <h3 className="font-extrabold text-slate-905 text-[11px] sm:text-xs line-clamp-2 leading-snug group-hover:text-indigo-650 transition-colors" title={p.name}>{p.name}</h3>
                     </div>
                   </div>
 
@@ -910,13 +911,15 @@ export default function PosPage() {
                         Stok: {p.stock}
                       </span>
                     </div>
-                    <button
-                      onClick={() => addToCart(p)}
-                      disabled={outOfStock}
-                      className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg sm:rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center shadow-3xs transition-all active:scale-95 disabled:bg-slate-100 disabled:text-slate-400 cursor-pointer shrink-0"
+                    <div
+                      className={`h-7 w-7 sm:h-8 sm:w-8 rounded-lg sm:rounded-xl flex items-center justify-center shadow-3xs transition-all shrink-0 ${
+                        outOfStock
+                          ? 'bg-slate-100 text-slate-400'
+                          : 'bg-indigo-605 group-hover:bg-indigo-700 text-white group-hover:scale-105 active:scale-95'
+                      }`}
                     >
                       <Plus size={13} />
-                    </button>
+                    </div>
                   </div>
                 </div>
               )
@@ -941,56 +944,6 @@ export default function PosPage() {
           <span className="text-[10px] font-bold text-slate-700 ">{cashier?.name || 'Kasir'}</span>
         </div>        
         <div className="flex-1 overflow-y-auto pr-0.5 space-y-3 mb-4 scrollbar-thin">
-          {/* Order Type Selector */}
-          {tables && tables.length > 0 && (
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => { setOrderType('TAKEAWAY'); setSelectedTableId('') }}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold border text-center transition-all cursor-pointer ${
-                  orderType === 'TAKEAWAY'
-                    ? 'border-indigo-600 bg-indigo-50/40 text-indigo-700 shadow-3xs'
-                    : 'border-slate-205 bg-white text-slate-500 hover:border-slate-350'
-                }`}
-              >
-                Take Away
-              </button>
-              <button
-                type="button"
-                onClick={() => setOrderType('DINEIN')}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold border text-center transition-all cursor-pointer ${
-                  orderType === 'DINEIN'
-                    ? 'border-indigo-600 bg-indigo-50/40 text-indigo-700 shadow-3xs'
-                    : 'border-slate-205 bg-white text-slate-500 hover:border-slate-350'
-                }`}
-              >
-                Dine In
-              </button>
-            </div>
-          )}
-
-          {/* Table Picker if Dine In */}
-          {tables && tables.length > 0 && orderType === 'DINEIN' && (
-            <div className="space-y-1 mb-2.5 animate-in slide-in-from-top-1 duration-150">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Pilih Meja</span>
-              <div className="relative">
-                <select
-                  value={selectedTableId}
-                  onChange={e => setSelectedTableId(e.target.value)}
-                  className="w-full appearance-none bg-white border border-slate-250/70 pl-3.5 pr-10 py-2.5 rounded-xl text-xs font-bold text-slate-800 focus:border-indigo-500 outline-none cursor-pointer"
-                >
-                  <option value="">-- Pilih Meja --</option>
-                  {tables.map(table => (
-                    <option key={table.id} value={table.id} disabled={table.status !== 'AVAILABLE'}>
-                      Meja {table.number} ({table.capacity} pax) {table.status !== 'AVAILABLE' ? '[Terisi]' : ''}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={13} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-              </div>
-            </div>
-          )}
-
           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Item Dipilih</p>
           
           {cart.length === 0 ? (

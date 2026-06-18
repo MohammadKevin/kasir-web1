@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, Suspense } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import * as XLSX from 'xlsx'
 import { 
@@ -19,7 +20,10 @@ import {
   ChevronDown,
   Upload,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Info,
+  ArrowRightLeft,
+  ClipboardList
 } from 'lucide-react'
 
 type StockMovement = {
@@ -31,9 +35,13 @@ type StockMovement = {
   note?: string
   createdAt: string
   product: {
+    id: string
     name: string
     sku: string
     stock: number
+    category?: {
+      name: string
+    }
   }
 }
 
@@ -47,28 +55,77 @@ type ProductType = {
   name: string
   sku: string
   stock: number
+  category?: {
+    name: string
+  }
 }
 
-export default function StockMovementPage() {
+type CategoryType = {
+  id: string
+  name: string
+}
+
+type SupplierType = {
+  id: string
+  name: string
+  phone?: string
+}
+
+function StockMovementPageContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const typeParam = searchParams.get('type') || '' // '', 'IN', 'OUT', 'TRANSFER', 'OPNAME'
+
   const [movements, setMovements] = useState<StockMovement[]>([])
   const [stores, setStores] = useState<StoreType[]>([])
   const [products, setProducts] = useState<ProductType[]>([])
+  const [categories, setCategories] = useState<CategoryType[]>([])
+  const [suppliers, setSuppliers] = useState<SupplierType[]>([])
   
   const [selectedStoreId, setSelectedStoreId] = useState('')
+  const [selectedCategoryId, setSelectedCategoryId] = useState('ALL')
   const [loading, setLoading] = useState(true)
+  
+  // Filters
   const [searchQuery, setSearchQuery] = useState('')
-  const [typeFilter, setTypeFilter] = useState('ALL')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  
+  const [showEmptyStock, setShowEmptyStock] = useState(false)
+  const [showBanner, setShowBanner] = useState(true)
 
-  const [isOpenModal, setIsOpenModal] = useState(false)
+  // Modals
+  const [isOpenInModal, setIsOpenInModal] = useState(false)
+  const [isOpenOutModal, setIsOpenOutModal] = useState(false)
+  const [isOpenTransferModal, setIsOpenTransferModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const [formData, setFormData] = useState({
-    storeId: '',
+  // Modals form states
+  const [formIn, setFormIn] = useState({
     productId: '',
-    type: 'IN' as 'IN' | 'OUT' | 'DAMAGED',
+    supplierId: '',
     qty: 1,
-    note: '',
+    note: ''
   })
+
+  const [formOut, setFormOut] = useState({
+    productId: '',
+    reason: 'Barang Rusak', // 'Barang Rusak', 'Sampel', 'Koreksi Audit', 'Lainnya'
+    qty: 1,
+    note: ''
+  })
+
+  const [formTransfer, setFormTransfer] = useState({
+    productId: '',
+    destStoreId: '',
+    qty: 1,
+    note: ''
+  })
+
+  // Stock Opname local state
+  const [opnameActuals, setOpnameActuals] = useState<{ [productId: string]: string }>({})
+  const [opnameNotes, setOpnameNotes] = useState<{ [productId: string]: string }>({})
+  const [isSavingOpname, setIsSavingOpname] = useState(false)
 
   const [importStatus, setImportStatus] = useState<{
     isOpen: boolean;
@@ -88,6 +145,12 @@ export default function StockMovementPage() {
     if (selectedStoreId) {
       loadMovements(selectedStoreId)
       loadProducts(selectedStoreId)
+      loadCategories(selectedStoreId)
+      loadSuppliers(selectedStoreId)
+      
+      // Clear opname state
+      setOpnameActuals({})
+      setOpnameNotes({})
     }
   }, [selectedStoreId])
 
@@ -132,12 +195,270 @@ export default function StockMovementPage() {
       const res = await api.get(`/products/store/${storeId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       })
-      setProducts(res.data)
+      setProducts(res.data || [])
     } catch (error) {
       console.error(error)
     }
   }
 
+  async function loadCategories(storeId: string) {
+    try {
+      const res = await api.get(`/categories/store/${storeId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      })
+      setCategories(res.data || [])
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  async function loadSuppliers(storeId: string) {
+    try {
+      const res = await api.get(`/suppliers/store/${storeId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      })
+      setSuppliers(res.data || [])
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  // Modals trigger
+  function handleOpenIn() {
+    setFormIn({
+      productId: products[0]?.id || '',
+      supplierId: suppliers[0]?.id || '',
+      qty: 1,
+      note: ''
+    })
+    setIsOpenInModal(true)
+  }
+
+  function handleOpenOut() {
+    setFormOut({
+      productId: products[0]?.id || '',
+      reason: 'Barang Rusak',
+      qty: 1,
+      note: ''
+    })
+    setIsOpenOutModal(true)
+  }
+
+  function handleOpenTransfer() {
+    const otherStore = stores.find(s => s.id !== selectedStoreId)
+    setFormTransfer({
+      productId: products[0]?.id || '',
+      destStoreId: otherStore?.id || '',
+      qty: 1,
+      note: ''
+    })
+    setIsOpenTransferModal(true)
+  }
+
+  // Post Stock In
+  async function handleSubmitIn(e: React.FormEvent) {
+    e.preventDefault()
+    if (!formIn.productId) return alert('Silakan pilih produk!')
+    if (formIn.qty <= 0) return alert('Kuantitas harus lebih dari 0!')
+
+    setIsSubmitting(true)
+    const token = localStorage.getItem('token')
+    const headers = { Authorization: `Bearer ${token}` }
+
+    const selectedProduct = products.find(p => p.id === formIn.productId)
+    const selectedSupplier = suppliers.find(s => s.id === formIn.supplierId)
+    
+    let noteText = `Stok Masuk`
+    if (selectedSupplier) {
+      noteText += ` | Supplier: ${selectedSupplier.name}`
+    }
+    if (formIn.note.trim()) {
+      noteText += ` | ${formIn.note.trim()}`
+    }
+
+    try {
+      await api.post('/stock-movements', {
+        storeId: selectedStoreId,
+        productId: formIn.productId,
+        type: 'IN',
+        qty: Number(formIn.qty),
+        note: noteText
+      }, { headers })
+
+      setIsOpenInModal(false)
+      loadMovements(selectedStoreId)
+      loadProducts(selectedStoreId)
+    } catch (error: any) {
+      console.error(error)
+      alert(error.response?.data?.message || 'Gagal menyimpan stok masuk')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Post Stock Out
+  async function handleSubmitOut(e: React.FormEvent) {
+    e.preventDefault()
+    if (!formOut.productId) return alert('Silakan pilih produk!')
+    if (formOut.qty <= 0) return alert('Kuantitas harus lebih dari 0!')
+
+    const selectedProduct = products.find(p => p.id === formOut.productId)
+    if (selectedProduct && selectedProduct.stock < formOut.qty) {
+      return alert(`Stok tidak mencukupi! Stok saat ini: ${selectedProduct.stock} Pcs`)
+    }
+
+    setIsSubmitting(true)
+    const token = localStorage.getItem('token')
+    const headers = { Authorization: `Bearer ${token}` }
+
+    const type = formOut.reason === 'Barang Rusak' ? 'DAMAGED' : 'OUT'
+    let noteText = `Alasan: ${formOut.reason}`
+    if (formOut.note.trim()) {
+      noteText += ` | ${formOut.note.trim()}`
+    }
+
+    try {
+      await api.post('/stock-movements', {
+        storeId: selectedStoreId,
+        productId: formOut.productId,
+        type,
+        qty: Number(formOut.qty),
+        note: noteText
+      }, { headers })
+
+      setIsOpenOutModal(false)
+      loadMovements(selectedStoreId)
+      loadProducts(selectedStoreId)
+    } catch (error: any) {
+      console.error(error)
+      alert(error.response?.data?.message || 'Gagal menyimpan stok keluar')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Post Transfer Stok
+  async function handleSubmitTransfer(e: React.FormEvent) {
+    e.preventDefault()
+    if (!formTransfer.productId) return alert('Silakan pilih produk!')
+    if (!formTransfer.destStoreId) return alert('Silakan pilih outlet tujuan!')
+    if (formTransfer.destStoreId === selectedStoreId) return alert('Outlet tujuan tidak boleh sama dengan outlet asal!')
+    if (formTransfer.qty <= 0) return alert('Kuantitas harus lebih dari 0!')
+
+    const sourceProduct = products.find(p => p.id === formTransfer.productId)
+    if (!sourceProduct) return alert('Produk asal tidak ditemukan!')
+    if (sourceProduct.stock < formTransfer.qty) {
+      return alert(`Stok di outlet asal tidak mencukupi! Sisa stok: ${sourceProduct.stock} Pcs`)
+    }
+
+    setIsSubmitting(true)
+    const token = localStorage.getItem('token')
+    const headers = { Authorization: `Bearer ${token}` }
+
+    try {
+      // 1. Fetch products of the destination store to find matching SKU
+      const destStoreName = stores.find(s => s.id === formTransfer.destStoreId)?.name || 'Outlet Tujuan'
+      const sourceStoreName = stores.find(s => s.id === selectedStoreId)?.name || 'Outlet Asal'
+
+      const destProductsRes = await api.get(`/products/store/${formTransfer.destStoreId}`, { headers })
+      const destProducts: ProductType[] = destProductsRes.data || []
+      const destProduct = destProducts.find(p => p.sku === sourceProduct.sku)
+
+      if (!destProduct) {
+        throw new Error(`Produk dengan SKU "${sourceProduct.sku}" belum didaftarkan di ${destStoreName}. Daftarkan produk terlebih dahulu di outlet tersebut!`)
+      }
+
+      // 2. Reduce stock at source store (type OUT)
+      await api.post('/stock-movements', {
+        storeId: selectedStoreId,
+        productId: sourceProduct.id,
+        type: 'OUT',
+        qty: Number(formTransfer.qty),
+        note: `Transfer ke ${destStoreName} | ${formTransfer.note}`
+      }, { headers })
+
+      // 3. Add stock at destination store (type IN)
+      await api.post('/stock-movements', {
+        storeId: formTransfer.destStoreId,
+        productId: destProduct.id,
+        type: 'IN',
+        qty: Number(formTransfer.qty),
+        note: `Transfer dari ${sourceStoreName} | ${formTransfer.note}`
+      }, { headers })
+
+      setIsOpenTransferModal(false)
+      loadMovements(selectedStoreId)
+      loadProducts(selectedStoreId)
+      alert(`Transfer stok berhasil dikirim!`)
+    } catch (error: any) {
+      console.error(error)
+      alert(error.message || error.response?.data?.message || 'Gagal mengirim transfer stok')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Save Stock Opname (Reconcile)
+  async function handleSaveOpname() {
+    // Find all rows where actual value is entered and is different from system stock
+    const changes = products.filter(p => {
+      const actualVal = opnameActuals[p.id]
+      if (actualVal === undefined || actualVal === '') return false
+      return Number(actualVal) !== p.stock
+    })
+
+    if (changes.length === 0) {
+      return alert('Tidak ada penyesuaian stok opname yang perlu disimpan (Stok fisik sama dengan stok sistem atau belum diisi).')
+    }
+
+    if (!confirm(`Apakah Anda yakin ingin memproses stock opname untuk ${changes.length} produk?`)) {
+      return
+    }
+
+    setIsSavingOpname(true)
+    const token = localStorage.getItem('token')
+    const headers = { Authorization: `Bearer ${token}` }
+
+    let successCount = 0
+    let failCount = 0
+
+    for (const p of changes) {
+      const systemStock = p.stock
+      const actualStock = Number(opnameActuals[p.id])
+      const diff = actualStock - systemStock
+      const qty = Math.abs(diff)
+      const type = diff > 0 ? 'IN' : 'OUT'
+      const customNote = opnameNotes[p.id]?.trim()
+      const note = `Stock Opname: Fisik=${actualStock}, Sistem=${systemStock} (Selisih=${diff > 0 ? '+' : ''}${diff}) ${customNote ? `| ${customNote}` : ''}`
+
+      try {
+        await api.post('/stock-movements', {
+          storeId: selectedStoreId,
+          productId: p.id,
+          type,
+          qty,
+          note
+        }, { headers })
+        successCount++
+      } catch (err) {
+        console.error(`Gagal menyesuaikan produk ${p.name}:`, err)
+        failCount++
+      }
+    }
+
+    setIsSavingOpname(false)
+    alert(`Stock opname selesai! Berhasil: ${successCount} produk. Gagal: ${failCount} produk.`)
+    
+    // Reset inputs
+    setOpnameActuals({})
+    setOpnameNotes({})
+    
+    // Reload
+    loadMovements(selectedStoreId)
+    loadProducts(selectedStoreId)
+  }
+
+  // Excel Stock Import
   async function handleImportStockExcel(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -244,13 +565,13 @@ export default function StockMovementPage() {
           const firstRow = data[0] && Array.isArray(data[0]) 
             ? data[0].map(h => String(h || '').trim()).join(', ') 
             : 'tidak terdeteksi'
-          alert(`Header kolom Excel tidak valid.\n\nBaris pertama file Anda berisi: "${firstRow}"\n\nFile Excel minimal harus memiliki kolom yang mengandung nama "Produk" dan "Stok Akhir". Mohon periksa baris header tabel Excel Anda.`);
+          alert(`Header kolom Excel tidak valid.\n\nBaris pertama file Anda berisi: "${firstRow}"\n\nFile Excel minimal harus memiliki kolom yang mengandung nama "Produk" dan "Stok Akhir".`);
           return
         }
 
         const rows = data.slice(headerRowIdx + 1).filter(row => row.length > 0 && row[nameIdx])
         if (rows.length === 0) {
-          alert('Tidak ada data produk yang valid untuk di-import setelah baris header.')
+          alert('Tidak ada data produk yang valid untuk di-import.')
           return
         }
 
@@ -273,7 +594,7 @@ export default function StockMovementPage() {
           latestProducts = prodRes.data || []
           setProducts(latestProducts)
         } catch (prodErr) {
-          console.error('Failed to reload products before stock import', prodErr)
+          console.error('Failed to reload products', prodErr)
           latestProducts = [...products]
         }
 
@@ -323,23 +644,22 @@ export default function StockMovementPage() {
             await api.post('/stock-movements', payload, { headers: headersApi })
             successCount++
           } catch (err: any) {
-            console.warn('Import stock row error, trying direct PATCH fallback...', err.message || err)
+            console.warn('Import error, fallback direct PATCH...', err.message)
             
             try {
               if (dbProduct) {
-                const patchPayload = { stock: targetStock }
-                await api.patch(`/products/${dbProduct.id}`, patchPayload, { headers: headersApi })
+                await api.patch(`/products/${dbProduct.id}`, { stock: targetStock }, { headers: headersApi })
                 successCount++
                 continue
               }
             } catch (patchErr: any) {
-              console.error('Direct PATCH fallback also failed', patchErr)
+              console.error('Fallback failed', patchErr)
             }
 
             const responseData = err.response?.data
             const errMsg = responseData?.message || responseData?.error || err.message || 'Gagal menyimpan penyesuaian stok'
             const formattedError = Array.isArray(errMsg) ? errMsg.join(', ') : errMsg
-            errors.push(`Baris ${i + headerRowIdx + 2} (${productName}): Excel Target = ${targetStock}, DB Sisa = ${currentStock} (Mutasi: ${type} ${qty} Pcs). Error: ${formattedError}`)
+            errors.push(`Baris ${i + headerRowIdx + 2} (${productName}): Target = ${targetStock}, DB = ${currentStock}. Error: ${formattedError}`)
           }
         }
 
@@ -355,354 +675,561 @@ export default function StockMovementPage() {
         loadMovements(selectedStoreId)
         loadProducts(selectedStoreId)
       } catch (excelErr: any) {
-        alert('Gagal membaca atau memproses file Excel: ' + (excelErr.message || excelErr))
+        alert('Gagal memproses file Excel: ' + (excelErr.message || excelErr))
         setImportStatus(null)
       }
     }
     reader.readAsBinaryString(file)
   }
 
-  function handleOpenCreate() {
-    setFormData({
-      storeId: selectedStoreId,
-      productId: products[0]?.id || '',
-      type: 'IN',
-      qty: 1,
-      note: '',
-    })
-    setIsOpenModal(true)
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!formData.productId) return alert('Silakan pilih produk terlebih dahulu!')
-    if (formData.qty <= 0) return alert('Jumlah kuantitas penyesuaian harus lebih dari 0!')
-
-    setIsSubmitting(true)
-    const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` }
-
-    const payload = {
-      storeId: formData.storeId,
-      productId: formData.productId,
-      type: formData.type,
-      qty: Number(formData.qty),
-      note: formData.note.trim() || undefined,
-    }
-
-    try {
-      await api.post('/stock-movements', payload, { headers })
-      setIsOpenModal(false)
-      loadMovements(selectedStoreId)
-      loadProducts(selectedStoreId)
-    } catch (error: any) {
-      const serverMessage = error.response?.data?.message
-      alert(`Gagal menyesuaikan stok: ${Array.isArray(serverMessage) ? serverMessage.join(', ') : serverMessage}`)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
+  // Filtered movements logically mapped to the list
   const filteredMovements = movements.filter((m) => {
-    const matchesSearch = m.product?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          m.product?.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          (m.note && m.note.toLowerCase().includes(searchQuery.toLowerCase()))
-    const matchesType = typeFilter === 'ALL' || m.type === typeFilter
-    return matchesSearch && matchesType
+    // Search query
+    const matchesSearch = 
+      m.product?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.product?.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (m.note && m.note.toLowerCase().includes(searchQuery.toLowerCase()))
+
+    // Category filter
+    const matchesCategory = 
+      selectedCategoryId === 'ALL' || 
+      m.product?.category?.name === selectedCategoryId ||
+      (selectedCategoryId === 'Umum' && !m.product?.category)
+
+    // Date range filter
+    let matchesDate = true
+    if (startDate) {
+      matchesDate = matchesDate && new Date(m.createdAt) >= new Date(startDate + 'T00:00:00')
+    }
+    if (endDate) {
+      matchesDate = matchesDate && new Date(m.createdAt) <= new Date(endDate + 'T23:59:59')
+    }
+
+    // Type filtering
+    if (typeParam === 'IN' && m.type !== 'IN') return false
+    if (typeParam === 'OUT' && m.type !== 'OUT' && m.type !== 'DAMAGED') return false
+    if (typeParam === 'TRANSFER' && !m.note?.toLowerCase().includes('transfer')) return false
+
+    return matchesSearch && matchesCategory && matchesDate
   })
 
-  const stats = useMemo(() => {
-    const totalIn = filteredMovements.filter(m => m.type === 'IN').reduce((acc, curr) => acc + curr.qty, 0)
-    const totalOut = filteredMovements.filter(m => m.type === 'OUT').reduce((acc, curr) => acc + curr.qty, 0)
-    const totalDamaged = filteredMovements.filter(m => m.type === 'DAMAGED').reduce((acc, curr) => acc + curr.qty, 0)
-    return { totalIn, totalOut, totalDamaged }
-  }, [filteredMovements])
+  // Filtered products list for Stock Opname page
+  const filteredProducts = products.filter((p) => {
+    const matchesSearch = 
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.sku.toLowerCase().includes(searchQuery.toLowerCase())
 
-  function getTypeBadge(type: 'IN' | 'OUT' | 'DAMAGED') {
-    switch (type) {
-      case 'IN':
-        return <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-150 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700"><TrendingUp size={11}/>Stok Masuk</span>
-      case 'OUT':
-        return <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 border border-indigo-150 px-2.5 py-0.5 text-[10px] font-bold text-indigo-700"><TrendingDown size={11}/>Stok Keluar</span>
-      case 'DAMAGED':
-        return <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 border border-rose-150 px-2.5 py-0.5 text-[10px] font-bold text-rose-700"><AlertOctagon size={11}/>Rusak</span>
-      default:
-        return <span className="inline-flex items-center rounded-full bg-slate-100 border border-slate-200 px-2.5 py-0.5 text-[10px] font-bold text-slate-700">{type}</span>
-    }
-  }
+    const matchesCategory = 
+      selectedCategoryId === 'ALL' || 
+      p.category?.name === selectedCategoryId ||
+      (selectedCategoryId === 'Umum' && !p.category)
 
-  if (loading && stores.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-2">
-            <div className="h-9 w-44 animate-pulse rounded-xl bg-slate-200" />
-            <div className="h-4 w-72 animate-pulse rounded-lg bg-slate-100" />
-          </div>
-          <div className="h-11 w-36 animate-pulse rounded-xl bg-slate-200" />
-        </div>
-        <div className="h-12 w-full max-w-md animate-pulse rounded-xl bg-slate-100" />
-        <div className="h-96 w-full animate-pulse rounded-2xl bg-slate-50 border border-slate-100" />
-      </div>
-    )
-  }
+    let matchesToggles = true
+    if (showEmptyStock && p.stock > 0) matchesToggles = false
+
+    return matchesSearch && matchesCategory && matchesToggles
+  })
+
+  const activeTitle = useMemo(() => {
+    if (typeParam === 'IN') return 'Stok Masuk'
+    if (typeParam === 'OUT') return 'Stok Keluar'
+    if (typeParam === 'TRANSFER') return 'Transfer Stok'
+    if (typeParam === 'OPNAME') return 'Stok Opname (Penyesuaian)'
+    return 'Kartu Stok'
+  }, [typeParam])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <div className="h-10 w-10 bg-indigo-50 border border-indigo-100/55 rounded-xl flex items-center justify-center text-indigo-600 shrink-0">
-            <Boxes size={20} />
-          </div>
-          <div>
-            <h1 className="text-xl font-black text-slate-900 tracking-tight">Mutasi & Log Stok</h1>
-            <p className="text-xs font-semibold text-slate-400 mt-0.5">Pantau rekam jejak keluar masuk barang dan koreksi opname internal toko.</p>
-          </div>
+      {/* Top Header Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-3">
+        <div>
+          <div className="text-xs font-bold text-slate-400">Inventori</div>
+          <h1 className="text-xl font-black text-slate-900 tracking-tight mt-1">{activeTitle}</h1>
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          <label className={`inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-4 py-2.5 text-xs font-bold text-slate-700 hover:text-slate-800 transition-all shadow-3xs active:scale-97 cursor-pointer select-none shrink-0 ${
-            importStatus && !importStatus.isFinished ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''
-          }`}>
-            {importStatus && !importStatus.isFinished ? (
-              <Loader2 size={14} className="text-indigo-600 animate-spin" />
-            ) : (
-              <Upload size={14} className="text-slate-500" />
-            )}
-            <span>Import Excel</span>
-            <input 
-              type="file" 
-              accept=".xlsx, .xls" 
-              onChange={handleImportStockExcel} 
-              className="hidden" 
-              disabled={!!(importStatus && !importStatus.isFinished)}
-            />
-          </label>
+          {typeParam === '' && (
+            <label className={`inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-700 hover:text-slate-800 transition-all shadow-3xs active:scale-97 cursor-pointer select-none shrink-0 ${
+              importStatus && !importStatus.isFinished ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''
+            }`}>
+              {importStatus && !importStatus.isFinished ? (
+                <Loader2 size={14} className="text-sky-500 animate-spin" />
+              ) : (
+                <Upload size={14} className="text-slate-500" />
+              )}
+              <span>Import Excel</span>
+              <input 
+                type="file" 
+                accept=".xlsx, .xls" 
+                onChange={handleImportStockExcel} 
+                className="hidden" 
+                disabled={!!(importStatus && !importStatus.isFinished)}
+              />
+            </label>
+          )}
 
-          <button
-            onClick={handleOpenCreate}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white transition-all shadow-3xs hover:bg-indigo-700 active:scale-97 cursor-pointer shrink-0"
+          {typeParam === 'IN' && (
+            <button
+              onClick={handleOpenIn}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-sky-500 px-4 py-2 text-xs font-bold text-white transition-all shadow-3xs hover:bg-sky-600 active:scale-97 cursor-pointer shrink-0"
+            >
+              <Plus size={14} />
+              Tambah Stok Masuk
+            </button>
+          )}
+
+          {typeParam === 'OUT' && (
+            <button
+              onClick={handleOpenOut}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-sky-500 px-4 py-2 text-xs font-bold text-white transition-all shadow-3xs hover:bg-sky-600 active:scale-97 cursor-pointer shrink-0"
+            >
+              <Plus size={14} />
+              Tambah Stok Keluar
+            </button>
+          )}
+
+          {typeParam === 'TRANSFER' && (
+            <button
+              onClick={handleOpenTransfer}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-sky-500 px-4 py-2 text-xs font-bold text-white transition-all shadow-3xs hover:bg-sky-600 active:scale-97 cursor-pointer shrink-0"
+            >
+              <ArrowRightLeft size={14} />
+              Buat Transfer Stok
+            </button>
+          )}
+
+          {typeParam === 'OPNAME' && (
+            <button
+              onClick={handleSaveOpname}
+              disabled={isSavingOpname}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-xs font-bold text-white transition-all shadow-3xs hover:bg-emerald-600 disabled:bg-slate-350 active:scale-97 cursor-pointer shrink-0"
+            >
+              {isSavingOpname ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  Memproses Penyesuaian...
+                </>
+              ) : (
+                <>
+                  <ClipboardList size={14} />
+                  Simpan Penyesuaian (Opname)
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Top Tabs Switcher */}
+      <div className="flex border-b border-slate-200">
+        {[
+          { label: 'Kartu Stok', type: '' },
+          { label: 'Stok Masuk', type: 'IN' },
+          { label: 'Stok Keluar', type: 'OUT' },
+          { label: 'Transfer Stok', type: 'TRANSFER' },
+          { label: 'Stok Opname', type: 'OPNAME' },
+        ].map((tab) => {
+          const isSelected = typeParam === tab.type
+          return (
+            <button
+              key={tab.type}
+              onClick={() => router.push(`/dashboard/admin/stock${tab.type ? `?type=${tab.type}` : ''}`)}
+              className={`px-5 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+                isSelected
+                  ? 'border-sky-500 text-sky-500 font-extrabold'
+                  : 'border-transparent text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              {tab.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Tahukah Anda Banner */}
+      {showBanner && (
+        <div className="bg-[#fdf6e2] border border-[#f5e7c4] rounded-lg p-4 flex items-start justify-between text-[#856404]">
+          <div className="flex gap-3">
+            <Info size={16} className="text-sky-500 stroke-[2.5] mt-0.5" />
+            <div className="text-xs">
+              <span className="font-extrabold block">Tahukah Anda?</span>
+              <span className="mt-1 block leading-normal text-slate-600 font-semibold">
+                {typeParam === 'OPNAME' 
+                  ? 'Gunakan modul Stok Opname ini untuk mencocokkan stok fisik barang di gudang dengan stok sistem. Ketik stok aktual yang dihitung di kolom stok fisik.' 
+                  : typeParam === 'TRANSFER'
+                  ? 'Modul Transfer Stok membantu Anda mendistribusikan persediaan baju antarcabang outlet secara cepat. Seluruh data pengurangan & penambahan dilakukan terintegrasi.'
+                  : 'Seluruh pergerakan barang (penjualan kasir POS, purchase order, dan koreksi manual) tercatat otomatis di Kartu Stok secara realtime.'}
+              </span>
+            </div>
+          </div>
+          <button 
+            onClick={() => setShowBanner(false)}
+            className="text-slate-400 hover:text-slate-600 rounded p-0.5 cursor-pointer"
           >
-            <Plus size={14} />
-            Penyesuaian Stok
+            <X size={14} />
           </button>
         </div>
-      </div>
+      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 flex items-center gap-4 shadow-3xs">
-          <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shrink-0 border border-emerald-100/50">
-            <TrendingUp size={18} />
-          </div>
-          <div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Stok Masuk</div>
-            <div className="text-xl font-extrabold text-slate-900 mt-0.5">{stats.totalIn} Pcs</div>
-          </div>
-        </div>
-
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 flex items-center gap-4 shadow-3xs">
-          <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center shrink-0 border border-indigo-100/50">
-            <TrendingDown size={18} />
-          </div>
-          <div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Stok Keluar</div>
-            <div className="text-xl font-extrabold text-slate-900 mt-0.5">{stats.totalOut} Pcs</div>
-          </div>
-        </div>
-
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 flex items-center gap-4 shadow-3xs">
-          <div className="w-10 h-10 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center shrink-0 border border-rose-100/50">
-            <AlertOctagon size={18} />
-          </div>
-          <div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Barang Rusak</div>
-            <div className="text-xl font-extrabold text-slate-900 mt-0.5">{stats.totalDamaged} Pcs</div>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-md">
-          <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Cari nama produk, SKU, atau catatan..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-slate-250/70 bg-white pl-11 pr-11 py-3.5 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-3xs"
-          />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3 shrink-0">
-          <div className="flex border border-slate-200/80 rounded-xl p-1 bg-slate-50/50">
-            {['ALL', 'IN', 'OUT', 'DAMAGED'].map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setTypeFilter(filter)}
-                className={`px-3 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                  typeFilter === filter 
-                    ? 'bg-indigo-600 text-white shadow-3xs' 
-                    : 'text-slate-500 hover:text-slate-900'
-                }`}
+      {/* Filter Row Form Controls */}
+      <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-3xs space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+          
+          {/* Outlet select */}
+          <div className="space-y-1">
+            <label className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Outlet</label>
+            <div className="relative">
+              <select
+                value={selectedStoreId}
+                onChange={(e) => {
+                  setSelectedStoreId(e.target.value)
+                  localStorage.setItem('storeId', e.target.value)
+                }}
+                className="w-full appearance-none bg-slate-50 border border-slate-200 pl-3 pr-8 py-2 rounded-lg text-xs font-bold text-slate-700 focus:bg-white focus:border-sky-500 outline-none cursor-pointer transition-all"
               >
-                {filter === 'ALL' ? 'Semua' : filter === 'IN' ? 'Masuk' : filter === 'OUT' ? 'Keluar' : 'Rusak'}
-              </button>
-            ))}
+                {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+              <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            </div>
           </div>
 
-          <div className="relative shrink-0">
-            <select
-              value={selectedStoreId}
-              onChange={(e) => {
-                setSelectedStoreId(e.target.value)
-                localStorage.setItem('storeId', e.target.value)
+          {/* Date Range filters (Only for log views) */}
+          {typeParam !== 'OPNAME' ? (
+            <>
+              <div className="space-y-1">
+                <label className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Tanggal Mulai</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 focus:bg-white focus:border-sky-500 outline-none cursor-pointer transition-all"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Tanggal Selesai</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 focus:bg-white focus:border-sky-500 outline-none cursor-pointer transition-all"
+                />
+              </div>
+            </>
+          ) : (
+            <div className="col-span-2 hidden md:block" />
+          )}
+
+          {/* Category filter */}
+          <div className="space-y-1">
+            <label className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Kategori</label>
+            <div className="relative">
+              <select
+                value={selectedCategoryId}
+                onChange={(e) => setSelectedCategoryId(e.target.value)}
+                className="w-full appearance-none bg-slate-50 border border-slate-200 pl-3 pr-8 py-2 rounded-lg text-xs font-bold text-slate-700 focus:bg-white focus:border-sky-500 outline-none cursor-pointer transition-all"
+              >
+                <option value="ALL">Semua Kategori</option>
+                {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                <option value="Umum">Umum</option>
+              </select>
+              <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            </div>
+          </div>
+
+          {/* Search bar */}
+          <div className="space-y-1">
+            <label className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Cari Produk</label>
+            <div className="relative">
+              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Cari nama baju / SKU"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 pl-9 pr-3 py-2 rounded-lg text-xs font-semibold text-slate-700 focus:bg-white focus:border-sky-500 outline-none transition-all placeholder:text-slate-400"
+              />
+            </div>
+          </div>
+
+        </div>
+
+        {/* Toggles and Reset Row */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-3 border-t border-slate-100 gap-4">
+          
+          <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-slate-500">
+            {typeParam === 'OPNAME' && (
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input 
+                  type="checkbox" 
+                  checked={showEmptyStock} 
+                  onChange={(e) => setShowEmptyStock(e.target.checked)}
+                  className="rounded border-slate-300 text-sky-500 focus:ring-sky-500 h-3.5 w-3.5"
+                />
+                <span>Hanya Stok Kosong</span>
+              </label>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+            <button
+              onClick={() => {
+                setSearchQuery('')
+                setSelectedCategoryId('ALL')
+                setStartDate('')
+                setEndDate('')
+                setShowEmptyStock(false)
               }}
-              className="w-full sm:w-56 appearance-none bg-white border border-slate-250/70 pl-4 pr-10 py-3.5 rounded-xl text-xs font-bold text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 cursor-pointer transition-all shadow-3xs"
+              className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all active:scale-97 cursor-pointer"
             >
-              {stores.map((store) => (
-                <option key={store.id} value={store.id}>{store.name}</option>
-              ))}
-            </select>
-            <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              Reset
+            </button>
           </div>
         </div>
+
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-3xs overflow-hidden">
+      {/* Main Stock Data Table */}
+      <div className="rounded-xl border border-slate-200 bg-white shadow-3xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[800px] text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-400 font-bold uppercase tracking-wider text-[9px]">
-                <th className="p-4 pl-6">Nama Produk / SKU</th>
-                <th className="p-4">Waktu Mutasi</th>
-                <th className="p-4">Jenis Perubahan</th>
-                <th className="p-4">Jumlah Perubahan</th>
-                <th className="p-4 pr-6">Keterangan / Memo</th>
-              </tr>
-            </thead>
-
-            <tbody className="divide-y divide-slate-100 text-slate-600 font-semibold">
-              {loading ? (
+          {typeParam !== 'OPNAME' ? (
+            /* Table 1: Historical movements log (Kartu Stok, Stok Masuk, Stok Keluar, Transfer) */
+            <table className="w-full min-w-[950px] text-left border-collapse text-xs">
+              <thead className="bg-[#1a202c] text-white text-[9.5px] font-bold uppercase tracking-wider">
                 <tr>
-                  <td colSpan={5} className="p-10 text-center">
-                    <Loader2 className="w-5 h-5 animate-spin text-slate-400 mx-auto" />
-                  </td>
+                  <th className="p-3.5 pl-5">Tanggal & Waktu</th>
+                  <th className="p-3.5">Nama Produk</th>
+                  <th className="p-3.5">SKU</th>
+                  <th className="p-3.5">Kategori</th>
+                  <th className="p-3.5">Jenis Aliran</th>
+                  <th className="p-3.5 text-right">Kuantitas</th>
+                  <th className="p-3.5 pr-5">Memo / Keterangan</th>
                 </tr>
-              ) : filteredMovements.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="p-16 text-center text-slate-400">
-                    <div className="flex flex-col items-center justify-center space-y-2">
-                      <div className="p-3 bg-slate-50 border border-slate-150 rounded-2xl text-slate-400">
-                        <Boxes className="w-6 h-6" />
-                      </div>
-                      <p className="text-xs font-bold text-slate-600">Belum ada aktivitas mutasi stok</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredMovements.map((m) => (
-                  <tr key={m.id} className="group hover:bg-slate-50/45 transition-colors">
-                    <td className="p-4 pl-6">
-                      <div className="font-extrabold text-slate-900 text-xs">{m.product?.name || 'Produk Terhapus'}</div>
-                      <div className="text-[10px] font-mono text-slate-400 mt-0.5">SKU: {m.product?.sku || '-'}</div>
-                    </td>
-                    <td className="p-4 whitespace-nowrap text-slate-500 font-medium">
-                      {new Date(m.createdAt).toLocaleDateString('id-ID', { dateStyle: 'medium' })}
-                    </td>
-                    <td className="p-4 whitespace-nowrap">{getTypeBadge(m.type)}</td>
-                    <td className={`p-4 font-mono font-bold text-xs ${m.type === 'IN' ? 'text-emerald-600' : 'text-slate-900'}`}>
-                      {m.type === 'IN' ? `+${m.qty}` : `-${m.qty}`} Pcs
-                    </td>
-                    <td className="p-4 pr-6 text-slate-500 max-w-xs truncate font-medium">
-                      {m.note || <span className="text-slate-300 italic font-normal">Tidak ada catatan</span>}
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-600 font-semibold">
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="p-10 text-center">
+                      <Loader2 className="w-5 h-5 animate-spin text-slate-400 mx-auto" />
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : filteredMovements.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-16 text-center text-slate-400">
+                      <Boxes className="w-7 h-7 mx-auto text-slate-300 mb-2" />
+                      <p className="text-xs font-bold text-slate-600">Belum ada catatan mutasi persediaan</p>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredMovements.map((m) => {
+                    const isIN = m.type === 'IN'
+                    const isOUT = m.type === 'OUT'
+                    const isDAMAGED = m.type === 'DAMAGED'
+                    
+                    return (
+                      <tr key={m.id} className="hover:bg-slate-50/45 transition-colors">
+                        <td className="p-3.5 pl-5 text-slate-500 font-medium whitespace-nowrap">
+                          {new Date(m.createdAt).toLocaleString('id-ID')}
+                        </td>
+                        <td className="p-3.5 font-bold text-slate-900">{m.product?.name}</td>
+                        <td className="p-3.5 font-mono text-slate-400">{m.product?.sku || '-'}</td>
+                        <td className="p-3.5">
+                          <span className="bg-slate-100 border border-slate-200 text-[10px] px-2 py-0.5 rounded-full font-bold text-slate-600">
+                            {m.product?.category?.name || 'Umum'}
+                          </span>
+                        </td>
+                        <td className="p-3.5">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                            isIN 
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-250/70' 
+                              : isDAMAGED 
+                              ? 'bg-rose-50 text-rose-700 border-rose-200' 
+                              : 'bg-slate-100 text-slate-700 border-slate-200'
+                          }`}>
+                            {isIN ? 'Stok Masuk' : isDAMAGED ? 'Barang Rusak' : 'Stok Keluar'}
+                          </span>
+                        </td>
+                        <td className={`p-3.5 text-right font-mono font-black ${isIN ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          {isIN ? `+${m.qty}` : `-${m.qty}`} Pcs
+                        </td>
+                        <td className="p-3.5 pr-5 text-slate-500 font-medium max-w-xs truncate">{m.note || '-'}</td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
+          ) : (
+            /* Table 2: Stok Opname Reconciler Input Grid */
+            <table className="w-full min-w-[950px] text-left border-collapse text-xs">
+              <thead className="bg-[#1a202c] text-white text-[9.5px] font-bold uppercase tracking-wider">
+                <tr>
+                  <th className="p-3.5 pl-5">Produk</th>
+                  <th className="p-3.5">SKU</th>
+                  <th className="p-3.5">Kategori</th>
+                  <th className="p-3.5 text-right">Stok Sistem</th>
+                  <th className="p-3.5 text-center w-40">Stok Fisik (Aktual)</th>
+                  <th className="p-3.5 text-right w-28">Selisih</th>
+                  <th className="p-3.5 pr-5">Catatan Koreksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-600 font-semibold">
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="p-10 text-center">
+                      <Loader2 className="w-5 h-5 animate-spin text-slate-400 mx-auto" />
+                    </td>
+                  </tr>
+                ) : filteredProducts.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-16 text-center text-slate-400">
+                      <Boxes className="w-7 h-7 mx-auto text-slate-300 mb-2" />
+                      <p className="text-xs font-bold text-slate-600">Tidak ada produk ditemukan di outlet ini</p>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredProducts.map((p) => {
+                    const actualVal = opnameActuals[p.id]
+                    const diff = (actualVal !== undefined && actualVal !== '') 
+                      ? Number(actualVal) - p.stock 
+                      : 0
+
+                    return (
+                      <tr key={p.id} className="hover:bg-slate-50/45 transition-colors">
+                        <td className="p-3.5 pl-5 font-bold text-slate-900">{p.name}</td>
+                        <td className="p-3.5 font-mono text-slate-400">{p.sku}</td>
+                        <td className="p-3.5">
+                          <span className="bg-slate-100 border border-slate-200 text-[10px] px-2 py-0.5 rounded-full font-bold text-slate-600">
+                            {p.category?.name || 'Umum'}
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-right font-mono font-bold text-slate-700">{p.stock} Pcs</td>
+                        <td className="p-3.5 text-center">
+                          <input
+                            type="number"
+                            placeholder="Ketik stok fisik..."
+                            value={actualVal ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value
+                              setOpnameActuals(prev => ({ ...prev, [p.id]: val }))
+                            }}
+                            className="w-32 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-md text-xs font-bold text-center text-slate-800 focus:bg-white focus:border-sky-500 outline-none transition-all"
+                          />
+                        </td>
+                        <td className={`p-3.5 text-right font-mono font-black ${
+                          actualVal === undefined || actualVal === ''
+                            ? 'text-slate-400'
+                            : diff > 0
+                            ? 'text-emerald-600'
+                            : diff < 0
+                            ? 'text-rose-600'
+                            : 'text-slate-500'
+                        }`}>
+                          {actualVal === undefined || actualVal === ''
+                            ? '-'
+                            : diff > 0
+                            ? `+${diff} Pcs`
+                            : `${diff} Pcs`}
+                        </td>
+                        <td className="p-3.5 pr-5">
+                          <input
+                            type="text"
+                            placeholder="Ketik catatan penyesuaian..."
+                            value={opnameNotes[p.id] ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value
+                              setOpnameNotes(prev => ({ ...prev, [p.id]: val }))
+                            }}
+                            className="w-full bg-slate-50 border border-slate-200 px-3 py-1 rounded-md text-xs font-semibold text-slate-700 focus:bg-white focus:border-sky-500 outline-none transition-all"
+                          />
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
-      {isOpenModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-all">
-          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-150 bg-white p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-150">
+      {/* Modal 1: Tambah Stok Masuk */}
+      {isOpenInModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs transition-all">
+          <div className="w-full max-w-md overflow-hidden rounded-xl border border-slate-150 bg-white p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
-                <h3 className="text-sm font-black text-slate-900">Koreksi Penyesuaian Stok</h3>
-                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Lakukan penyesuaian stock opname manual.</p>
+                <h3 className="text-sm font-black text-slate-900">Tambah Masuk Stok (Inflow)</h3>
+                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Catat penambahan baju dari supplier.</p>
               </div>
-              <button onClick={() => setIsOpenModal(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-600">
+              <button onClick={() => setIsOpenInModal(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-600">
                 <X size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+            <form onSubmit={handleSubmitIn} className="mt-5 space-y-4">
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Pilih Produk Barang</label>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-sans">Pilih Baju / Produk</label>
                 <div className="relative">
-                  <Package className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
                   <select
-                    value={formData.productId}
-                    onChange={(e) => setFormData({ ...formData, productId: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200/80 bg-slate-50/50 pl-10 pr-10 py-3 text-xs font-semibold text-slate-800 outline-none cursor-pointer appearance-none focus:border-indigo-500 focus:bg-white"
+                    value={formIn.productId}
+                    onChange={(e) => setFormIn({ ...formIn, productId: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-3 pr-8 py-3 text-xs font-bold text-slate-800 outline-none cursor-pointer appearance-none focus:border-sky-500 focus:bg-white"
                   >
                     {products.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name} — Sisa: {p.stock} Pcs</option>
+                      <option key={p.id} value={p.id}>{p.name} — SKU: {p.sku} (Stok: {p.stock})</option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Tipe Penyesuaian</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-sans">Supplier</label>
                   <div className="relative">
                     <select
-                      value={formData.type}
-                      onChange={(e) => setFormData({ ...formData, type: e.target.value as 'IN' | 'OUT' | 'DAMAGED' })}
-                      className="w-full rounded-xl border border-slate-200/80 bg-slate-50/50 pl-3 pr-8 py-3 text-xs font-semibold text-slate-800 outline-none cursor-pointer appearance-none focus:border-indigo-500 focus:bg-white"
+                      value={formIn.supplierId}
+                      onChange={(e) => setFormIn({ ...formIn, supplierId: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-3 pr-8 py-3 text-xs font-bold text-slate-800 outline-none cursor-pointer appearance-none focus:border-sky-500 focus:bg-white"
                     >
-                      <option value="IN">Stok Masuk</option>
-                      <option value="OUT">Stok Keluar</option>
-                      <option value="DAMAGED">Barang Rusak</option>
+                      <option value="">Tanpa Supplier</option>
+                      {suppliers.map((s) => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
                     </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Jumlah (Qty)</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-sans">Jumlah Qty Masuk</label>
                   <input
                     type="number"
                     required
                     min={1}
-                    value={formData.qty}
-                    onChange={(e) => setFormData({ ...formData, qty: Number(e.target.value) })}
-                    className="w-full rounded-xl border border-slate-200/80 bg-slate-50/50 px-3 py-3 text-xs font-semibold outline-none transition-all focus:border-indigo-500 focus:bg-white"
+                    value={formIn.qty}
+                    onChange={(e) => setFormIn({ ...formIn, qty: Number(e.target.value) })}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-3 text-xs font-bold outline-none focus:bg-white focus:border-sky-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Alasan / Memo Catatan</label>
-                <div className="relative">
-                  <FileText className="absolute left-3.5 top-3.5 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-                  <textarea
-                    rows={2}
-                    required
-                    placeholder="Contoh: Audit opname, Rusak di rak display, Bonus supplier."
-                    value={formData.note}
-                    onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200/80 bg-slate-50/50 pl-10 pr-4 py-3 text-xs font-semibold outline-none resize-none focus:bg-white focus:border-indigo-500"
-                  />
-                </div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-sans">Keterangan / Catatan</label>
+                <textarea
+                  rows={2}
+                  placeholder="Contoh: Pengiriman pesanan PO baju muslim"
+                  value={formIn.note}
+                  onChange={(e) => setFormIn({ ...formIn, note: e.target.value })}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs font-semibold outline-none resize-none focus:bg-white focus:border-sky-500"
+                />
               </div>
 
               <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-4 mt-6">
-                <button type="button" disabled={isSubmitting} onClick={() => setIsOpenModal(false)} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all">Batal</button>
-                <button type="submit" disabled={isSubmitting || products.length === 0} className="rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-700 shadow-indigo-500/10 transition-all cursor-pointer">
-                  {isSubmitting ? 'Memproses...' : 'Simpan Koreksi'}
+                <button type="button" disabled={isSubmitting} onClick={() => setIsOpenInModal(false)} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all cursor-pointer">Batal</button>
+                <button type="submit" disabled={isSubmitting || products.length === 0} className="rounded-xl bg-sky-500 px-4 py-2.5 text-xs font-bold text-white hover:bg-sky-600 transition-all cursor-pointer">
+                  {isSubmitting ? 'Memproses...' : 'Simpan Stok Masuk'}
                 </button>
               </div>
             </form>
@@ -710,30 +1237,187 @@ export default function StockMovementPage() {
         </div>
       )}
 
+      {/* Modal 2: Tambah Stok Keluar */}
+      {isOpenOutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs transition-all">
+          <div className="w-full max-w-md overflow-hidden rounded-xl border border-slate-150 bg-white p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div>
+                <h3 className="text-sm font-black text-slate-900">Tambah Keluar Stok (Outflow)</h3>
+                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Catat pengurangan baju dari inventori.</p>
+              </div>
+              <button onClick={() => setIsOpenOutModal(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-600">
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitOut} className="mt-5 space-y-4">
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-sans">Pilih Baju / Produk</label>
+                <div className="relative">
+                  <select
+                    value={formOut.productId}
+                    onChange={(e) => setFormOut({ ...formOut, productId: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-3 pr-8 py-3 text-xs font-bold text-slate-800 outline-none cursor-pointer appearance-none focus:border-sky-500 focus:bg-white"
+                  >
+                    {products.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name} — SKU: {p.sku} (Sisa: {p.stock} Pcs)</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-sans">Alasan Pengeluaran</label>
+                  <div className="relative">
+                    <select
+                      value={formOut.reason}
+                      onChange={(e) => setFormOut({ ...formOut, reason: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-3 pr-8 py-3 text-xs font-bold text-slate-800 outline-none cursor-pointer appearance-none focus:border-sky-500 focus:bg-white"
+                    >
+                      <option value="Barang Rusak">Barang Rusak</option>
+                      <option value="Sampel">Hadiah / Sampel Promo</option>
+                      <option value="Koreksi Audit">Koreksi Audit</option>
+                      <option value="Lainnya">Lain-lain</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-sans">Jumlah Qty Keluar</label>
+                  <input
+                    type="number"
+                    required
+                    min={1}
+                    value={formOut.qty}
+                    onChange={(e) => setFormOut({ ...formOut, qty: Number(e.target.value) })}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-3 text-xs font-bold outline-none focus:bg-white focus:border-sky-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-sans">Keterangan / Catatan</label>
+                <textarea
+                  rows={2}
+                  placeholder="Contoh: Robek pada jahitan display depan"
+                  value={formOut.note}
+                  onChange={(e) => setFormOut({ ...formOut, note: e.target.value })}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs font-semibold outline-none resize-none focus:bg-white focus:border-sky-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-4 mt-6">
+                <button type="button" disabled={isSubmitting} onClick={() => setIsOpenOutModal(false)} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all cursor-pointer">Batal</button>
+                <button type="submit" disabled={isSubmitting || products.length === 0} className="rounded-xl bg-sky-500 px-4 py-2.5 text-xs font-bold text-white hover:bg-sky-600 transition-all cursor-pointer">
+                  {isSubmitting ? 'Memproses...' : 'Simpan Stok Keluar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 3: Buat Transfer Stok */}
+      {isOpenTransferModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs transition-all">
+          <div className="w-full max-w-md overflow-hidden rounded-xl border border-slate-150 bg-white p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div>
+                <h3 className="text-sm font-black text-slate-900">Kirim Transfer Persediaan Stok</h3>
+                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Kirim stok baju ke cabang outlet lainnya.</p>
+              </div>
+              <button onClick={() => setIsOpenTransferModal(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-600">
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitTransfer} className="mt-5 space-y-4">
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-sans">Pilih Baju / Produk</label>
+                <div className="relative">
+                  <select
+                    value={formTransfer.productId}
+                    onChange={(e) => setFormTransfer({ ...formTransfer, productId: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-3 pr-8 py-3 text-xs font-bold text-slate-800 outline-none cursor-pointer appearance-none focus:border-sky-500 focus:bg-white"
+                  >
+                    {products.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name} — SKU: {p.sku} (Sisa: {p.stock} Pcs)</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-sans">Outlet Tujuan</label>
+                  <div className="relative">
+                    <select
+                      value={formTransfer.destStoreId}
+                      onChange={(e) => setFormTransfer({ ...formTransfer, destStoreId: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-3 pr-8 py-3 text-xs font-bold text-slate-800 outline-none cursor-pointer appearance-none focus:border-sky-500 focus:bg-white"
+                    >
+                      {stores.filter(s => s.id !== selectedStoreId).map((s) => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                      {stores.filter(s => s.id !== selectedStoreId).length === 0 && (
+                        <option value="">Tidak ada outlet lain</option>
+                      )}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-sans">Jumlah Qty Transfer</label>
+                  <input
+                    type="number"
+                    required
+                    min={1}
+                    value={formTransfer.qty}
+                    onChange={(e) => setFormTransfer({ ...formTransfer, qty: Number(e.target.value) })}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-3 text-xs font-bold outline-none focus:bg-white focus:border-sky-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 font-sans">Memo Catatan Transfer</label>
+                <textarea
+                  rows={2}
+                  placeholder="Contoh: Distribusi untuk cabang Bandung"
+                  value={formTransfer.note}
+                  onChange={(e) => setFormTransfer({ ...formTransfer, note: e.target.value })}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs font-semibold outline-none resize-none focus:bg-white focus:border-sky-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-4 mt-6">
+                <button type="button" disabled={isSubmitting} onClick={() => setIsOpenTransferModal(false)} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all cursor-pointer">Batal</button>
+                <button type="submit" disabled={isSubmitting || products.length === 0 || stores.filter(s => s.id !== selectedStoreId).length === 0} className="rounded-xl bg-sky-500 px-4 py-2.5 text-xs font-bold text-white hover:bg-sky-600 transition-all cursor-pointer">
+                  {isSubmitting ? 'Memproses...' : 'Kirim Transfer Stok'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Excel Progress Modal */}
       {importStatus && (
-        <div 
-          className="fixed inset-0 z-55 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200"
-        >
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200/80 animate-in slide-in-from-bottom-3 duration-250 flex flex-col max-h-[85vh]">
-            
-            {/* Header */}
+        <div className="fixed inset-0 z-55 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-white rounded-xl shadow-xl overflow-hidden border border-slate-200/80 animate-in slide-in-from-bottom-3 duration-250 flex flex-col max-h-[85vh]">
             <div className="p-6 pb-0 flex items-start justify-between shrink-0">
               <div>
-                <h3 className="text-base font-black text-slate-950">
-                  {importStatus.isFinished ? 'Proses Import Selesai' : 'Sedang Mengimport Stok...'}
-                </h3>
+                <h3 className="text-base font-black text-slate-955">{importStatus.isFinished ? 'Proses Import Selesai' : 'Sedang Mengimport Stok...'}</h3>
                 <p className="text-[10.5px] font-semibold text-slate-400 mt-0.5">
-                  {importStatus.isFinished 
-                    ? 'Proses penyesuaian stok massal telah rampung dilaksanakan' 
-                    : 'Mohon tidak menutup halaman ini hingga proses selesai'}
+                  {importStatus.isFinished ? 'Proses penyesuaian stok massal selesai.' : 'Jangan menutup halaman ini.'}
                 </p>
               </div>
               {importStatus.isFinished && (
-                <button 
-                  type="button" 
-                  onClick={() => setImportStatus(null)}
-                  className="h-8 w-8 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
-                >
+                <button type="button" onClick={() => setImportStatus(null)} className="h-8 w-8 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
                   <X size={15} />
                 </button>
               )}
@@ -741,91 +1425,50 @@ export default function StockMovementPage() {
 
             <div className="h-px bg-slate-100 my-4 mx-6 shrink-0" />
 
-            {/* Content */}
             <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-5">
-              
-              {/* Progress and status name */}
               <div className="space-y-2">
                 <div className="flex justify-between text-xs font-bold text-slate-700">
                   <span>Progres</span>
-                  <span className="font-mono">
-                    {importStatus.current} / {importStatus.total} ({Math.round((importStatus.current / importStatus.total) * 100)}%)
-                  </span>
+                  <span className="font-mono">{importStatus.current} / {importStatus.total} ({Math.round((importStatus.current / importStatus.total) * 100)}%)</span>
                 </div>
-                
-                {/* Progress bar container */}
                 <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
-                  <div 
-                    className="h-full bg-indigo-600 rounded-full transition-all duration-300 ease-out"
-                    style={{ width: `${(importStatus.current / importStatus.total) * 100}%` }}
-                  />
+                  <div className="h-full bg-sky-500 rounded-full transition-all duration-300 ease-out" style={{ width: `${(importStatus.current / importStatus.total) * 100}%` }} />
                 </div>
-                
-                {!importStatus.isFinished && (
-                  <p className="text-[10.5px] text-slate-500 font-semibold truncate animate-pulse">
-                    Memproses: <span className="font-bold text-slate-800">{importStatus.currentName}</span>
-                  </p>
-                )}
               </div>
 
-              {/* Statistics Grid */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-emerald-50/50 border border-emerald-200/50 rounded-xl p-3 flex items-center gap-3">
-                  <div className="h-8 w-8 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600 shrink-0">
-                    <CheckCircle size={16} />
-                  </div>
+                <div className="bg-emerald-50/55 border border-emerald-200/50 rounded-xl p-3 flex items-center gap-3">
+                  <div className="h-8 w-8 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600 shrink-0"><CheckCircle size={16} /></div>
                   <div>
                     <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block leading-none">Berhasil</span>
-                    <span className="font-mono text-base font-black text-emerald-700">{importStatus.successCount}</span>
+                    <span className="font-mono text-sm font-black text-emerald-700">{importStatus.successCount}</span>
                   </div>
                 </div>
-
-                <div className="bg-rose-50/50 border border-rose-200/50 rounded-xl p-3 flex items-center gap-3">
-                  <div className="h-8 w-8 bg-rose-100 rounded-lg flex items-center justify-center text-rose-600 shrink-0">
-                    <AlertCircle size={16} />
-                  </div>
+                <div className="bg-rose-50/55 border border-rose-200/50 rounded-xl p-3 flex items-center gap-3">
+                  <div className="h-8 w-8 bg-rose-100 rounded-lg flex items-center justify-center text-rose-600 shrink-0"><AlertCircle size={16} /></div>
                   <div>
                     <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block leading-none">Gagal</span>
-                    <span className="font-mono text-base font-black text-rose-700">{importStatus.errors.length}</span>
+                    <span className="font-mono text-sm font-black text-rose-700">{importStatus.errors.length}</span>
                   </div>
                 </div>
               </div>
-
-              {/* Error list (if any) */}
-              {importStatus.errors.length > 0 && (
-                <div className="space-y-2">
-                  <label className="text-[9px] font-extrabold uppercase tracking-widest text-rose-600 block">Daftar Kesalahan ({importStatus.errors.length})</label>
-                  <div className="border border-rose-100 bg-rose-50/20 rounded-xl p-3 max-h-[180px] overflow-y-auto space-y-1.5 text-[10.5px] text-rose-700 font-semibold scrollbar-thin">
-                    {importStatus.errors.map((err, idx) => (
-                      <div key={idx} className="flex items-start gap-1.5 leading-relaxed">
-                        <span className="text-rose-400 mt-0.5 shrink-0">•</span>
-                        <span>{err}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
             </div>
-
-            {/* Footer */}
-            {importStatus.isFinished && (
-              <div className="p-6 border-t border-slate-100 bg-slate-50/50 shrink-0 flex justify-end">
-                <button 
-                  type="button" 
-                  onClick={() => setImportStatus(null)} 
-                  className="w-full sm:w-auto rounded-xl bg-indigo-600 hover:bg-indigo-700 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/10 transition-all active:scale-98 cursor-pointer flex justify-center items-center gap-1.5"
-                >
-                  <span>Selesai & Tutup</span>
-                  <CheckCircle size={14} />
-                </button>
-              </div>
-            )}
-
           </div>
         </div>
       )}
 
     </div>
+  )
+}
+
+export default function StockMovementPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen w-full items-center justify-center bg-[#f4f6f9]">
+        <Loader2 className="h-8 w-8 animate-spin text-sky-500" />
+      </div>
+    }>
+      <StockMovementPageContent />
+    </Suspense>
   )
 }
