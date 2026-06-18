@@ -39,6 +39,10 @@ type StoreStat = {
   cashiersCount: number
   transactionsCount: number
   revenue: number
+  bestSeller?: {
+    name: string
+    sold: number
+  } | null
 }
 
 type DashboardData = {
@@ -90,15 +94,21 @@ export default function AdminDashboard() {
       await Promise.all(
         stores.map(async (store: StoreType) => {
           try {
-            const [cashier, transaction, profit] = await Promise.all([
+            const [cashier, transaction, profit, topProductsRes] = await Promise.all([
               api.get(`/cashier/store/${store.id}`, { headers }),
               api.get(`/transactions/store/${store.id}`, { headers }),
               api.get(`/reports/profit/${store.id}`, { headers }),
+              api.get(`/dashboard/${store.id}/top-products`, { headers }).catch(() => ({ data: [] })),
             ])
 
             const cashiersCount = cashier.data?.length ?? 0
             const transactionsCount = transaction.data?.length ?? 0
             const revenue = Number(profit.data?.totalSales ?? 0)
+            
+            const topProducts = topProductsRes.data || []
+            const bestSeller = topProducts.length > 0 && topProducts[0].name
+              ? { name: topProducts[0].name, sold: topProducts[0].sold }
+              : null
 
             totalCashiers += cashiersCount
             totalTransactions += transactionsCount
@@ -109,7 +119,8 @@ export default function AdminDashboard() {
               name: store.name,
               cashiersCount,
               transactionsCount,
-              revenue
+              revenue,
+              bestSeller
             })
 
             if (Array.isArray(transaction.data)) {
@@ -252,6 +263,50 @@ export default function AdminDashboard() {
     return { points: '0,100 400,100', labels: [], growth: true }
   }, [data.allTransactions, period])
 
+  const filteredRevenue = useMemo(() => {
+    const now = new Date()
+    const paidTransactions = data.allTransactions.filter(tx => tx.status === 'PAID')
+
+    if (period === '1d') {
+      return paidTransactions
+        .filter(tx => new Date(tx.createdAt).toDateString() === now.toDateString())
+        .reduce((sum, tx) => sum + tx.total, 0)
+    }
+
+    if (period === '1w') {
+      const start = new Date()
+      start.setDate(now.getDate() - 6)
+      start.setHours(0, 0, 0, 0)
+      return paidTransactions
+        .filter(tx => new Date(tx.createdAt) >= start)
+        .reduce((sum, tx) => sum + tx.total, 0)
+    }
+
+    if (period === '1m') {
+      const start = new Date()
+      start.setDate(now.getDate() - 27)
+      start.setHours(0, 0, 0, 0)
+      return paidTransactions
+        .filter(tx => new Date(tx.createdAt) >= start)
+        .reduce((sum, tx) => sum + tx.total, 0)
+    }
+
+    if (period === '1y') {
+      return paidTransactions
+        .filter(tx => new Date(tx.createdAt).getFullYear() === now.getFullYear())
+        .reduce((sum, tx) => sum + tx.total, 0)
+    }
+
+    return data.totalRevenue
+  }, [data.allTransactions, data.totalRevenue, period])
+
+  const periodLabels = {
+    '1d': 'Hari Ini',
+    '1w': '1 Minggu',
+    '1m': '1 Bulan',
+    '1y': '1 Tahun'
+  }
+
   const cards = [
     { 
       title: 'Total Toko', 
@@ -284,8 +339,8 @@ export default function AdminDashboard() {
       iconTextClass: 'text-violet-600',
     },
     { 
-      title: 'Total Pendapatan', 
-      value: `Rp ${data.totalRevenue.toLocaleString('id-ID')}`, 
+      title: `Total Pendapatan (${periodLabels[period]})`, 
+      value: `Rp ${filteredRevenue.toLocaleString('id-ID')}`, 
       icon: DollarSign,
       bgClass: 'bg-gradient-to-br from-amber-50/40 via-white to-white',
       borderClass: 'border-slate-200/70 hover:border-amber-350 hover:shadow-amber-500/5',
@@ -537,11 +592,22 @@ export default function AdminDashboard() {
               <tbody className="divide-y divide-slate-100 text-slate-600 font-semibold">
                 {data.storeStats.map((stat) => (
                   <tr key={stat.id} className="group hover:bg-slate-50/45 transition-colors">
-                    <td className="p-4 pl-6 font-bold text-slate-900 flex items-center gap-2.5">
-                      <div className="h-7 w-7 rounded-lg bg-blue-50 border border-blue-100/50 flex items-center justify-center text-blue-600 shrink-0 group-hover:scale-105 transition-transform">
-                        <Store className="h-3.5 w-3.5" />
+                    <td className="p-4 pl-6 font-bold text-slate-900 flex flex-col justify-center">
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-7 w-7 rounded-lg bg-blue-50 border border-blue-100/50 flex items-center justify-center text-blue-600 shrink-0 group-hover:scale-105 transition-transform">
+                          <Store className="h-3.5 w-3.5" />
+                        </div>
+                        <span>{stat.name}</span>
                       </div>
-                      <span>{stat.name}</span>
+                      {stat.bestSeller ? (
+                        <span className="text-[10px] text-slate-400 font-semibold mt-1 ml-9">
+                          Terlaris: <span className="font-extrabold text-indigo-650">{stat.bestSeller.name}</span> ({stat.bestSeller.sold}x terjual)
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 font-semibold mt-1 ml-9">
+                          Terlaris: -
+                        </span>
+                      )}
                     </td>
                     <td className="p-4 text-slate-500 font-medium">{stat.cashiersCount.toLocaleString('id-ID')} Kasir</td>
                     <td className="p-4 text-slate-500 font-medium">{stat.transactionsCount.toLocaleString('id-ID')} Transaksi</td>

@@ -215,6 +215,7 @@ export default function PosPage() {
   const [isOpenReceipt, setIsOpenReceipt] = useState(false)
   const [currentStore, setCurrentStore] = useState<any>(null)
   const [mobileView, setMobileView] = useState<'catalog' | 'cart'>('catalog')
+  const [checkoutStep, setCheckoutStep] = useState<'cart' | 'payment'>('cart')
 
   const barcodeBuffer = useRef<string>('')
   const lastKeyTime = useRef<number>(0)
@@ -250,7 +251,11 @@ export default function PosPage() {
     const handleKeydown = (e: KeyboardEvent) => {
       if (e.key === 'F9') { 
         e.preventDefault() 
-        checkout() 
+        if (checkoutStep === 'cart') {
+          if (cart.length > 0) setCheckoutStep('payment')
+        } else {
+          checkout()
+        }
       } else if (e.key === 'F2') {
         e.preventDefault()
         searchInputRef.current?.focus()
@@ -261,7 +266,7 @@ export default function PosPage() {
     }
     window.addEventListener('keydown', handleKeydown)
     return () => window.removeEventListener('keydown', handleKeydown)
-  }, [cart, payment, paid, submitting])
+  }, [cart, payment, paid, submitting, checkoutStep])
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -675,6 +680,7 @@ export default function PosPage() {
     setMobileView('catalog')
     setCategoryFilter(null)
     setSearch('')
+    setCheckoutStep('cart')
     
     // Reset new states
     setOrderType('TAKEAWAY')
@@ -1119,151 +1125,36 @@ export default function PosPage() {
                 />
               </div>
             </div>
-
-            {orderType === 'DINEIN' && serviceAmount > 0 && (
-              <div className="flex justify-between text-xs text-slate-500 font-bold">
-                <span>Service Charge ({servicePercent}%)</span>
-                <span className="font-mono text-slate-950">{fmt(serviceAmount)}</span>
+            {globalCalculatedDiscount > 0 && (
+              <div className="flex justify-between text-xs text-rose-500 font-bold pt-1.5">
+                <span>Diskon Transaksi</span>
+                <span className="font-mono">-{fmt(globalCalculatedDiscount)}</span>
               </div>
             )}
-
-            <div className="flex items-center justify-between text-xs font-bold text-slate-500">
-              <span>Pajak PPN ({taxPercent}%)</span>
-              <div className="flex items-center gap-3">
-                {isPPN && <span className="font-mono text-slate-700 text-xs">{fmt(ppnAmount)}</span>}
-                <button
-                  type="button"
-                  onClick={() => setIsPPN(!isPPN)}
-                  className={`relative inline-flex h-5 w-9 cursor-pointer rounded-full transition-colors duration-200 ${
-                    isPPN ? 'bg-indigo-600' : 'bg-slate-200'
-                  }`}
-                >
-                  <span className={`inline-block h-4 w-4 mt-0.5 transform rounded-full bg-white transition duration-200 shadow-xs ${
-                    isPPN ? 'translate-x-4.5' : 'translate-x-0.5'
-                  }`} />
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Metode Bayar</span>
-              <div className="grid grid-cols-4 gap-1.5">
-                {paymentMethods.map(m => {
-                  const Icon = m.icon
-                  const active = payment === m.id
-                  return (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() => setPayment(m.id as PaymentMethod)}
-                      className={`flex flex-col items-center justify-center gap-1 py-2 border rounded-xl text-[10px] font-bold transition-all cursor-pointer ${
-                        active
-                          ? 'border-indigo-500 bg-indigo-50/30 text-indigo-600'
-                          : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
-                      }`}
-                    >
-                      <Icon size={13} className="shrink-0" />
-                      <span>{m.label}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            {payment === 'CASH' && (
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-3xs space-y-1.5 font-mono text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="font-sans font-bold text-slate-500 text-xs">Uang Diterima</span>
-                  <div className="relative w-1/2 flex items-center justify-end">
-                    <input
-                      type="number"
-                      placeholder="0"
-                      value={paid}
-                      onChange={e => setPaid(e.target.value === '' ? '' : Number(e.target.value))}
-                      className="bg-transparent font-bold text-slate-900 outline-none text-right w-full border-b border-slate-200 focus:border-indigo-500 pb-0.5"
-                      autoFocus
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-between items-center border-t border-slate-100 pt-1.5">
-                  <span className="font-sans font-bold text-slate-400 text-[9px] uppercase">Kembalian</span>
-                  <span className={`font-bold text-xs ${change > 0 ? 'text-emerald-600' : 'text-slate-600'}`}>{fmt(change)}</span>
-                </div>
-              </div>
-            )}
-
-            {payment === 'SPLIT' && (
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-3xs space-y-2 font-mono text-xs">
-                <span className="font-sans font-bold text-slate-500 text-[9px] uppercase block mb-1">Rincian Split Payment</span>
-                <div className="grid grid-cols-2 gap-1.5">
-                  <div>
-                    <label className="block text-[8px] font-sans font-extrabold uppercase text-slate-400 mb-0.5">Tunai (Rp)</label>
-                    <input
-                      type="number"
-                      placeholder="0"
-                      value={splitAmounts.CASH || ''}
-                      onChange={e => setSplitAmounts({ ...splitAmounts, CASH: Number(e.target.value) })}
-                      className="w-full bg-white border border-slate-200 rounded-lg px-1.5 py-1 text-[10px] outline-none text-right font-bold text-slate-800"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[8px] font-sans font-extrabold uppercase text-slate-400 mb-0.5">QRIS (Rp)</label>
-                    <input
-                      type="number"
-                      placeholder="0"
-                      value={splitAmounts.QRIS || ''}
-                      onChange={e => setSplitAmounts({ ...splitAmounts, QRIS: Number(e.target.value) })}
-                      className="w-full bg-white border border-slate-200 rounded-lg px-1.5 py-1 text-[10px] outline-none text-right font-bold text-slate-800"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-between items-center border-t border-slate-100 pt-1.5">
-                  <span className="font-sans font-bold text-slate-450 text-[9px] uppercase">Total Dibayar</span>
-                  <span className="font-bold text-xs text-slate-850">
-                    {fmt(Object.values(splitAmounts).reduce((a, b) => a + b, 0))}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-[9px]">
-                  <span className="font-sans font-bold text-slate-450 uppercase">Sisa Tagihan</span>
-                  <span className={`font-bold ${
-                    Object.values(splitAmounts).reduce((a, b) => a + b, 0) >= finalTotal ? 'text-emerald-600' : 'text-rose-600'
-                  }`}>
-                    {fmt(Math.max(0, finalTotal - Object.values(splitAmounts).reduce((a, b) => a + b, 0)))}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {payment === 'QRIS' && (
-              <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-150 rounded-xl px-3 py-2 text-[10px] text-emerald-700 font-bold shadow-3xs leading-none">
-                <CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
-                <span>Pembayaran pas — tidak ada kembalian</span>
-              </div>
-            )}
-
           </div>
 
           <div className="border-t border-slate-200 pt-3 space-y-3">
             <div className="flex justify-between items-center px-1">
-              <span className="text-xs text-slate-400 font-extrabold uppercase tracking-wide">Total Pembayaran</span>
-              <span className="text-xl font-black font-mono text-indigo-600">{fmt(finalTotal)}</span>
+              <span className="text-xs text-slate-400 font-extrabold uppercase tracking-wide">Estimasi Total</span>
+              <span className="text-base font-black font-mono text-indigo-600">{fmt(finalTotal)}</span>
             </div>
 
             <div className="space-y-2">
               <button
-                onClick={checkout}
-                disabled={cart.length === 0 || submitting}
-                className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white py-3 text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-40 shadow-indigo-500/10 transition-all cursor-pointer animate-none"
+                type="button"
+                onClick={() => {
+                  if (cart.length === 0) return alert('Keranjang kosong')
+                  setCheckoutStep('payment')
+                }}
+                className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 text-xs font-bold flex items-center justify-center gap-2 shadow-indigo-500/10 transition-all cursor-pointer"
               >
-                {submitting
-                  ? <Loader2 className="animate-spin text-white" size={14} />
-                  : <><span>Bayar Sekarang (F9)</span><ArrowRight size={13} /></>
-                }
+                <span>Lanjutkan ke Pembayaran</span>
+                <ArrowRight size={13} />
               </button>
               {cart.length > 0 && (
                 <button
                   type="button"
-                  onClick={() => { if (confirm('Hapus semua item dari keranjang?')) { setCart([]); setPaid('') } }}
+                  onClick={() => { if (confirm('Hapus semua item dari keranjang?')) { setCart([]); setPaid(''); setCheckoutStep('cart') } }}
                   className="w-full rounded-xl border border-slate-200 text-slate-400 hover:text-slate-600 py-2 text-xs hover:bg-slate-50 transition-colors cursor-pointer"
                 >
                   Hapus keranjang
@@ -1418,6 +1309,256 @@ export default function PosPage() {
               <ArrowRight size={13} />
             </span>
           </button>
+        </div>
+      )}
+
+      {checkoutStep === 'payment' && (
+        <div className="fixed inset-0 z-45 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200 select-none">
+          <div className="w-full max-w-4xl h-[90vh] bg-white rounded-3xl border border-slate-200/80 shadow-2xl flex flex-col md:flex-row overflow-hidden animate-in zoom-in-95 duration-250">
+            
+            {/* Left Pane: Detailed Item Bill Grid (Indomaret Style) */}
+            <div className="flex-1 p-6 flex flex-col overflow-hidden bg-slate-50/50">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+                <div>
+                  <h3 className="text-sm font-black text-slate-950 uppercase tracking-wider">Rincian Belanja Nota</h3>
+                  <p className="text-[10px] text-slate-400 font-bold mt-0.5">Daftar item belanjaan yang akan dibayar</p>
+                </div>
+                <span className="text-[10px] font-extrabold bg-indigo-50 border border-indigo-150 text-indigo-750 px-2.5 py-1 rounded-lg">
+                  {cart.reduce((sum, item) => sum + item.qty, 0)} Item
+                </span>
+              </div>
+
+              <div className="flex-grow overflow-y-auto mt-4 pr-1 scrollbar-thin">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider text-[9px] pb-2">
+                      <th className="pb-2">Produk</th>
+                      <th className="pb-2 text-center">Qty</th>
+                      <th className="pb-2 text-right">Harga Satuan</th>
+                      <th className="pb-2 text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-semibold text-slate-600">
+                    {cart.map((item, idx) => {
+                      const md = getProductMasterDiscount(item)
+                      const finalItemPrice = Math.max(0, item.sellingPrice - md - item.cashierDiscount)
+                      const itemDiscount = (md + item.cashierDiscount) * item.qty
+                      const itemTotal = item.sellingPrice * item.qty
+                      return (
+                        <tr key={item.id} className="align-middle">
+                          <td className="py-3">
+                            <div className="font-extrabold text-slate-900">{idx + 1}. {item.name}</div>
+                            {itemDiscount > 0 && (
+                              <div className="text-[9px] text-rose-500 italic mt-0.5">Promo/Diskon: -{fmt(itemDiscount)}</div>
+                            )}
+                          </td>
+                          <td className="py-3 text-center font-mono font-bold text-slate-800">{item.qty} Pcs</td>
+                          <td className="py-3 text-right font-mono text-slate-500">{fmt(item.sellingPrice)}</td>
+                          <td className="py-3 text-right font-mono font-black text-slate-900">{fmt(finalItemPrice * item.qty)}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* SOP/Note under items list */}
+              <div className="bg-indigo-50/30 border border-indigo-100/50 rounded-xl p-3.5 mt-4 text-[10px] text-indigo-700 font-bold flex items-start gap-2 shrink-0">
+                <Sparkles size={14} className="shrink-0 mt-0.5" />
+                <span>Pastikan semua kuantitas barang sesuai sebelum menekan tombol Bayar. Gunakan tombol 'Kembali & Edit' jika ada revisi belanja.</span>
+              </div>
+            </div>
+
+            {/* Right Pane: Final Breakdown & Payment Inputs */}
+            <div className="w-full md:w-[380px] border-t md:border-t-0 md:border-l border-slate-200 p-6 flex flex-col justify-between overflow-y-auto scrollbar-thin bg-white">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Detail Pembayaran</span>
+                  <button 
+                    type="button" 
+                    onClick={() => setCheckoutStep('cart')}
+                    className="text-[10px] font-extrabold text-indigo-650 hover:underline cursor-pointer"
+                  >
+                    &larr; Kembali & Edit
+                  </button>
+                </div>
+
+                {/* Calculations summary */}
+                <div className="space-y-2.5 text-xs">
+                  <div className="flex justify-between font-bold text-slate-500">
+                    <span>Sub total</span>
+                    <span className="font-mono text-slate-900">{fmt(rawSubtotal)}</span>
+                  </div>
+                  {discountTotal > 0 && (
+                    <div className="flex justify-between font-bold text-rose-500">
+                      <span>Total Diskon</span>
+                      <span className="font-mono">-{fmt(discountTotal)}</span>
+                    </div>
+                  )}
+                  {orderType === 'DINEIN' && serviceAmount > 0 && (
+                    <div className="flex justify-between font-bold text-slate-500">
+                      <span>Service Charge ({servicePercent}%)</span>
+                      <span className="font-mono text-slate-950">{fmt(serviceAmount)}</span>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between font-bold text-slate-500">
+                    <span>Pajak PPN ({taxPercent}%)</span>
+                    <div className="flex items-center gap-3">
+                      {isPPN && <span className="font-mono text-slate-700 text-xs">{fmt(ppnAmount)}</span>}
+                      <button
+                        type="button"
+                        onClick={() => setIsPPN(!isPPN)}
+                        className={`relative inline-flex h-5 w-9 cursor-pointer rounded-full transition-colors duration-200 ${
+                          isPPN ? 'bg-indigo-600' : 'bg-slate-200'
+                        }`}
+                      >
+                        <span className={`inline-block h-4 w-4 mt-0.5 transform rounded-full bg-white transition duration-200 shadow-xs ${
+                          isPPN ? 'translate-x-4.5' : 'translate-x-0.5'
+                        }`} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {customerName && (
+                    <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-150 text-[10px] font-bold text-slate-500 flex justify-between">
+                      <span>Pelanggan: <span className="text-slate-800 font-extrabold">{customerName}</span></span>
+                      <span>Tier: <span className="text-indigo-600 font-extrabold">{customerTier}</span></span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="h-px bg-slate-100" />
+
+                {/* Payment Method Selector */}
+                <div className="space-y-1.5">
+                  <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-widest block">Metode Pembayaran</span>
+                  <div className="grid grid-cols-3 gap-2">
+                    {paymentMethods.map(m => {
+                      const Icon = m.icon
+                      const active = payment === m.id
+                      return (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => setPayment(m.id as PaymentMethod)}
+                          className={`flex flex-col items-center justify-center gap-1.5 py-2 border rounded-xl text-[10.5px] font-extrabold transition-all cursor-pointer ${
+                            active
+                              ? 'border-indigo-500 bg-indigo-50/40 text-indigo-650 shadow-3xs'
+                              : 'border-slate-200 bg-white text-slate-500 hover:border-slate-350'
+                          }`}
+                        >
+                          <Icon size={14} className="shrink-0" />
+                          <span>{m.label}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Cash Inputs / Split Inputs / QRIS Note */}
+                {payment === 'CASH' && (
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 shadow-3xs space-y-2.5 font-mono text-xs animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between">
+                      <span className="font-sans font-bold text-slate-500 text-xs">Uang Diterima</span>
+                      <div className="relative w-1/2 flex items-center justify-end">
+                        <input
+                          type="number"
+                          placeholder="0"
+                          value={paid}
+                          onChange={e => setPaid(e.target.value === '' ? '' : Number(e.target.value))}
+                          className="bg-transparent font-bold text-slate-900 outline-none text-right w-full border-b border-slate-200 focus:border-indigo-500 pb-0.5 text-sm"
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center border-t border-slate-100 pt-2">
+                      <span className="font-sans font-bold text-slate-400 text-[9px] uppercase">Kembalian</span>
+                      <span className={`font-bold text-sm ${change > 0 ? 'text-emerald-600' : 'text-slate-650'}`}>{fmt(change)}</span>
+                    </div>
+                  </div>
+                )}
+
+                {payment === 'SPLIT' && (
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 shadow-3xs space-y-2.5 font-mono text-xs animate-in fade-in duration-150">
+                    <span className="font-sans font-bold text-slate-500 text-[9px] uppercase block mb-1">Rincian Split Payment</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[8px] font-sans font-extrabold uppercase text-slate-400 mb-0.5">Tunai (Rp)</label>
+                        <input
+                          type="number"
+                          placeholder="0"
+                          value={splitAmounts.CASH || ''}
+                          onChange={e => setSplitAmounts({ ...splitAmounts, CASH: Number(e.target.value) })}
+                          className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-[10px] outline-none text-right font-bold text-slate-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[8px] font-sans font-extrabold uppercase text-slate-400 mb-0.5">QRIS (Rp)</label>
+                        <input
+                          type="number"
+                          placeholder="0"
+                          value={splitAmounts.QRIS || ''}
+                          onChange={e => setSplitAmounts({ ...splitAmounts, QRIS: Number(e.target.value) })}
+                          className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-[10px] outline-none text-right font-bold text-slate-800"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center border-t border-slate-100 pt-2">
+                      <span className="font-sans font-bold text-slate-455 text-[9px] uppercase">Total Dibayar</span>
+                      <span className="font-bold text-xs text-slate-850">
+                        {fmt(Object.values(splitAmounts).reduce((a, b) => a + b, 0))}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-[9px]">
+                      <span className="font-sans font-bold text-slate-455 uppercase">Sisa Tagihan</span>
+                      <span className={`font-bold ${
+                        Object.values(splitAmounts).reduce((a, b) => a + b, 0) >= finalTotal ? 'text-emerald-600' : 'text-rose-600'
+                      }`}>
+                        {fmt(Math.max(0, finalTotal - Object.values(splitAmounts).reduce((a, b) => a + b, 0)))}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {payment === 'QRIS' && (
+                  <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-150 rounded-xl px-3.5 py-2.5 text-[10px] text-emerald-750 font-bold shadow-3xs leading-none animate-in fade-in duration-150">
+                    <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                    <span>Pembayaran pas &mdash; tidak ada kembalian</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 space-y-3">
+                <div className="flex justify-between items-center px-1">
+                  <span className="text-xs text-slate-400 font-extrabold uppercase tracking-wide">Total Pembayaran</span>
+                  <span className="text-xl font-black font-mono text-indigo-600">{fmt(finalTotal)}</span>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCheckoutStep('cart')}
+                    className="flex-1 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 py-3.5 text-xs font-bold transition-all cursor-pointer active:scale-97"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={checkout}
+                    disabled={submitting}
+                    className="flex-[2.5] rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-40 shadow-indigo-500/10 transition-all cursor-pointer active:scale-97"
+                  >
+                    {submitting ? (
+                      <Loader2 className="animate-spin text-white" size={14} />
+                    ) : (
+                      <><span>Bayar Sekarang</span><ArrowRight size={13} /></>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
       )}
     </div>

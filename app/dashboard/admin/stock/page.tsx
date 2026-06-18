@@ -165,7 +165,7 @@ export default function StockMovementPage() {
 
         const parseExcelNumber = (val: any): number => {
           if (val === undefined || val === null) return 0
-          if (typeof val === 'number') return val
+          if (typeof val === 'number') return Math.round(val)
           let str = String(val).trim().replace(/\s/g, '')
           if (!str) return 0
           if (str.includes('.') && str.includes(',')) {
@@ -178,14 +178,21 @@ export default function StockMovementPage() {
             }
           } else if (str.includes(',')) {
             const parts = str.split(',')
-            if (parts.length === 2 && parts[1].length === 2) {
-              str = str.replace(/,/g, '.')
+            const lastPart = parts[parts.length - 1]
+            if (lastPart.length === 3) {
+              str = str.replace(/,/g, '')
             } else {
               str = str.replace(/,/g, '.')
             }
+          } else if (str.includes('.')) {
+            const parts = str.split('.')
+            const lastPart = parts[parts.length - 1]
+            if (parts.length > 1 && lastPart.length === 3) {
+              str = str.replace(/\./g, '')
+            }
           }
           const num = Number(str)
-          return isNaN(num) ? 0 : num
+          return isNaN(num) ? 0 : Math.round(num)
         }
 
         let headerRowIdx = -1
@@ -292,7 +299,7 @@ export default function StockMovementPage() {
               throw new Error(`Produk tidak ditemukan di database cabang ini`)
             }
 
-            targetStock = parseExcelNumber(row[stockIdx])
+            targetStock = Math.round(parseExcelNumber(row[stockIdx]))
             currentStock = dbProduct.stock || 0
 
             const delta = targetStock - currentStock

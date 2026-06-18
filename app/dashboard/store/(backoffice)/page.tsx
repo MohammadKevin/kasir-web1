@@ -12,7 +12,9 @@ import {
   Clock,
   AlertTriangle,
   Lock,
-  Barcode
+  Barcode,
+  Loader2,
+  X
 } from 'lucide-react'
 import { api } from '@/lib/api'
 
@@ -26,6 +28,23 @@ type Summary = {
   activeShift: number
 }
 
+type Transaction = {
+  id: string
+  invoiceNumber: string
+  subtotal: number
+  totalDiscount: number
+  total: number
+  paidAmount: number
+  changeAmount: number
+  paymentMethod: string
+  status: string
+  voidReason?: string
+  cashier?: {
+    name: string
+  }
+  createdAt: string
+}
+
 export default function StoreDashboard() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
@@ -35,6 +54,18 @@ export default function StoreDashboard() {
   const [storeAttendance, setStoreAttendance] = useState<any>(null)
   const [checkingStore, setCheckingStore] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
+
+  // Recent Transactions States
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [loadingTransactions, setLoadingTransactions] = useState(true)
+  const [isAdminKasir, setIsAdminKasir] = useState(false)
+  const [storeId, setStoreId] = useState('')
+
+  // Void modal states
+  const [isOpenVoidModal, setIsOpenVoidModal] = useState(false)
+  const [voidId, setVoidId] = useState('')
+  const [voidReason, setVoidReason] = useState('')
+  const [isSubmittingVoid, setIsSubmittingVoid] = useState(false)
 
   const [summary, setSummary] = useState<Summary>({
     todaySales: 0,
@@ -51,20 +82,39 @@ export default function StoreDashboard() {
     if (u) {
       setUser(JSON.parse(u))
     }
+    const cachedStoreId = localStorage.getItem('storeId') || ''
+    setStoreId(cachedStoreId)
+
     loadDashboardData()
     checkStoreStatus()
+
+    if (cachedStoreId) {
+      loadRecentTransactions(cachedStoreId)
+    }
+
+    const cachedCashier = localStorage.getItem('cashier')
+    if (cachedCashier) {
+      try {
+        const cashierObj = JSON.parse(cachedCashier)
+        if (cashierObj?.name && cashierObj.name.toLowerCase().includes('admin')) {
+          setIsAdminKasir(true)
+        }
+      } catch (e) {
+        console.error(e)
+      }
+    }
   }, [])
 
   async function loadDashboardData() {
     try {
-      const storeId = localStorage.getItem('storeId')
+      const cachedStoreId = localStorage.getItem('storeId')
       const token = localStorage.getItem('token')
 
-      if (!storeId) return
+      if (!cachedStoreId) return
 
       const headers = { Authorization: `Bearer ${token}` }
 
-      const res = await api.get(`/dashboard/${storeId}`, { headers })
+      const res = await api.get(`/dashboard/${cachedStoreId}`, { headers })
       if (res.data) {
         setSummary({
           todaySales: Number(res.data.todaySales || 0),
@@ -80,6 +130,24 @@ export default function StoreDashboard() {
       console.error(err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function loadRecentTransactions(id: string) {
+    setLoadingTransactions(true)
+    const token = localStorage.getItem('token')
+    const headers = { Authorization: `Bearer ${token}` }
+    try {
+      const res = await api.get(`/transactions/store/${id}`, { headers })
+      // Sort by date descending and take top 10
+      const sorted = (res.data || []).sort(
+        (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )
+      setTransactions(sorted.slice(0, 10))
+    } catch (err) {
+      console.error('Gagal memuat transaksi terbaru:', err)
+    } finally {
+      setLoadingTransactions(false)
     }
   }
 
@@ -112,6 +180,9 @@ export default function StoreDashboard() {
       setStoreAttendance(res.data)
       localStorage.setItem('storeOpen', 'true')
       alert('Toko berhasil dibuka! Selamat bekerja.')
+      if (storeId) {
+        loadRecentTransactions(storeId)
+      }
     } catch (err: any) {
       alert(err.response?.data?.message || 'Gagal membuka toko')
     } finally {
@@ -133,10 +204,43 @@ export default function StoreDashboard() {
       localStorage.removeItem('cashierActive')
       localStorage.removeItem('currentShiftId')
       alert('Toko berhasil ditutup! Sampai jumpa besok.')
+      setTransactions([])
     } catch (err: any) {
       alert(err.response?.data?.message || 'Gagal menutup toko')
     } finally {
       setActionLoading(false)
+    }
+  }
+
+  function openVoid(id: string) {
+    setVoidId(id)
+    setVoidReason('')
+    setIsOpenVoidModal(true)
+  }
+
+  async function handleConfirmVoid(e: React.FormEvent) {
+    e.preventDefault()
+    if (!voidReason.trim()) return alert('Alasan pembatalan (Void) wajib diisi!')
+
+    setIsSubmittingVoid(true)
+    try {
+      const token = localStorage.getItem('token')
+      await api.patch(`/transactions/${voidId}/void`, { reason: voidReason.trim() }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      setIsOpenVoidModal(false)
+      alert('Transaksi berhasil dibatalkan (Void)')
+      if (storeId) {
+        loadRecentTransactions(storeId)
+        loadDashboardData() // Refresh dashboard cards
+      }
+    } catch (error: any) {
+      const msg = error.response?.data?.message || 'Gagal membatalkan transaksi'
+      alert(Array.isArray(msg) ? msg.join(', ') : msg)
+    } finally {
+      setIsSubmittingVoid(false)
     }
   }
 
@@ -306,6 +410,106 @@ export default function StoreDashboard() {
         </div>
       </div>
 
+      {/* Riwayat Transaksi Terbaru Table Section */}
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-3xs overflow-hidden">
+        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">Riwayat Transaksi Terbaru (Limit 10)</h2>
+            <p className="text-[10px] text-slate-400 font-bold mt-0.5">Monitoring transaksi penjualan terupdate di outlet cabang ini</p>
+          </div>
+          <span className="text-[10px] font-bold text-slate-400 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg">
+            Terbaca: {transactions.length} Nota
+          </span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[700px] text-left border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-400 font-bold uppercase tracking-wider text-[9px]">
+                <th className="p-4 pl-6">No. Invoice</th>
+                <th className="p-4">Tanggal & Waktu</th>
+                <th className="p-4">Operator / Kasir</th>
+                <th className="p-4">Total Belanja</th>
+                <th className="p-4">Metode Bayar</th>
+                <th className="p-4">Status</th>
+                <th className="p-4 pr-6 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-slate-600 font-semibold">
+              {loadingTransactions ? (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center">
+                    <Loader2 className="w-5 h-5 animate-spin text-slate-400 mx-auto" />
+                  </td>
+                </tr>
+              ) : transactions.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="p-12 text-center text-slate-400 font-bold">
+                    Belum ada transaksi terekam hari ini.
+                  </td>
+                </tr>
+              ) : (
+                transactions.map((tx) => {
+                  const txDate = new Date(tx.createdAt)
+                  const formattedDateTime = `${txDate.toLocaleDateString('id-ID')} ${txDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`
+                  return (
+                    <tr key={tx.id} className="hover:bg-slate-50/45 transition-colors">
+                      <td className="p-4 pl-6 font-mono font-bold text-slate-900">
+                        {tx.invoiceNumber}
+                      </td>
+                      <td className="p-4">
+                        {formattedDateTime}
+                      </td>
+                      <td className="p-4">
+                        {tx.cashier?.name || 'Kasir'}
+                      </td>
+                      <td className="p-4 font-mono font-extrabold text-slate-900">
+                        {formatIDR(tx.total)}
+                      </td>
+                      <td className="p-4">
+                        <span className="inline-flex items-center rounded-md bg-slate-50 border border-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-700">
+                          {tx.paymentMethod === 'CASH' ? 'Tunai' : tx.paymentMethod === 'QRIS' ? 'QRIS' : tx.paymentMethod === 'DEBIT' ? 'Debit' : tx.paymentMethod}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-bold border text-[9px] uppercase tracking-wider ${
+                          tx.status === 'PAID' 
+                            ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
+                            : tx.status === 'CANCELLED'
+                            ? 'bg-rose-50 border-rose-200 text-rose-700'
+                            : 'bg-slate-50 border-slate-200 text-slate-400'
+                        }`}>
+                          <span className={`h-1 w-1 rounded-full ${tx.status === 'PAID' ? 'bg-emerald-500' : tx.status === 'CANCELLED' ? 'bg-rose-500' : 'bg-slate-400'}`} />
+                          {tx.status === 'PAID' ? 'Lunas' : tx.status === 'CANCELLED' ? 'Dibatalkan (Void)' : tx.status}
+                        </span>
+                        {tx.voidReason && (
+                          <span className="block text-[9px] text-slate-400 italic mt-0.5 max-w-[150px] truncate" title={tx.voidReason}>
+                            Alasan: {tx.voidReason}
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-4 pr-6 text-right">
+                        {tx.status === 'PAID' && isAdminKasir && (
+                          <button
+                            onClick={() => openVoid(tx.id)}
+                            className="rounded-xl border border-rose-200 hover:border-rose-455 bg-white text-rose-600 hover:bg-rose-50 px-3 py-1.5 text-[10px] font-bold transition-all active:scale-97 cursor-pointer"
+                          >
+                            Void
+                          </button>
+                        )}
+                        {tx.status !== 'PAID' && (
+                          <span className="text-slate-300 text-xs italic">-</span>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div className="border border-indigo-100 bg-indigo-50/35 p-5 rounded-2xl flex items-start gap-3 shadow-3xs">
         <div className="p-2 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-600 shrink-0">
           <Clock size={16} />
@@ -318,15 +522,85 @@ export default function StoreDashboard() {
         </div>
       </div>
 
+      {/* Void Confirmation Modal */}
+      {isOpenVoidModal && (
+        <div 
+          className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={e => { if (e.target === e.currentTarget) setIsOpenVoidModal(false) }}
+        >
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200/80 animate-in slide-in-from-bottom-3 duration-250 flex flex-col">
+            
+            <div className="p-6 pb-0 flex items-start justify-between">
+              <div>
+                <h3 className="text-base font-black text-slate-950">Batalkan Transaksi (Void)</h3>
+                <p className="text-[10.5px] font-semibold text-slate-400 mt-0.5">
+                  Transaksi yang dibatalkan akan mengembalikan persediaan stok produk otomatis.
+                </p>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setIsOpenVoidModal(false)}
+                className="h-8 w-8 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            <div className="h-px bg-slate-100 my-4 mx-6" />
+
+            <form onSubmit={handleConfirmVoid} className="p-6 pt-0 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 block">Alasan Void *</label>
+                <input
+                  type="text"
+                  required
+                  value={voidReason}
+                  onChange={(e) => setVoidReason(e.target.value)}
+                  placeholder="Contoh: Kesalahan input item belanja / Pelanggan batal bayar"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-rose-550 focus:outline-none focus:ring-4 focus:ring-rose-500/10 transition-all font-semibold"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button 
+                  type="button" 
+                  onClick={() => setIsOpenVoidModal(false)} 
+                  disabled={isSubmittingVoid}
+                  className="flex-1 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 py-3 text-xs font-bold text-slate-655 transition-all active:scale-98 cursor-pointer disabled:opacity-50 text-slate-600"
+                >
+                  Batal
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSubmittingVoid || !voidReason.trim()}
+                  className="flex-1 rounded-xl bg-rose-605 hover:bg-rose-700 py-3 text-xs font-bold text-white shadow-md shadow-rose-600/15 transition-all active:scale-98 disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer bg-rose-600"
+                >
+                  {isSubmittingVoid ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin text-white" />
+                      <span>Memproses...</span>
+                    </>
+                  ) : (
+                    <span>Konfirmasi Void</span>
+                  )}
+                </button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
 
 function Card({ icon: Icon, title, value, isMono = false, highlight = false }: any) {
   return (
-    <div className="border border-slate-200 rounded-2xl p-5 bg-white flex flex-col justify-between h-28 shadow-3xs relative overflow-hidden group hover:border-slate-300 transition-all">
+    <div className="border border-slate-200 rounded-2xl p-5 bg-white flex flex-col justify-between h-28 shadow-3xs relative overflow-hidden group hover:border-slate-350 transition-all">
       {highlight && (
-        <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-600" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-650 bg-indigo-650" style={{ backgroundColor: '#4f46e5' }} />
       )}
       <div className={highlight ? 'text-indigo-600' : 'text-slate-400'}>
         <Icon size={18} />

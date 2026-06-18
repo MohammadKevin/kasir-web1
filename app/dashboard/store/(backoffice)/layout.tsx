@@ -38,6 +38,7 @@ export default function StoreLayout({
   const [storeName, setStoreName] = useState('')
   const [staffName, setStaffName] = useState('Staff Laila')
   const [hasTables, setHasTables] = useState(false)
+  const [isAdminKasir, setIsAdminKasir] = useState(false)
 
   useEffect(() => {
     setSidebarOpen(false)
@@ -66,6 +67,25 @@ export default function StoreLayout({
           localStorage.setItem('storeId', user.storeId)
           currentStoreId = user.storeId
         }
+      }
+
+      const cachedCashier = localStorage.getItem('cashier')
+      if (cachedCashier) {
+        try {
+          const cashierObj = JSON.parse(cachedCashier)
+          if (cashierObj?.name) {
+            setStaffName(cashierObj.name)
+            if (cashierObj.name.toLowerCase().includes('admin')) {
+              setIsAdminKasir(true)
+            } else {
+              setIsAdminKasir(false)
+            }
+          }
+        } catch {
+          setIsAdminKasir(false)
+        }
+      } else {
+        setIsAdminKasir(false)
       }
 
       if (currentStoreId) {
@@ -150,6 +170,7 @@ export default function StoreLayout({
             <nav className="space-y-1.5">
               {menus
                 .filter((m) => m.path !== '/dashboard/store/kds' || hasTables)
+                .filter((m) => m.path !== '/dashboard/store/barcode' || isAdminKasir)
                 .map((m) => {
                   const Icon = m.icon
                   const isActive = pathname === m.path

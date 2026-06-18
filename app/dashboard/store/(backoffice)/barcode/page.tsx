@@ -27,12 +27,25 @@ export default function StoreBarcodePage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [printQty, setPrintQty] = useState<Record<string, number>>({})
   const [paperType, setPaperType] = useState<'a4' | 'thermal'>('thermal')
+  const [isAdminKasir, setIsAdminKasir] = useState(false)
 
   useEffect(() => { 
     const cachedStoreId = localStorage.getItem('storeId') || ''
     setStoreId(cachedStoreId)
     if (cachedStoreId) {
       loadProducts(cachedStoreId)
+    }
+
+    const cachedCashier = localStorage.getItem('cashier')
+    if (cachedCashier) {
+      try {
+        const cashierObj = JSON.parse(cachedCashier)
+        if (cashierObj?.name && cashierObj.name.toLowerCase().includes('admin')) {
+          setIsAdminKasir(true)
+        }
+      } catch (e) {
+        console.error(e)
+      }
     }
   }, [])
 
@@ -230,7 +243,7 @@ export default function StoreBarcodePage() {
           </div>
         </div>
 
-        {storeId && (
+        {storeId && isAdminKasir && (
           <button
             onClick={handleGenerateAll}
             disabled={isProcessing}
@@ -392,13 +405,17 @@ export default function StoreBarcodePage() {
                           </button>
                         </div>
                       ) : (
-                        <button 
-                          onClick={() => handleGenerateSingle(p.id)} 
-                          disabled={isProcessing}
-                          className="bg-indigo-600 hover:bg-indigo-755 text-white px-3.5 py-1.5 rounded-xl font-bold text-xs shadow-3xs active:scale-97 transition-all disabled:opacity-40 cursor-pointer"
-                        >
-                          Generate
-                        </button>
+                        isAdminKasir ? (
+                          <button 
+                            onClick={() => handleGenerateSingle(p.id)} 
+                            disabled={isProcessing}
+                            className="bg-indigo-600 hover:bg-indigo-755 text-white px-3.5 py-1.5 rounded-xl font-bold text-xs shadow-3xs active:scale-97 transition-all disabled:opacity-40 cursor-pointer"
+                          >
+                            Generate
+                          </button>
+                        ) : (
+                          <span className="text-slate-400 text-xs italic">-</span>
+                        )
                       )}
                     </td>
                   </tr>

@@ -223,6 +223,38 @@ export default function ProductPage() {
           console.error('Failed to reload categories before import', catErr)
         }
 
+        const parseExcelNumber = (val: any): number => {
+          if (val === undefined || val === null) return 0
+          if (typeof val === 'number') return Math.round(val)
+          let str = String(val).trim().replace(/\s/g, '')
+          if (!str) return 0
+          if (str.includes('.') && str.includes(',')) {
+            const dotIdx = str.indexOf('.')
+            const commaIdx = str.indexOf(',')
+            if (dotIdx < commaIdx) {
+              str = str.replace(/\./g, '').replace(/,/g, '.')
+            } else {
+              str = str.replace(/,/g, '')
+            }
+          } else if (str.includes(',')) {
+            const parts = str.split(',')
+            const lastPart = parts[parts.length - 1]
+            if (lastPart.length === 3) {
+              str = str.replace(/,/g, '')
+            } else {
+              str = str.replace(/,/g, '.')
+            }
+          } else if (str.includes('.')) {
+            const parts = str.split('.')
+            const lastPart = parts[parts.length - 1]
+            if (parts.length > 1 && lastPart.length === 3) {
+              str = str.replace(/\./g, '')
+            }
+          }
+          const num = Number(str)
+          return isNaN(num) ? 0 : Math.round(num)
+        }
+
         let successCount = 0
         const errors: string[] = []
 
@@ -257,9 +289,9 @@ export default function ProductPage() {
               }
             }
 
-            const costPrice = costPriceIdx !== -1 && row[costPriceIdx] ? Math.max(0, Number(row[costPriceIdx]) || 0) : 0
-            const sellingPrice = sellingPriceIdx !== -1 && row[sellingPriceIdx] ? Math.max(0, Number(row[sellingPriceIdx]) || 0) : 0
-            const stock = stockIdx !== -1 && row[stockIdx] ? Math.max(0, Number(row[stockIdx]) || 0) : 0
+            const costPrice = costPriceIdx !== -1 && row[costPriceIdx] ? Math.max(0, parseExcelNumber(row[costPriceIdx])) : 0
+            const sellingPrice = sellingPriceIdx !== -1 && row[sellingPriceIdx] ? Math.max(0, parseExcelNumber(row[sellingPriceIdx])) : 0
+            const stock = stockIdx !== -1 && row[stockIdx] ? Math.max(0, parseExcelNumber(row[stockIdx])) : 0
             const sku = skuIdx !== -1 && row[skuIdx] ? String(row[skuIdx]).trim() : ''
 
             const productPayload: any = {
@@ -554,7 +586,7 @@ export default function ProductPage() {
                 <th className="p-4">SKU / Barcode</th>
                 <th className="p-4">Harga Modal</th>
                 <th className="p-4">Harga Jual</th>
-                <th className="p-4">Stok</th>
+                <th className="p-4">Stok / Min. Stok</th>
                 <th className="p-4">Status</th>
                 <th className="p-4 pr-6 text-right">Aksi</th>
               </tr>
@@ -650,12 +682,13 @@ export default function ProductPage() {
                             {p.stock}
                           </span>
                           {lowStock && p.isActive && (
-                            <span title="Stok berada di bawah batas minimum" className="text-amber-500">
+                            <span title="Stok berada di bawah batas minimum (Stok Minimum)" className="text-amber-500 inline-flex items-center gap-0.5">
                               <AlertTriangle size={12} />
+                              <span className="text-[8px] font-bold bg-amber-50 px-1 py-0.5 rounded border border-amber-100 text-amber-600 scale-90 origin-left">Min</span>
                             </span>
                           )}
                         </div>
-                        <span className="text-[9.5px] text-slate-350 font-semibold block mt-0.5">min. {p.minimumStock}</span>
+                        <span className="text-[9.5px] text-slate-350 font-semibold block mt-0.5">Min. Stok: {p.minimumStock}</span>
                       </td>
 
                       <td className="p-4">
@@ -830,32 +863,38 @@ export default function ProductPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 block">Harga Barang</label>
+                  <label className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 block">Harga Barang (Harga Modal & Harga Jual)</label>
                   <div className="grid gap-3 grid-cols-2">
-                    <div className="relative">
-                      <DollarSign size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                      <input
-                        type="number"
-                        min={0}
-                        required
-                        value={formData.costPrice ?? ''}
-                        onChange={(e) => setFormData({ ...formData, costPrice: Number(e.target.value) })}
-                        placeholder="Harga Modal (Rp)"
-                        className="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-3 text-xs text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold"
-                      />
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-slate-500 block">Harga Modal</span>
+                      <div className="relative">
+                        <DollarSign size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        <input
+                          type="number"
+                          min={0}
+                          required
+                          value={formData.costPrice ?? ''}
+                          onChange={(e) => setFormData({ ...formData, costPrice: Number(e.target.value) })}
+                          placeholder="Harga Modal (Rp)"
+                          className="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-3 text-xs text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold"
+                        />
+                      </div>
                     </div>
 
-                    <div className="relative">
-                      <DollarSign size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                      <input
-                        type="number"
-                        min={0}
-                        required
-                        value={formData.sellingPrice ?? ''}
-                        onChange={(e) => setFormData({ ...formData, sellingPrice: Number(e.target.value) })}
-                        placeholder="Harga Jual (Rp)"
-                        className="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-3 text-xs text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold"
-                      />
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-slate-500 block">Harga Jual</span>
+                      <div className="relative">
+                        <DollarSign size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        <input
+                          type="number"
+                          min={0}
+                          required
+                          value={formData.sellingPrice ?? ''}
+                          onChange={(e) => setFormData({ ...formData, sellingPrice: Number(e.target.value) })}
+                          placeholder="Harga Jual (Rp)"
+                          className="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-3 text-xs text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold"
+                        />
+                      </div>
                     </div>
                   </div>
 
