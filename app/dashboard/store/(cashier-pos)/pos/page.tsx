@@ -201,7 +201,6 @@ export default function PosPage() {
   const [customerPoints, setCustomerPoints] = useState<number>(0)
   const [customerTier, setCustomerTier] = useState<string>('BRONZE')
   const [isRedeemingPoints, setIsRedeemingPoints] = useState(false)
-  const [pointsToRedeem, setPointsToRedeem] = useState(0)
   const [isSplitPaymentModalOpen, setIsSplitPaymentModalOpen] = useState(false)
   const [splitAmounts, setSplitAmounts] = useState<Record<string, number>>({ CASH: 0, QRIS: 0, DEBIT: 0 })
 
@@ -412,11 +411,17 @@ export default function PosPage() {
       : globalDiscountValue,
   [rawSubtotal, globalDiscountType, globalDiscountValue])
 
-  const pointsDiscount = useMemo(() => {
-    if (currentStore?.pointsEnabled === false) return 0
+  const pointsToRedeem = useMemo(() => {
+    if (!isRedeemingPoints || currentStore?.pointsEnabled === false) return 0
     const pointVal = currentStore?.pointValue || 1000
-    return isRedeemingPoints ? Math.min(customerPoints * pointVal, rawSubtotal - globalCalculatedDiscount) : 0
+    const billAfterDiscount = rawSubtotal - globalCalculatedDiscount
+    return Math.min(customerPoints, Math.ceil(billAfterDiscount / pointVal))
   }, [isRedeemingPoints, customerPoints, rawSubtotal, globalCalculatedDiscount, currentStore])
+
+  const pointsDiscount = useMemo(() => {
+    const pointVal = currentStore?.pointValue || 1000
+    return pointsToRedeem * pointVal
+  }, [pointsToRedeem, currentStore])
 
   const discountTotal = useMemo(() =>
     globalCalculatedDiscount + pointsDiscount,
@@ -442,9 +447,16 @@ export default function PosPage() {
     else setPaid('')
   }, [payment, finalTotal])
 
-  const change = useMemo(() =>
-    payment === 'CASH' ? Math.max(0, Number(paid || 0) - finalTotal) : 0,
-  [paid, finalTotal, payment])
+  const change = useMemo(() => {
+    if (payment === 'CASH') {
+      return Math.max(0, Number(paid || 0) - finalTotal)
+    }
+    if (payment === 'SPLIT') {
+      const splitSum = Object.values(splitAmounts).reduce((a, b) => a + b, 0)
+      return Math.max(0, splitSum - finalTotal)
+    }
+    return 0
+  }, [paid, finalTotal, payment, splitAmounts])
 
   function autoPrintReceipt(data: any, paymentMethod: PaymentMethod) {
     const printWindow = window.open('', '_blank')
@@ -688,7 +700,6 @@ export default function PosPage() {
     setCustomerPoints(0)
     setCustomerTier('BRONZE')
     setIsRedeemingPoints(false)
-    setPointsToRedeem(0)
     setSplitAmounts({ CASH: 0, QRIS: 0, DEBIT: 0 })
     
     loadData()
@@ -727,6 +738,7 @@ export default function PosPage() {
   const paymentMethods = [
     { id: 'CASH', icon: Wallet, label: 'Tunai' },
     { id: 'QRIS', icon: QrCode, label: 'QRIS' },
+    { id: 'DEBIT', icon: CreditCard, label: 'Debit' },
     { id: 'SPLIT', icon: Layers, label: 'Split' },
   ]
 
@@ -1025,13 +1037,12 @@ export default function PosPage() {
                       <span>Poin Aktif: <span className="text-indigo-600 font-black">{customerPoints}</span></span>
                     </div>
                     {customerPoints > 0 && (
-                      <label className="flex items-center gap-1.5 text-slate-600 cursor-pointer mt-1">
+                      <label className="flex items-center gap-1.5 text-slate-650 cursor-pointer mt-1">
                         <input
                           type="checkbox"
                           checked={isRedeemingPoints}
                           onChange={e => {
                             setIsRedeemingPoints(e.target.checked)
-                            setPointsToRedeem(e.target.checked ? customerPoints : 0)
                           }}
                           className="rounded border-slate-300 h-3.5 w-3.5 text-indigo-600 cursor-pointer"
                         />
@@ -1474,7 +1485,7 @@ export default function PosPage() {
                   </div>
                 )}
 
-                {payment === 'QRIS' && (
+                {(payment === 'QRIS' || payment === 'DEBIT') && (
                   <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-150 rounded-xl px-3.5 py-2.5 text-[10px] text-emerald-750 font-bold shadow-3xs leading-none animate-in fade-in duration-150">
                     <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
                     <span>Pembayaran pas &mdash; tidak ada kembalian</span>

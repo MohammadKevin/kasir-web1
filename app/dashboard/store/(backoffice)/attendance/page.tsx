@@ -28,7 +28,7 @@ export default function AttendancePage() {
   const [currentTime, setCurrentTime] = useState<Date | null>(null)
   const [isClockedIn, setIsClockedIn] = useState(false)
   const [activeAttendance, setActiveAttendance] = useState<Attendance | null>(null)
-  const [history, setHistory] = useState<Attendance[]>()
+  const [history, setHistory] = useState<Attendance[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
 
