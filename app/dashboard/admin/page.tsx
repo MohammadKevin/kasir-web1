@@ -57,10 +57,78 @@ type DashboardData = {
 
 type FilterPeriod = '1d' | '1w' | '1m' | '1y'
 
+type ChartPoint = { x: number; y: number }
+
+function getNiceMax(rawMax: number): number {
+  if (rawMax <= 0) return 1000
+  const digits = Math.floor(Math.log10(rawMax))
+  const power = Math.pow(10, digits)
+  const ratio = rawMax / power
+  let roundedRatio = 2
+  if (ratio <= 1) roundedRatio = 1
+  else if (ratio <= 2) roundedRatio = 2
+  else if (ratio <= 5) roundedRatio = 5
+  else if (ratio <= 10) roundedRatio = 10
+  
+  return roundedRatio * power
+}
+
+function getCurvePath(points: ChartPoint[]): string {
+  if (points.length === 0) return ''
+  let path = `M ${points[0].x},${points[0].y}`
+  const smoothing = 0.2
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const curr = points[i]
+    const next = points[i + 1]
+
+    let cp1x = curr.x
+    let cp1y = curr.y
+    if (i > 0) {
+      const prev = points[i - 1]
+      const dx = next.x - prev.x
+      const dy = next.y - prev.y
+      cp1x = curr.x + dx * smoothing
+      cp1y = curr.y + dy * smoothing
+    } else {
+      const dx = next.x - curr.x
+      const dy = next.y - curr.y
+      cp1x = curr.x + dx * smoothing
+      cp1y = curr.y + dy * smoothing
+    }
+
+    let cp2x = next.x
+    let cp2y = next.y
+    if (i < points.length - 2) {
+      const nextNext = points[i + 2]
+      const dx = nextNext.x - curr.x
+      const dy = nextNext.y - curr.y
+      cp2x = next.x - dx * smoothing
+      cp2y = next.y - dy * smoothing
+    } else {
+      const dx = next.x - curr.x
+      const dy = next.y - curr.y
+      cp2x = next.x - dx * smoothing
+      cp2y = next.y - dy * smoothing
+    }
+
+    path += ` C ${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${next.x.toFixed(1)},${next.y.toFixed(1)}`
+  }
+
+  return path
+}
+
+function getFillPath(points: ChartPoint[]): string {
+  if (points.length === 0) return ''
+  const curvePath = getCurvePath(points)
+  return `${curvePath} L 400,100 L 0,100 Z`
+}
+
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [period, setPeriod] = useState<FilterPeriod>('1w')
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const [data, setData] = useState<DashboardData>({
     totalStores: 0,
     totalCashiers: 0,
@@ -164,26 +232,33 @@ export default function AdminDashboard() {
     const paidTransactions = data.allTransactions.filter(tx => tx.status === 'PAID')
 
     if (period === '1d') {
-      const hours = [0, 6, 12, 18, 23]
+      const hours = Array.from({ length: 24 }).map((_, i) => i)
       const values = hours.map(h => {
         return paidTransactions
           .filter(tx => {
             const d = new Date(tx.createdAt)
-            return d.toDateString() === now.toDateString() && d.getHours() <= h
+            return d.toDateString() === now.toDateString() && d.getHours() === h
           })
           .reduce((sum, tx) => sum + tx.total, 0)
       })
       
-      const max = Math.max(...values, 1)
+      const rawMax = Math.max(...values, 0)
+      const niceMax = getNiceMax(rawMax)
       const points = hours.map((h, i) => {
-        const x = (i / (hours.length - 1)) * 400
-        const y = 100 - ((values[i] / max) * 90)
-        return `${x},${y}`
-      }).join(' ')
+        const x = (i / 23) * 400
+        const y = 100 - ((values[i] / niceMax) * 90)
+        return { x, y }
+      })
+
+      const labels = hours.map(h => `${String(h).padStart(2, '0')}:00`)
 
       return {
         points,
-        labels: ['00:00', '06:00', '12:00', '18:00', '24:00'],
+        values,
+        niceMax,
+        strokePath: getCurvePath(points),
+        fillPath: getFillPath(points),
+        labels,
         growth: values[values.length - 1] >= values[0]
       }
     }
@@ -197,12 +272,13 @@ export default function AdminDashboard() {
           .reduce((sum, tx) => sum + tx.total, 0)
       })
 
-      const max = Math.max(...values, 1)
+      const rawMax = Math.max(...values, 0)
+      const niceMax = getNiceMax(rawMax)
       const points = values.map((val, i) => {
         const x = (i / 6) * 400
-        const y = 100 - ((val / max) * 90)
-        return `${x},${y}`
-      }).join(' ')
+        const y = 100 - ((val / niceMax) * 90)
+        return { x, y }
+      })
 
       const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
       const labels = Array.from({ length: 7 }).map((_, i) => {
@@ -211,7 +287,15 @@ export default function AdminDashboard() {
         return days[d.getDay()]
       })
 
-      return { points, labels, growth: values[6] >= values[0] }
+      return {
+        points,
+        values,
+        niceMax,
+        strokePath: getCurvePath(points),
+        fillPath: getFillPath(points),
+        labels,
+        growth: values[6] >= values[0]
+      }
     }
 
     if (period === '1m') {
@@ -228,14 +312,23 @@ export default function AdminDashboard() {
           .reduce((sum, tx) => sum + tx.total, 0)
       })
 
-      const max = Math.max(...values, 1)
+      const rawMax = Math.max(...values, 0)
+      const niceMax = getNiceMax(rawMax)
       const points = values.map((val, i) => {
         const x = (i / 3) * 400
-        const y = 100 - ((val / max) * 90)
-        return `${x},${y}`
-      }).join(' ')
+        const y = 100 - ((val / niceMax) * 90)
+        return { x, y }
+      })
 
-      return { points, labels: ['W1', 'W2', 'W3', 'W4'], growth: values[3] >= values[0] }
+      return {
+        points,
+        values,
+        niceMax,
+        strokePath: getCurvePath(points),
+        fillPath: getFillPath(points),
+        labels: ['W1', 'W2', 'W3', 'W4'],
+        growth: values[3] >= values[0]
+      }
     }
 
     if (period === '1y') {
@@ -250,18 +343,76 @@ export default function AdminDashboard() {
           .reduce((sum, tx) => sum + tx.total, 0)
       })
 
-      const max = Math.max(...values, 1)
+      const rawMax = Math.max(...values, 0)
+      const niceMax = getNiceMax(rawMax)
       const points = values.map((val, i) => {
         const x = (i / 3) * 400
-        const y = 100 - ((val / max) * 90)
-        return `${x},${y}`
-      }).join(' ')
+        const y = 100 - ((val / niceMax) * 90)
+        return { x, y }
+      })
 
-      return { points, labels: ['Q1', 'Q2', 'Q3', 'Q4'], growth: values[3] >= values[0] }
+      return {
+        points,
+        values,
+        niceMax,
+        strokePath: getCurvePath(points),
+        fillPath: getFillPath(points),
+        labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+        growth: values[3] >= values[0]
+      }
     }
 
-    return { points: '0,100 400,100', labels: [], growth: true }
+    return {
+      points: [],
+      values: [],
+      niceMax: 1000,
+      strokePath: '',
+      fillPath: '',
+      labels: [],
+      growth: true
+    }
   }, [data.allTransactions, period])
+
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
+    if (!chartData.points || chartData.points.length === 0) return
+    const svg = e.currentTarget
+    const rect = svg.getBoundingClientRect()
+    const mouseX = ((e.clientX - rect.left) / rect.width) * 400
+    
+    let closestIndex = 0
+    let minDiff = Infinity
+    chartData.points.forEach((pt, idx) => {
+      const diff = Math.abs(pt.x - mouseX)
+      if (diff < minDiff) {
+        minDiff = diff
+        closestIndex = idx
+      }
+    })
+    setHoveredIndex(closestIndex)
+  }
+
+  const handleMouseLeave = () => {
+    setHoveredIndex(null)
+  }
+
+  const activeIndex = useMemo(() => {
+    if (!chartData.points || chartData.points.length === 0) return null
+    if (hoveredIndex !== null && hoveredIndex < chartData.points.length) {
+      return hoveredIndex
+    }
+    let maxIdx = 0
+    let maxVal = -1
+    chartData.values.forEach((v, idx) => {
+      if (v > maxVal) {
+        maxVal = v
+        maxIdx = idx
+      }
+    })
+    if (maxVal <= 0) {
+      return chartData.points.length - 1
+    }
+    return maxIdx
+  }, [chartData.points, chartData.values, hoveredIndex])
 
   const filteredRevenue = useMemo(() => {
     const now = new Date()
@@ -516,47 +667,118 @@ export default function AdminDashboard() {
                 <span>{chartData.growth ? 'Tren Penjualan Stabil/Naik' : 'Perubahan Sesi Fluktuatif'}</span>
               </div>
 
-              <div className="w-full h-40 border-b border-l border-slate-200/75 relative">
-                
-                <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-0.5">
-                  <div className="w-full border-t border-dashed border-slate-100" />
-                  <div className="w-full border-t border-dashed border-slate-100" />
-                  <div className="w-full border-t border-dashed border-slate-100" />
-                  <div className="w-full border-t border-dashed border-slate-100" />
+              <div className="flex gap-3">
+                {/* Y-Axis Labels */}
+                <div className="relative w-12 h-40 select-none text-right text-[8px] font-extrabold font-mono text-slate-450 pr-1">
+                  <span className="absolute left-0 right-0 -translate-y-1/2" style={{ top: '10%' }}>
+                    {chartData.niceMax.toLocaleString('id-ID')}
+                  </span>
+                  <span className="absolute left-0 right-0 -translate-y-1/2" style={{ top: '32.5%' }}>
+                    {Math.round(chartData.niceMax * 0.75).toLocaleString('id-ID')}
+                  </span>
+                  <span className="absolute left-0 right-0 -translate-y-1/2" style={{ top: '55%' }}>
+                    {Math.round(chartData.niceMax * 0.5).toLocaleString('id-ID')}
+                  </span>
+                  <span className="absolute left-0 right-0 -translate-y-1/2" style={{ top: '77.5%' }}>
+                    {Math.round(chartData.niceMax * 0.25).toLocaleString('id-ID')}
+                  </span>
+                  <span className="absolute left-0 right-0 -translate-y-1/2" style={{ top: '100%' }}>
+                    0
+                  </span>
                 </div>
 
-                <svg viewBox="0 0 400 100" className="w-full h-full overflow-visible relative z-10" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#2563eb" stopOpacity="0.22" />
-                      <stop offset="100%" stopColor="#2563eb" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
+                {/* Chart Area */}
+                <div className="flex-1 h-40 border-b border-l border-slate-200/75 relative">
                   
-                  {chartData.points && (
-                    <path d={`M 0,100 L ${chartData.points} L 400,100 Z`} fill="url(#chartGrad)" className="transition-all duration-300" />
-                  )}
-                  {chartData.points && (
-                    <polyline fill="none" stroke="#2563eb" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" points={chartData.points} className="transition-all duration-300" />
+                  {/* Tooltip */}
+                  {activeIndex !== null && chartData.points[activeIndex] && (
+                    (() => {
+                      const pt = chartData.points[activeIndex]
+                      const val = chartData.values[activeIndex]
+                      const lbl = chartData.labels[activeIndex]
+                      
+                      const leftPercent = `${(pt.x / 400) * 100}%`
+                      const topPercent = `${(pt.y / 100) * 100}%`
+                      
+                      return (
+                        <div 
+                          className="absolute z-20 pointer-events-none transition-all duration-150 ease-out -translate-x-1/2 -translate-y-[calc(100%+12px)] bg-white border border-slate-200/80 rounded-xl px-3 py-2 shadow-lg text-center min-w-[90px]"
+                          style={{ left: leftPercent, top: topPercent }}
+                        >
+                          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-white border-r border-b border-slate-200/80" />
+                          <p className="text-[9px] font-extrabold text-slate-450 uppercase tracking-wider">{lbl}</p>
+                          <p className="text-[11px] font-black text-slate-900 mt-0.5 font-mono">Rp {val.toLocaleString('id-ID')}</p>
+                        </div>
+                      )
+                    })()
                   )}
 
-                  {chartData.points && chartData.points.split(' ').map((pt, i) => {
-                    const coords = pt.split(',')
-                    const x = coords[0]
-                    const y = coords[1]
-                    if (!x || !y) return null
-                    return (
-                      <g key={i}>
-                        <circle cx={x} cy={y} r="3" className="fill-blue-600 stroke-white stroke-2" />
-                        <circle cx={x} cy={y} r="5" className="fill-blue-600/20 animate-ping" />
+                  <svg 
+                    viewBox="0 0 400 100" 
+                    className="w-full h-full overflow-visible relative z-10 cursor-crosshair" 
+                    preserveAspectRatio="none"
+                    onMouseMove={handleMouseMove}
+                    onMouseLeave={handleMouseLeave}
+                  >
+                    <defs>
+                      <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#3bc0f0" stopOpacity="0.25" />
+                        <stop offset="100%" stopColor="#3bc0f0" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+
+                    {/* Horizontal Grid Lines */}
+                    <line x1="0" y1="10" x2="400" y2="10" stroke="#f1f5f9" strokeWidth="1" />
+                    <line x1="0" y1="32.5" x2="400" y2="32.5" stroke="#f1f5f9" strokeWidth="1" />
+                    <line x1="0" y1="55" x2="400" y2="55" stroke="#f1f5f9" strokeWidth="1" />
+                    <line x1="0" y1="77.5" x2="400" y2="77.5" stroke="#f1f5f9" strokeWidth="1" />
+                    
+                    {chartData.points.length > 0 && (
+                      <path d={chartData.fillPath} fill="url(#chartGrad)" className="transition-all duration-300" />
+                    )}
+                    {chartData.points.length > 0 && (
+                      <path fill="none" stroke="#3bc0f0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" d={chartData.strokePath} className="transition-all duration-300" />
+                    )}
+
+                    {/* Small dots for all points */}
+                    {chartData.points.length > 0 && chartData.points.map((pt, i) => {
+                      const isHoveredOrMax = i === activeIndex
+                      if (isHoveredOrMax) return null // Draw large active dot separately below
+                      return (
+                        <circle key={i} cx={pt.x} cy={pt.y} r="2" className="fill-slate-200" />
+                      )
+                    })}
+
+                    {/* Large active dot */}
+                    {activeIndex !== null && chartData.points[activeIndex] && (
+                      <g>
+                        <circle 
+                          cx={chartData.points[activeIndex].x} 
+                          cy={chartData.points[activeIndex].y} 
+                          r="4.5" 
+                          className="fill-sky-450 stroke-white stroke-2" 
+                        />
+                        <circle 
+                          cx={chartData.points[activeIndex].x} 
+                          cy={chartData.points[activeIndex].y} 
+                          r="8" 
+                          className="fill-sky-400/20 animate-ping pointer-events-none" 
+                        />
                       </g>
-                    )
-                  })}
-                </svg>
+                    )}
+                  </svg>
+                </div>
               </div>
 
-              <div className="flex justify-between text-[9px] text-slate-400 font-extrabold font-mono mt-3 px-1">
-                {chartData.labels.map((lbl) => <span key={lbl}>{lbl}</span>)}
+              {/* X-Axis Labels */}
+              <div className="flex justify-between text-[9px] text-slate-400 font-extrabold font-mono mt-3 pl-[60px] pr-1">
+                {chartData.labels.map((lbl, idx) => {
+                  // If 24 hours, only show labels at intervals to avoid overlap
+                  if (chartData.labels.length === 24) {
+                    if (idx % 3 !== 0 && idx !== 23) return <span key={lbl} className="w-0 overflow-visible invisible" />
+                  }
+                  return <span key={lbl}>{lbl}</span>
+                })}
               </div>
             </div>
           </div>
