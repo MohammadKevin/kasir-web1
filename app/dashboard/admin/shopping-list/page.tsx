@@ -48,31 +48,31 @@ type SupplierType = {
 }
 
 export default function ShoppingListPage() {
-  // Master Store Data
+  
   const [stores, setStores] = useState<StoreType[]>([])
   const [selectedStoreId, setSelectedStoreId] = useState<string>('')
   
-  // API Autosuggest data
+  
   const [products, setProducts] = useState<ProductType[]>([])
   const [suppliers, setSuppliers] = useState<SupplierType[]>([])
   
-  // UI states
+  
   const [loading, setLoading] = useState<boolean>(true)
   const [loadingData, setLoadingData] = useState<boolean>(false)
   
-  // Table Items
+  
   const [items, setItems] = useState<ShoppingItem[]>([])
   
-  // Search Filters
+  
   const [searchProduct, setSearchProduct] = useState<string>('')
   const [searchBrand, setSearchBrand] = useState<string>('')
   const [searchSupplier, setSearchSupplier] = useState<string>('')
   
-  // Management Modal
+  
   const [isOpenModal, setIsOpenModal] = useState<boolean>(false)
   const [modalItems, setModalItems] = useState<ShoppingItem[]>([])
   
-  // Autocomplete positioning tracker
+  
   const [focusedRowIdx, setFocusedRowIdx] = useState<number | null>(null)
   const [focusedField, setFocusedField] = useState<'product' | 'supplier' | null>(null)
 
@@ -150,7 +150,7 @@ export default function ShoppingListPage() {
     }
   }
 
-  // Filtered shopping list items based on 3 criteria
+  
   const filteredItems = useMemo(() => {
     return items.filter(item => {
       const matchProd = item.productName.toLowerCase().includes(searchProduct.toLowerCase())
@@ -160,14 +160,14 @@ export default function ShoppingListPage() {
     })
   }, [items, searchProduct, searchBrand, searchSupplier])
 
-  // Open modal and load existing list items for editing
+  
   function handleOpenManageModal() {
     setFocusedRowIdx(null)
     setFocusedField(null)
     if (items.length > 0) {
-      setModalItems(JSON.parse(JSON.stringify(items))) // deep copy
+      setModalItems(JSON.parse(JSON.stringify(items))) 
     } else {
-      // Start with 1 empty row
+      
       setModalItems([{
         id: crypto.randomUUID(),
         productName: '',
@@ -181,7 +181,7 @@ export default function ShoppingListPage() {
     setIsOpenModal(true)
   }
 
-  // Add row to modal
+  
   function handleAddModalRow() {
     setModalItems(prev => [
       ...prev,
@@ -197,12 +197,12 @@ export default function ShoppingListPage() {
     ])
   }
 
-  // Delete row in modal
+  
   function handleDeleteModalRow(id: string) {
     setModalItems(prev => prev.filter(item => item.id !== id))
   }
 
-  // Modify field in modal items
+  
   function handleUpdateModalItem(idx: number, field: keyof ShoppingItem, val: any) {
     setModalItems(prev => {
       const copy = [...prev]
@@ -214,7 +214,7 @@ export default function ShoppingListPage() {
     })
   }
 
-  // Autocomplete select hooks
+  
   function handleSelectProductSuggestion(idx: number, prod: ProductType) {
     setModalItems(prev => {
       const copy = [...prev]
@@ -243,7 +243,7 @@ export default function ShoppingListPage() {
     setFocusedField(null)
   }
 
-  // Autocomplete lists
+  
   const getProductSuggestions = (val: string) => {
     if (!val) return []
     return products.filter(p => p.name.toLowerCase().includes(val.toLowerCase())).slice(0, 5)
@@ -254,9 +254,9 @@ export default function ShoppingListPage() {
     return suppliers.filter(s => s.name.toLowerCase().includes(val.toLowerCase())).slice(0, 5)
   }
 
-  // Save Modal changes
+  
   function handleSaveModal() {
-    // Validate required fields (Nama Produk, Brand, Jumlah, Satuan)
+    
     const invalidItem = modalItems.find(
       item => !item.productName.trim() || !item.brand.trim() || !item.quantity || !item.unit.trim()
     )
@@ -266,7 +266,7 @@ export default function ShoppingListPage() {
       return
     }
 
-    // Sanitize values
+    
     const sanitized = modalItems.map(item => ({
       ...item,
       productName: item.productName.trim(),
@@ -281,7 +281,7 @@ export default function ShoppingListPage() {
     setIsOpenModal(false)
   }
 
-  // Format currency
+  
   const fmt = (n: number) => n.toLocaleString('id-ID')
 
   if (loading && stores.length === 0) {
@@ -321,7 +321,7 @@ export default function ShoppingListPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header Row */}
+      
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-start gap-3">
           <div className="h-10 w-10 bg-cyan-50 border border-cyan-100/55 rounded-xl flex items-center justify-center text-cyan-600 shrink-0">
@@ -361,9 +361,9 @@ export default function ShoppingListPage() {
         </div>
       </div>
 
-      {/* Real-time Filters */}
+      
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Produk Search */}
+        
         <div className="relative">
           <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <input
@@ -383,7 +383,7 @@ export default function ShoppingListPage() {
           )}
         </div>
 
-        {/* Brand Search */}
+        
         <div className="relative">
           <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <input
@@ -403,7 +403,7 @@ export default function ShoppingListPage() {
           )}
         </div>
 
-        {/* Supplier Search */}
+        
         <div className="relative">
           <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <input
@@ -424,7 +424,7 @@ export default function ShoppingListPage() {
         </div>
       </div>
 
-      {/* Main Table Grid */}
+      
       <div className="rounded-2xl border border-slate-200 bg-white shadow-3xs overflow-hidden">
         {loadingData ? (
           <div className="p-16 text-center">
@@ -432,7 +432,7 @@ export default function ShoppingListPage() {
             <p className="text-xs font-semibold text-slate-400 mt-2">Sinkronisasi data katalog...</p>
           </div>
         ) : filteredItems.length === 0 ? (
-          /* Empty State matches design exactly */
+          
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
             <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-slate-50 border border-slate-100 text-slate-350">
               <ShoppingCart size={38} className="stroke-[1.25]" />
@@ -498,7 +498,7 @@ export default function ShoppingListPage() {
         )}
       </div>
 
-      {/* Footer Total Product stats */}
+      
       <div className="flex items-center justify-between bg-white border border-slate-200 rounded-2xl p-4 shadow-3xs">
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-slate-500">Total Produk</span>
@@ -508,11 +508,11 @@ export default function ShoppingListPage() {
         </div>
       </div>
 
-      {/* Kelola Daftar Belanja Modal */}
+      
       {isOpenModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs transition-all animate-in fade-in duration-200">
           <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200/80 flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-150">
-            {/* Modal Header */}
+            
             <div className="p-6 pb-4 flex items-start justify-between border-b border-slate-100 shrink-0">
               <div>
                 <h3 className="text-sm font-black text-slate-900">Kelola Daftar Belanja</h3>
@@ -527,7 +527,7 @@ export default function ShoppingListPage() {
               </button>
             </div>
 
-            {/* Modal Scrollable Content Container */}
+            
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-3xs">
                 <table className="w-full text-left border-collapse text-xs">
@@ -554,7 +554,7 @@ export default function ShoppingListPage() {
 
                       return (
                         <tr key={item.id} className="hover:bg-slate-50/30 transition-colors">
-                          {/* Nama Produk with Suggestion */}
+                          
                           <td className="p-2 relative align-middle">
                             <input
                               type="text"
@@ -569,7 +569,7 @@ export default function ShoppingListPage() {
                                 setFocusedField('product')
                               }}
                               onBlur={() => {
-                                // Delayed to let mouse click click the suggestions list
+                                
                                 setTimeout(() => {
                                   if (focusedRowIdx === idx && focusedField === 'product') {
                                     setFocusedRowIdx(null)
@@ -597,7 +597,7 @@ export default function ShoppingListPage() {
                             )}
                           </td>
 
-                          {/* Brand */}
+                          
                           <td className="p-2 align-middle">
                             <input
                               type="text"
@@ -608,7 +608,7 @@ export default function ShoppingListPage() {
                             />
                           </td>
 
-                          {/* Supplier with Suggestion */}
+                          
                           <td className="p-2 relative align-middle">
                             <input
                               type="text"
@@ -649,7 +649,7 @@ export default function ShoppingListPage() {
                             )}
                           </td>
 
-                          {/* Jumlah */}
+                          
                           <td className="p-2 align-middle">
                             <input
                               type="number"
@@ -662,7 +662,7 @@ export default function ShoppingListPage() {
                             />
                           </td>
 
-                          {/* Satuan */}
+                          
                           <td className="p-2 align-middle">
                             <input
                               type="text"
@@ -673,7 +673,7 @@ export default function ShoppingListPage() {
                             />
                           </td>
 
-                          {/* Harga Satuan */}
+                          
                           <td className="p-2 align-middle">
                             <input
                               type="number"
@@ -686,7 +686,7 @@ export default function ShoppingListPage() {
                             />
                           </td>
 
-                          {/* Delete row */}
+                          
                           <td className="p-2 text-center align-middle">
                             <button
                               type="button"
@@ -704,7 +704,7 @@ export default function ShoppingListPage() {
                 </table>
               </div>
 
-              {/* Add row under table */}
+              
               <button
                 type="button"
                 onClick={handleAddModalRow}
@@ -715,7 +715,7 @@ export default function ShoppingListPage() {
               </button>
             </div>
 
-            {/* Modal Footer */}
+            
             <div className="p-6 border-t border-slate-100 bg-slate-50/50 shrink-0 flex items-center justify-between">
               <div className="flex items-center gap-4 text-xs font-semibold text-slate-500">
                 <span className="font-bold text-slate-700">{modalItems.length} Produk</span>

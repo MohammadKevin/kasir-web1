@@ -75,7 +75,7 @@ export default function AdminPortalPage() {
       })
 
       if (data.success && data.cashier) {
-        // Save original cashier session if one exists and isn't already admin
+        
         const current = localStorage.getItem('cashier')
         if (current) {
           try {
@@ -88,14 +88,14 @@ export default function AdminPortalPage() {
           }
         }
 
-        // Save to localstorage and activate
+        
         localStorage.setItem('cashier', JSON.stringify(data.cashier))
         localStorage.setItem('cashierActive', 'true')
         
         setIsAdmin(true)
         setCashierName(data.cashier.name)
         
-        // Force refresh layout and state
+        
         window.location.reload()
       }
     } catch (err: any) {
@@ -126,7 +126,7 @@ export default function AdminPortalPage() {
     )
   }
 
-  // Render Lock Screen if not Admin Store
+  
   if (!isAdmin) {
     return (
       <div className="max-w-md mx-auto py-12 px-4 animate-in fade-in duration-200">
@@ -200,7 +200,7 @@ export default function AdminPortalPage() {
     )
   }
 
-  // Render Portal Dashboard if Admin Store
+  
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       
@@ -236,7 +236,7 @@ export default function AdminPortalPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         
-        {/* Card 1: Cetak Barcode */}
+        
         <div 
           onClick={() => router.push('/dashboard/store/barcode')}
           className="group bg-white border border-slate-200 rounded-3xl p-5 hover:border-indigo-500 hover:shadow-md cursor-pointer transition-all duration-300 flex flex-col justify-between h-44 relative overflow-hidden"
@@ -260,7 +260,7 @@ export default function AdminPortalPage() {
           </span>
         </div>
 
-        {/* Card 2: Kelola Katalog */}
+        
         <div 
           onClick={() => router.push('/dashboard/store/products')}
           className="group bg-white border border-slate-200 rounded-3xl p-5 hover:border-indigo-500 hover:shadow-md cursor-pointer transition-all duration-300 flex flex-col justify-between h-44 relative overflow-hidden"
@@ -284,7 +284,7 @@ export default function AdminPortalPage() {
           </span>
         </div>
 
-        {/* Card 3: Riwayat Transaksi & Void */}
+        
         <div 
           onClick={() => router.push('/dashboard/store')}
           className="group bg-white border border-slate-200 rounded-3xl p-5 hover:border-indigo-500 hover:shadow-md cursor-pointer transition-all duration-300 flex flex-col justify-between h-44 relative overflow-hidden"
@@ -308,7 +308,7 @@ export default function AdminPortalPage() {
           </span>
         </div>
 
-        {/* Card 4: Riwayat Shift */}
+        
         <div 
           onClick={() => router.push('/dashboard/store/shifts')}
           className="group bg-white border border-slate-200 rounded-3xl p-5 hover:border-indigo-500 hover:shadow-md cursor-pointer transition-all duration-300 flex flex-col justify-between h-44 relative overflow-hidden"

@@ -127,7 +127,7 @@ export default function ExpensePage() {
   function handleOpenEdit(expense: Expense) {
     setEditingId(expense.id)
     
-    // Format the expense.createdAt to yyyy-mm-dd for input type="date"
+    
     const d = new Date(expense.createdAt)
     const yyyy = d.getFullYear()
     const mm = String(d.getMonth() + 1).padStart(2, '0')

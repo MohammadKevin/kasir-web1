@@ -43,7 +43,7 @@ export default function AdminReceiptDesignPage() {
   const [loadingDetail, setLoadingDetail] = useState(false)
   const [saving, setSaving] = useState(false)
 
-  // Form states
+  
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
@@ -163,7 +163,7 @@ export default function AdminReceiptDesignPage() {
           </div>
         </div>
 
-        {/* Store Selector Dropdown */}
+        
         <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-3xs max-w-xs w-full sm:w-auto">
           <Building2 size={13} className="text-blue-500 shrink-0" />
           <select
@@ -191,7 +191,7 @@ export default function AdminReceiptDesignPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6 items-start animate-in fade-in duration-200">
           
-          {/* Left Form: Customization settings */}
+          
           <form onSubmit={handleSave} className="bg-white border border-slate-200 rounded-3xl p-6 shadow-3xs space-y-6">
             <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
               <Settings size={15} className="text-blue-600" />
@@ -265,7 +265,7 @@ export default function AdminReceiptDesignPage() {
 
             <hr className="border-slate-100" />
 
-            {/* Struk Notes */}
+            
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
@@ -300,7 +300,7 @@ export default function AdminReceiptDesignPage() {
 
             <hr className="border-slate-100" />
 
-            {/* Toggle Switches */}
+            
             <div className="space-y-4">
               <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">Visibilitas Elemen</span>
               
@@ -343,7 +343,7 @@ export default function AdminReceiptDesignPage() {
 
             <hr className="border-slate-100" />
 
-            {/* Loyalty Points Section */}
+            
             <div className="space-y-4">
               <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">Sistem Loyalti Poin Member</span>
               
@@ -385,7 +385,7 @@ export default function AdminReceiptDesignPage() {
 
             <hr className="border-slate-100" />
 
-            {/* Receipt Print Width */}
+            
             <div className="space-y-3">
               <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">Ukuran Lebar Kertas Struk</span>
               <div className="grid grid-cols-2 gap-3">
@@ -428,7 +428,7 @@ export default function AdminReceiptDesignPage() {
             </div>
           </form>
 
-          {/* Right Panel: Live Receipt Preview */}
+          
           <div className="space-y-4 sticky top-6">
             <div className="flex items-center gap-2 text-slate-400">
               <Eye size={14} className="text-blue-600" />
@@ -436,12 +436,12 @@ export default function AdminReceiptDesignPage() {
             </div>
 
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl flex items-center justify-center min-h-[500px]">
-              {/* Paper Mockup */}
+              
               <div 
                 style={{ width: receiptSize === '58mm' ? '280px' : '340px' }}
                 className="bg-white text-slate-900 border border-slate-300 shadow-lg p-5 font-mono text-[10.5px] leading-relaxed transition-all duration-300 flex flex-col relative select-none rounded-[4px] min-h-[420px]"
               >
-                {/* Jagged teeth paper edge top */}
+                
                 <div className="absolute top-[-3px] inset-x-0 h-1 bg-[radial-gradient(circle_at_center,transparent_2px,white_2.5px)] bg-[length:6px_6px]" />
 
                 <div className="text-center space-y-1 mt-2 mb-4">
@@ -467,7 +467,7 @@ export default function AdminReceiptDesignPage() {
                   </div>
                 </div>
 
-                {/* Items Table */}
+                
                 <div className="space-y-2 mb-3 border-b border-dashed border-slate-200 pb-2">
                   <div className="flex justify-between text-[8px] font-bold text-slate-400 uppercase">
                     <span>Item</span>
@@ -491,7 +491,7 @@ export default function AdminReceiptDesignPage() {
                   </div>
                 </div>
 
-                {/* Bill Details */}
+                
                 <div className="space-y-1 mb-4 text-[9.5px]">
                   <div className="flex justify-between font-semibold">
                     <span>Subtotal</span>
@@ -530,11 +530,11 @@ export default function AdminReceiptDesignPage() {
                   </div>
                 </div>
 
-                {/* Barcode & Footer */}
+                
                 <div className="text-center space-y-3 mt-auto mb-2">
                   {receiptShowBarcode && (
                     <div className="flex flex-col items-center justify-center gap-1 opacity-70">
-                      {/* Simulated barcode graphic */}
+                      
                       <div className="h-6 w-36 bg-[repeating-linear-gradient(90deg,black_0px,black_1px,transparent_1px,transparent_3px,black_3px,black_5px)]" />
                       <span className="text-[7.5px] tracking-[0.25em] font-bold">INV14062026</span>
                     </div>
@@ -551,7 +551,7 @@ export default function AdminReceiptDesignPage() {
                   )}
                 </div>
 
-                {/* Jagged teeth paper edge bottom */}
+                
                 <div className="absolute bottom-[-3px] inset-x-0 h-1 bg-[radial-gradient(circle_at_center,transparent_2px,white_2.5px)] bg-[length:6px_6px] rotate-180" />
               </div>
             </div>

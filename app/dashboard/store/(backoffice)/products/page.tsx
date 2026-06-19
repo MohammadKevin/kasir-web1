@@ -60,7 +60,7 @@ export default function ProductsPage() {
   const [isAdminKasir, setIsAdminKasir] = useState(false)
   const [storeId, setStoreId] = useState('')
 
-  // Modal mutation states
+  
   const [isOpenModal, setIsOpenModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)

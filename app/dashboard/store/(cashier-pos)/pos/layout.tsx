@@ -18,7 +18,7 @@ export default function PosLayout({
   const [isOpenCloseShiftModal, setIsOpenCloseShiftModal] = useState(false)
   const [closingCashInput, setClosingCashInput] = useState<number | ''>('')
 
-  // Open Shift States
+  
   const [checkingShift, setCheckingShift] = useState(true)
   const [isOpenOpenShiftModal, setIsOpenOpenShiftModal] = useState(false)
   const [openingCashInput, setOpeningCashInput] = useState<number | ''>('')
@@ -181,7 +181,7 @@ export default function PosLayout({
   return (
     <div className="flex flex-col h-screen bg-slate-50 text-slate-800 antialiased overflow-hidden select-none">
       
-      {/* Header POS */}
+      
       <header className="h-14 bg-white border-b border-slate-200/80 px-4 flex items-center justify-between flex-shrink-0 shadow-3xs">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-xl text-xs font-bold text-indigo-600">
@@ -226,12 +226,12 @@ export default function PosLayout({
         </div>
       </header>
 
-      {/* Main POS Container */}
+      
       <main className="flex-1 overflow-hidden p-2 sm:p-3 md:p-4">
         {children}
       </main>
 
-      {/* Open Shift Modal */}
+      
       {isOpenOpenShiftModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-all animate-in fade-in duration-200">
           <div className="w-full max-w-xs overflow-hidden rounded-2xl border border-slate-150 bg-white p-6 shadow-xl relative animate-in zoom-in-95 duration-150 space-y-4">
@@ -282,7 +282,7 @@ export default function PosLayout({
         </div>
       )}
 
-      {/* Close Shift Modal */}
+      
       {isOpenCloseShiftModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-all animate-in fade-in duration-200">
           <div className="w-full max-w-xs overflow-hidden rounded-2xl border border-slate-150 bg-white p-6 shadow-xl relative animate-in zoom-in-95 duration-150 space-y-4">

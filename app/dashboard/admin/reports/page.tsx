@@ -61,7 +61,7 @@ function ReportPageContent() {
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<TabType>('sales')
 
-  // Define reports mapping
+  
   const salesReportCards = [
     { id: 'ringkasan', label: 'Ringkasan', icon: FileText, tab: 'sales' as TabType, desc: 'Ringkasan omset dan grafik penjualan harian' },
     { id: 'transaksi', label: 'Data Transaksi Penjualan', icon: FileText, tab: 'sales' as TabType, desc: 'Log lengkap seluruh transaksi penjualan' },
@@ -89,7 +89,7 @@ function ReportPageContent() {
     { id: 'laba-produk', label: 'Laba Produk', icon: Boxes, tab: 'products' as TabType, desc: 'Margin laba per item barang' }
   ]
 
-  // Get report list depending on the selected submenu
+  
   const currentReports = useMemo(() => {
     if (menuParam === 'operational-menu') return operationalReportCards
     if (menuParam === 'profit-menu') return profitReportCards
@@ -108,7 +108,7 @@ function ReportPageContent() {
   }, [])
 
   useEffect(() => {
-    // Reset report drill-down if menu category changes
+    
     setSelectedReportId(null)
   }, [menuParam])
 
@@ -309,12 +309,12 @@ function ReportPageContent() {
     )
   }
 
-  // Render Grid Menu if no specific report is selected
+  
   if (!selectedReportId) {
     return (
       <div className="space-y-6">
         
-        {/* Header Title */}
+        
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
           <div>
             <div className="text-xs font-bold text-slate-400">Laporan</div>
@@ -338,7 +338,7 @@ function ReportPageContent() {
           </div>
         </div>
 
-        {/* Report Card Grid */}
+        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {currentReports.map((report) => {
             const Icon = report.icon
@@ -368,13 +368,13 @@ function ReportPageContent() {
     )
   }
 
-  // Drill down view (Specific Report Details)
+  
   const currentReportObj = currentReports.find(r => r.id === selectedReportId)
 
   return (
     <div className="space-y-6">
       
-      {/* Back button and title */}
+      
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
         <div>
           <button
@@ -410,7 +410,7 @@ function ReportPageContent() {
         </div>
       </div>
 
-      {/* Date Filter Panel */}
+      
       <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-3xs">
         <div className="flex items-center gap-3 text-slate-800">
           <div className="h-9 w-9 bg-sky-50 border border-sky-100 rounded-lg flex items-center justify-center text-sky-500 shrink-0">
@@ -476,7 +476,7 @@ function ReportPageContent() {
         </div>
       </div>
 
-      {/* Omset, Expenses, Profit summary block - Only shown for summary/profit/revenue related logs */}
+      
       {(selectedReportId === 'ringkasan' || selectedReportId === 'laba-harian' || selectedReportId === 'transaksi') && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <div className="border border-slate-200 rounded-xl p-5 bg-white shadow-3xs flex items-center gap-4 hover:shadow-xs transition-all">
@@ -516,7 +516,7 @@ function ReportPageContent() {
         </div>
       )}
 
-      {/* Export Buttons */}
+      
       <div className="flex items-center justify-between border-b border-slate-200 pb-2">
         <div className="text-xs font-bold text-slate-500">
           Manifestasi Log Laporan
@@ -543,7 +543,7 @@ function ReportPageContent() {
         )}
       </div>
 
-      {/* Data Table */}
+      
       <div className="rounded-xl border border-slate-200 bg-white shadow-3xs overflow-hidden">
         <div className="overflow-x-auto">
           {loadingTable ? (
@@ -558,7 +558,7 @@ function ReportPageContent() {
           ) : (
             <table className="w-full border-collapse text-left text-xs text-slate-600 font-semibold">
               
-              {/* 1. Ringkasan & Transaksi (Sales list) */}
+              
               {(selectedReportId === 'ringkasan' || selectedReportId === 'transaksi') && (
                 <>
                   <thead className="bg-slate-50 text-[9px] font-bold uppercase text-slate-400 border-b border-slate-200/70 tracking-wider">
@@ -590,7 +590,7 @@ function ReportPageContent() {
                 </>
               )}
 
-              {/* 2. Penjualan Per Outlet */}
+              
               {selectedReportId === 'outlet' && (
                 <>
                   <thead className="bg-slate-50 text-[9px] font-bold uppercase text-slate-400 border-b border-slate-200/70 tracking-wider">
@@ -612,7 +612,7 @@ function ReportPageContent() {
                 </>
               )}
 
-              {/* 3. Penjualan Harian */}
+              
               {selectedReportId === 'harian' && (
                 <>
                   <thead className="bg-slate-50 text-[9px] font-bold uppercase text-slate-400 border-b border-slate-200/70 tracking-wider">
@@ -634,7 +634,7 @@ function ReportPageContent() {
                 </>
               )}
 
-              {/* 4. Penjualan Per Jam */}
+              
               {selectedReportId === 'jam' && (
                 <>
                   <thead className="bg-slate-50 text-[9px] font-bold uppercase text-slate-400 border-b border-slate-200/70 tracking-wider">
@@ -656,7 +656,7 @@ function ReportPageContent() {
                 </>
               )}
 
-              {/* 5. Penjualan Per Kategori */}
+              
               {selectedReportId === 'kategori' && (
                 <>
                   <thead className="bg-slate-50 text-[9px] font-bold uppercase text-slate-400 border-b border-slate-200/70 tracking-wider">
@@ -678,7 +678,7 @@ function ReportPageContent() {
                 </>
               )}
 
-              {/* 6. Penjualan Per Pelanggan */}
+              
               {selectedReportId === 'pelanggan' && (
                 <>
                   <thead className="bg-slate-50 text-[9px] font-bold uppercase text-slate-400 border-b border-slate-200/70 tracking-wider">
@@ -702,7 +702,7 @@ function ReportPageContent() {
                 </>
               )}
 
-              {/* 7. Metode Pembayaran */}
+              
               {selectedReportId === 'metode' && (
                 <>
                   <thead className="bg-slate-50 text-[9px] font-bold uppercase text-slate-400 border-b border-slate-200/70 tracking-wider">
@@ -724,7 +724,7 @@ function ReportPageContent() {
                 </>
               )}
 
-              {/* 8. Penerimaan Pajak */}
+              
               {selectedReportId === 'pajak' && (
                 <>
                   <thead className="bg-slate-50 text-[9px] font-bold uppercase text-slate-400 border-b border-slate-200/70 tracking-wider">
@@ -748,7 +748,7 @@ function ReportPageContent() {
                 </>
               )}
 
-              {/* 9. Promo & Diskon */}
+              
               {selectedReportId === 'promo' && (
                 <>
                   <thead className="bg-slate-50 text-[9px] font-bold uppercase text-slate-400 border-b border-slate-200/70 tracking-wider">
@@ -772,7 +772,7 @@ function ReportPageContent() {
                 </>
               )}
 
-              {/* 10. Laba Harian */}
+              
               {selectedReportId === 'laba-harian' && (
                 <>
                   <thead className="bg-slate-50 text-[9px] font-bold uppercase text-slate-400 border-b border-slate-200/70 tracking-wider">
@@ -798,7 +798,7 @@ function ReportPageContent() {
                 </>
               )}
 
-              {/* 11. Laba Produk / Margin Produk */}
+              
               {(selectedReportId === 'laba-produk' || selectedReportId === 'produk') && (
                 <>
                   <thead className="bg-slate-50 text-[9px] font-bold uppercase text-slate-400 border-b border-slate-200/70 tracking-wider">
@@ -826,7 +826,7 @@ function ReportPageContent() {
                 </>
               )}
 
-              {/* 12. Rekap Kas Shifts */}
+              
               {selectedReportId === 'rekap-kas' && (
                 <>
                   <thead className="bg-slate-50 text-[9px] font-bold uppercase text-slate-400 border-b border-slate-200/70 tracking-wider">
@@ -860,7 +860,7 @@ function ReportPageContent() {
                 </>
               )}
 
-              {/* 13. Stok Mutasi */}
+              
               {selectedReportId === 'stok' && (
                 <>
                   <thead className="bg-slate-50 text-[9px] font-bold uppercase text-slate-400 border-b border-slate-200/70 tracking-wider">
@@ -893,7 +893,7 @@ function ReportPageContent() {
                 </>
               )}
 
-              {/* 14. Absensi Karyawan */}
+              
               {selectedReportId === 'absensi' && (
                 <>
                   <thead className="bg-slate-50 text-[9px] font-bold uppercase text-slate-400 border-b border-slate-200/70 tracking-wider">
@@ -919,7 +919,7 @@ function ReportPageContent() {
                 </>
               )}
 
-              {/* 15. Biaya Pengeluaran */}
+              
               {selectedReportId === 'pengeluaran' && (
                 <>
                   <thead className="bg-slate-50 text-[9px] font-bold uppercase text-slate-400 border-b border-slate-200/70 tracking-wider">
@@ -947,7 +947,7 @@ function ReportPageContent() {
                 </>
               )}
 
-              {/* 16. Komisi Karyawan */}
+              
               {selectedReportId === 'komisi' && (
                 <>
                   <thead className="bg-slate-50 text-[9px] font-bold uppercase text-slate-400 border-b border-slate-200/70 tracking-wider">

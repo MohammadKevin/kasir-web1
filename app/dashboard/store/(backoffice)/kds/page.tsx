@@ -44,8 +44,8 @@ export default function KdsPage() {
   useEffect(() => {
     loadOrders()
     const interval = setInterval(() => {
-      loadOrders(true) // Silent reload
-    }, 15000) // Poll every 15 seconds
+      loadOrders(true) 
+    }, 15000) 
 
     return () => clearInterval(interval)
   }, [])
@@ -58,13 +58,13 @@ export default function KdsPage() {
       const headers = { Authorization: `Bearer ${token}` }
       const res = await api.get(`/transactions/store/${storeId}`, { headers })
       
-      // Filter transactions that are from today
+      
       const todayStr = new Date().toDateString()
       const rawOrders = (res.data || []).filter((tx: any) => 
         new Date(tx.createdAt).toDateString() === todayStr && tx.status !== 'CANCELLED'
       )
 
-      // Fetch details (items) for each transaction to get product names
+      
       const detailedOrders = await Promise.all(
         rawOrders.slice(0, 15).map(async (o: any) => {
           const detailRes = await api.get(`/transactions/${o.id}`, { headers })
@@ -88,7 +88,7 @@ export default function KdsPage() {
 
   function handleCompleteOrder(orderId: string) {
     setCompletedOrderIds(prev => [...prev, orderId])
-    // Play a notification sound
+    
     if (soundEnabled && typeof window !== 'undefined') {
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
       const oscillator = audioCtx.createOscillator()
@@ -96,7 +96,7 @@ export default function KdsPage() {
       oscillator.connect(gainNode)
       gainNode.connect(audioCtx.destination)
       oscillator.type = 'sine'
-      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime) // A5 note
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime) 
       gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime)
       oscillator.start()
       oscillator.stop(audioCtx.currentTime + 0.15)

@@ -109,7 +109,7 @@ function SearchableProductSelect({ products, value, onChange, placeholder = 'Pil
     )
   }, [products, search])
 
-  // Close when clicking outside
+  
   useEffect(() => {
     if (!isOpen) return
     const handleClick = (e: MouseEvent) => {
@@ -198,7 +198,7 @@ function SearchableProductSelect({ products, value, onChange, placeholder = 'Pil
 function StockMovementPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const typeParam = searchParams.get('type') || '' // '', 'IN', 'OUT', 'TRANSFER', 'OPNAME'
+  const typeParam = searchParams.get('type') || '' 
 
   const [movements, setMovements] = useState<StockMovement[]>([])
   const [stores, setStores] = useState<StoreType[]>([])
@@ -210,7 +210,7 @@ function StockMovementPageContent() {
   const [selectedCategoryId, setSelectedCategoryId] = useState('ALL')
   const [loading, setLoading] = useState(true)
   
-  // Filters
+  
   const [searchQuery, setSearchQuery] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
@@ -218,13 +218,13 @@ function StockMovementPageContent() {
   const [showEmptyStock, setShowEmptyStock] = useState(false)
   const [showBanner, setShowBanner] = useState(true)
 
-  // Modals
+  
   const [isOpenInModal, setIsOpenInModal] = useState(false)
   const [isOpenOutModal, setIsOpenOutModal] = useState(false)
   const [isOpenTransferModal, setIsOpenTransferModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Modals form states
+  
   const [formIn, setFormIn] = useState({
     productId: '',
     supplierId: '',
@@ -234,7 +234,7 @@ function StockMovementPageContent() {
 
   const [formOut, setFormOut] = useState({
     productId: '',
-    reason: 'Barang Rusak', // 'Barang Rusak', 'Sampel', 'Koreksi Audit', 'Lainnya'
+    reason: 'Barang Rusak', 
     qty: 1,
     note: ''
   })
@@ -246,12 +246,12 @@ function StockMovementPageContent() {
     note: ''
   })
 
-  // Stock Opname local state
+  
   const [opnameActuals, setOpnameActuals] = useState<{ [productId: string]: string }>({})
   const [opnameNotes, setOpnameNotes] = useState<{ [productId: string]: string }>({})
   const [isSavingOpname, setIsSavingOpname] = useState(false)
 
-  // Stock Opname History & Form States (Pawoon style)
+  
   const [opnameHistory, setOpnameHistory] = useState<StockOpnameRecord[]>([])
   const [isAddingOpname, setIsAddingOpname] = useState(false)
   const [editingOpnameId, setEditingOpnameId] = useState<string | null>(null)
@@ -261,7 +261,7 @@ function StockMovementPageContent() {
   const [newOpnameActuals, setNewOpnameActuals] = useState<{ [productId: string]: string }>({})
   const [newOpnameNotes, setNewOpnameNotes] = useState<{ [productId: string]: string }>({})
 
-  // Stock Opname History Filters
+  
   const [filterStoreId, setFilterStoreId] = useState('ALL')
   const [filterStatus, setFilterStatus] = useState('ALL')
   const [filterOpnameId, setFilterOpnameId] = useState('')
@@ -486,7 +486,7 @@ function StockMovementPageContent() {
       loadCategories(selectedStoreId)
       loadSuppliers(selectedStoreId)
       
-      // Clear opname state
+      
       setOpnameActuals({})
       setOpnameNotes({})
     }
@@ -561,7 +561,7 @@ function StockMovementPageContent() {
     }
   }
 
-  // Modals trigger
+  
   function handleOpenIn() {
     setFormIn({
       productId: products[0]?.id || '',
@@ -593,7 +593,7 @@ function StockMovementPageContent() {
     setIsOpenTransferModal(true)
   }
 
-  // Post Stock In
+  
   async function handleSubmitIn(e: React.FormEvent) {
     e.preventDefault()
     if (!formIn.productId) return alert('Silakan pilih produk!')
@@ -634,7 +634,7 @@ function StockMovementPageContent() {
     }
   }
 
-  // Post Stock Out
+  
   async function handleSubmitOut(e: React.FormEvent) {
     e.preventDefault()
     if (!formOut.productId) return alert('Silakan pilih produk!')
@@ -675,7 +675,7 @@ function StockMovementPageContent() {
     }
   }
 
-  // Post Transfer Stok
+  
   async function handleSubmitTransfer(e: React.FormEvent) {
     e.preventDefault()
     if (!formTransfer.productId) return alert('Silakan pilih produk!')
@@ -694,7 +694,7 @@ function StockMovementPageContent() {
     const headers = { Authorization: `Bearer ${token}` }
 
     try {
-      // 1. Fetch products of the destination store to find matching SKU
+      
       const destStoreName = stores.find(s => s.id === formTransfer.destStoreId)?.name || 'Outlet Tujuan'
       const sourceStoreName = stores.find(s => s.id === selectedStoreId)?.name || 'Outlet Asal'
 
@@ -706,7 +706,7 @@ function StockMovementPageContent() {
         throw new Error(`Produk dengan SKU "${sourceProduct.sku}" belum didaftarkan di ${destStoreName}. Daftarkan produk terlebih dahulu di outlet tersebut!`)
       }
 
-      // 2. Reduce stock at source store (type OUT)
+      
       await api.post('/stock-movements', {
         storeId: selectedStoreId,
         productId: sourceProduct.id,
@@ -715,7 +715,7 @@ function StockMovementPageContent() {
         note: `Transfer ke ${destStoreName} | ${formTransfer.note}`
       }, { headers })
 
-      // 3. Add stock at destination store (type IN)
+      
       await api.post('/stock-movements', {
         storeId: formTransfer.destStoreId,
         productId: destProduct.id,
@@ -736,9 +736,9 @@ function StockMovementPageContent() {
     }
   }
 
-  // Save Stock Opname (Reconcile)
+  
   async function handleSaveOpname() {
-    // Find all rows where actual value is entered and is different from system stock
+    
     const changes = products.filter(p => {
       const actualVal = opnameActuals[p.id]
       if (actualVal === undefined || actualVal === '') return false
@@ -787,16 +787,16 @@ function StockMovementPageContent() {
     setIsSavingOpname(false)
     alert(`Stock opname selesai! Berhasil: ${successCount} produk. Gagal: ${failCount} produk.`)
     
-    // Reset inputs
+    
     setOpnameActuals({})
     setOpnameNotes({})
     
-    // Reload
+    
     loadMovements(selectedStoreId)
     loadProducts(selectedStoreId)
   }
 
-  // Excel Stock Import
+  
   async function handleImportStockExcel(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -1020,21 +1020,21 @@ function StockMovementPageContent() {
     reader.readAsBinaryString(file)
   }
 
-  // Filtered movements logically mapped to the list
+  
   const filteredMovements = movements.filter((m) => {
-    // Search query
+    
     const matchesSearch = 
       m.product?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       m.product?.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (m.note && m.note.toLowerCase().includes(searchQuery.toLowerCase()))
 
-    // Category filter
+    
     const matchesCategory = 
       selectedCategoryId === 'ALL' || 
       m.product?.category?.name === selectedCategoryId ||
       (selectedCategoryId === 'Umum' && !m.product?.category)
 
-    // Date range filter
+    
     let matchesDate = true
     if (startDate) {
       matchesDate = matchesDate && new Date(m.createdAt) >= new Date(startDate + 'T00:00:00')
@@ -1043,7 +1043,7 @@ function StockMovementPageContent() {
       matchesDate = matchesDate && new Date(m.createdAt) <= new Date(endDate + 'T23:59:59')
     }
 
-    // Type filtering
+    
     if (typeParam === 'IN' && m.type !== 'IN') return false
     if (typeParam === 'OUT' && m.type !== 'OUT' && m.type !== 'DAMAGED') return false
     if (typeParam === 'TRANSFER' && !m.note?.toLowerCase().includes('transfer')) return false
@@ -1051,7 +1051,7 @@ function StockMovementPageContent() {
     return matchesSearch && matchesCategory && matchesDate
   })
 
-  // Filtered products list for Stock Opname page
+  
   const filteredProducts = products.filter((p) => {
     const matchesSearch = 
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1096,7 +1096,7 @@ function StockMovementPageContent() {
     return (
       <div className="space-y-5">
         <div className="bg-white border border-slate-200/80 rounded-xl p-6 shadow-3xs space-y-6">
-          {/* Header */}
+          
           <div className="flex items-center justify-between border-b border-slate-100 pb-4">
             <div>
               <h2 className="text-lg font-black text-slate-900">Tambah Stok Opname</h2>
@@ -1117,7 +1117,7 @@ function StockMovementPageContent() {
             </button>
           </div>
 
-          {/* Form Fields */}
+          
           <div className="space-y-4 max-w-3xl">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
               <label className="w-24 text-xs font-bold text-slate-500 shrink-0">Outlet *</label>
@@ -1147,7 +1147,7 @@ function StockMovementPageContent() {
             </div>
           </div>
 
-          {/* Product Table (Render only when outlet is selected) */}
+          
           {newOpnameStoreId ? (
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-4 border-t border-slate-100 gap-2">
@@ -1271,7 +1271,7 @@ function StockMovementPageContent() {
             </div>
           )}
 
-          {/* Footer Actions */}
+          
           <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-5 mt-6">
             <button
               type="button"
@@ -1320,7 +1320,7 @@ function StockMovementPageContent() {
   return (
     <div className="space-y-5">
       
-      {/* Top Header Actions */}
+      
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-3">
         <div>
           <div className="text-xs font-bold text-slate-400">Inventori</div>
@@ -1410,7 +1410,7 @@ function StockMovementPageContent() {
         </div>
       </div>
 
-      {/* Top Tabs Switcher */}
+      
       <div className="flex border-b border-slate-200">
         {[
           { label: 'Kartu Stok', type: '' },
@@ -1436,7 +1436,7 @@ function StockMovementPageContent() {
         })}
       </div>
 
-      {/* Tahukah Anda Banner */}
+      
       {showBanner && (
         <div className="bg-[#fdf6e2] border border-[#f5e7c4] rounded-lg p-4 flex items-start justify-between text-[#856404]">
           <div className="flex gap-3">
@@ -1461,12 +1461,12 @@ function StockMovementPageContent() {
         </div>
       )}
 
-      {/* Filter Row Form Controls */}
+      
       {typeParam === 'OPNAME' ? (
         !isAddingOpname && (
           <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-3xs space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end">
-              {/* Lokasi */}
+              
               <div className="space-y-1">
                 <label className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Lokasi</label>
                 <div className="relative">
@@ -1482,7 +1482,7 @@ function StockMovementPageContent() {
                 </div>
               </div>
 
-              {/* Tanggal Mulai */}
+              
               <div className="space-y-1">
                 <label className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Tanggal Mulai</label>
                 <input
@@ -1493,7 +1493,7 @@ function StockMovementPageContent() {
                 />
               </div>
 
-              {/* Tanggal Selesai */}
+              
               <div className="space-y-1">
                 <label className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Tanggal Selesai</label>
                 <input
@@ -1504,7 +1504,7 @@ function StockMovementPageContent() {
                 />
               </div>
 
-              {/* Status */}
+              
               <div className="space-y-1">
                 <label className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Status</label>
                 <div className="relative">
@@ -1521,7 +1521,7 @@ function StockMovementPageContent() {
                 </div>
               </div>
 
-              {/* ID Opname */}
+              
               <div className="space-y-1">
                 <label className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">ID Opname</label>
                 <div className="relative">
@@ -1557,7 +1557,7 @@ function StockMovementPageContent() {
         <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-3xs space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
             
-            {/* Outlet select */}
+            
             <div className="space-y-1">
               <label className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Outlet</label>
               <div className="relative">
@@ -1575,7 +1575,7 @@ function StockMovementPageContent() {
               </div>
             </div>
 
-            {/* Date Range filters */}
+            
             <div className="space-y-1">
               <label className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Tanggal Mulai</label>
               <input
@@ -1596,7 +1596,7 @@ function StockMovementPageContent() {
               />
             </div>
 
-            {/* Category filter */}
+            
             <div className="space-y-1">
               <label className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Kategori</label>
               <div className="relative">
@@ -1613,7 +1613,7 @@ function StockMovementPageContent() {
               </div>
             </div>
 
-            {/* Search bar */}
+            
             <div className="space-y-1">
               <label className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Cari Produk</label>
               <div className="relative">
@@ -1630,10 +1630,10 @@ function StockMovementPageContent() {
 
           </div>
 
-          {/* Toggles and Reset Row */}
+          
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-3 border-t border-slate-100 gap-4">
             <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-slate-500">
-              {/* empty */}
+              
             </div>
 
             <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
@@ -1654,11 +1654,11 @@ function StockMovementPageContent() {
         </div>
       )}
 
-      {/* Main Stock Data Table */}
+      
       <div className="rounded-xl border border-slate-200 bg-white shadow-3xs overflow-hidden">
         <div className="overflow-x-auto">
           {typeParam !== 'OPNAME' ? (
-            /* Table 1: Historical movements log (Kartu Stok, Stok Masuk, Stok Keluar, Transfer) */
+            
             <table className="w-full min-w-[950px] text-left border-collapse text-xs">
               <thead className="bg-[#1a202c] text-white text-[9.5px] font-bold uppercase tracking-wider">
                 <tr>
@@ -1725,7 +1725,7 @@ function StockMovementPageContent() {
               </tbody>
             </table>
           ) : (
-            /* Table 2: Pawoon style Stock Opname history list */
+            
             <table className="w-full min-w-[950px] text-left border-collapse text-xs">
               <thead className="bg-[#1a202c] text-white text-[9.5px] font-bold uppercase tracking-wider">
                 <tr>
@@ -1792,7 +1792,7 @@ function StockMovementPageContent() {
         </div>
       </div>
 
-      {/* Modal 1: Tambah Stok Masuk */}
+      
       {isOpenInModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs transition-all">
           <div className="w-full max-w-md overflow-hidden rounded-xl border border-slate-150 bg-white p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-150">
@@ -1868,7 +1868,7 @@ function StockMovementPageContent() {
         </div>
       )}
 
-      {/* Modal 2: Tambah Stok Keluar */}
+      
       {isOpenOutModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs transition-all">
           <div className="w-full max-w-md overflow-hidden rounded-xl border border-slate-150 bg-white p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-150">
@@ -1944,7 +1944,7 @@ function StockMovementPageContent() {
         </div>
       )}
 
-      {/* Modal 3: Buat Transfer Stok */}
+      
       {isOpenTransferModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs transition-all">
           <div className="w-full max-w-md overflow-hidden rounded-xl border border-slate-150 bg-white p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-150">
@@ -2022,7 +2022,7 @@ function StockMovementPageContent() {
         </div>
       )}
 
-      {/* Excel Progress Modal */}
+      
       {importStatus && (
         <div className="fixed inset-0 z-55 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-md bg-white rounded-xl shadow-xl overflow-hidden border border-slate-200/80 animate-in slide-in-from-bottom-3 duration-250 flex flex-col max-h-[85vh]">
@@ -2074,7 +2074,7 @@ function StockMovementPageContent() {
         </div>
       )}
 
-      {/* Modal Detail Stok Opname (Read-Only) */}
+      
       {viewingOpnameId && (() => {
         const record = opnameHistory.find(r => r.id === viewingOpnameId)
         if (!record) return null
@@ -2094,7 +2094,7 @@ function StockMovementPageContent() {
                 </button>
               </div>
 
-              {/* Info grid */}
+              
               <div className="grid grid-cols-2 gap-4 my-4 text-xs font-semibold text-slate-600 shrink-0">
                 <div>
                   <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Outlet</span>
@@ -2106,7 +2106,7 @@ function StockMovementPageContent() {
                 </div>
               </div>
 
-              {/* Items Table */}
+              
               <div className="flex-1 overflow-y-auto rounded-xl border border-slate-200">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead className="bg-[#1a202c] text-white text-[9.5px] font-bold uppercase tracking-wider sticky top-0">

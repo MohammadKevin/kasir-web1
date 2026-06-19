@@ -194,7 +194,7 @@ export default function PosPage() {
   const [globalDiscountType, setGlobalDiscountType] = useState<'PERCENT' | 'FIXED'>('PERCENT')
   const [globalDiscountValue, setGlobalDiscountValue] = useState(0)
 
-  // New States for POS enterprise features
+  
   const [orderType, setOrderType] = useState<'TAKEAWAY' | 'DINEIN'>('TAKEAWAY')
   const [tables, setTables] = useState<any[]>([])
   const [selectedTableId, setSelectedTableId] = useState<string>('')
@@ -465,7 +465,7 @@ export default function PosPage() {
     const uniqueCode = getReceiptUniqueCode(data.invoice, data.createdAt)
     const branchAddress = currentStore?.address?.split(',').slice(-1)[0]?.trim() || 'Sby'
     
-    // Parse split payments if it exists
+    
     let parsedSplit: any = null
     if (data.splitPayments) {
       try {
@@ -694,7 +694,7 @@ export default function PosPage() {
     setSearch('')
     setCheckoutStep('cart')
     
-    // Reset new states
+    
     setOrderType('TAKEAWAY')
     setSelectedTableId('')
     setCustomerPoints(0)
@@ -820,7 +820,7 @@ export default function PosPage() {
             ))
           ) : categoryFilter === null && search.trim() === '' ? (
             <>
-              {/* Semua Produk Card */}
+              
               <button
                 type="button"
                 onClick={() => setCategoryFilter('all')}
@@ -836,7 +836,7 @@ export default function PosPage() {
                 </div>
               </button>
 
-              {/* Dynamic Category Cards */}
+              
               {categories.map((cat, idx) => {
                 const { bg, hoverRing, glow, gradient } = getCategoryStyles(cat.name, idx)
                 const Icon = getCategoryIcon(cat.name)
@@ -1280,7 +1280,7 @@ export default function PosPage() {
         <div className="fixed inset-0 z-45 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200 select-none">
           <div className="w-full max-w-4xl h-[90vh] bg-white rounded-3xl border border-slate-200/80 shadow-2xl flex flex-col md:flex-row overflow-hidden animate-in zoom-in-95 duration-250">
             
-            {/* Left Pane: Detailed Item Bill Grid (Indomaret Style) */}
+            
             <div className="flex-1 p-6 flex flex-col overflow-hidden bg-slate-50/50">
               <div className="flex items-center justify-between pb-4 border-b border-slate-200">
                 <div>
@@ -1326,14 +1326,14 @@ export default function PosPage() {
                 </table>
               </div>
 
-              {/* SOP/Note under items list */}
+              
               <div className="bg-indigo-50/30 border border-indigo-100/50 rounded-xl p-3.5 mt-4 text-[10px] text-indigo-700 font-bold flex items-start gap-2 shrink-0">
                 <Sparkles size={14} className="shrink-0 mt-0.5" />
                 <span>Pastikan semua kuantitas barang sesuai sebelum menekan tombol Bayar. Gunakan tombol 'Kembali & Edit' jika ada revisi belanja.</span>
               </div>
             </div>
 
-            {/* Right Pane: Final Breakdown & Payment Inputs */}
+            
             <div className="w-full md:w-[380px] border-t md:border-t-0 md:border-l border-slate-200 p-6 flex flex-col justify-between overflow-y-auto scrollbar-thin bg-white">
               <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -1347,7 +1347,7 @@ export default function PosPage() {
                   </button>
                 </div>
 
-                {/* Calculations summary */}
+                
                 <div className="space-y-2.5 text-xs">
                   <div className="flex justify-between font-bold text-slate-500">
                     <span>Sub total</span>
@@ -1394,7 +1394,7 @@ export default function PosPage() {
 
                 <div className="h-px bg-slate-100" />
 
-                {/* Payment Method Selector */}
+                
                 <div className="space-y-1.5">
                   <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-widest block">Metode Pembayaran</span>
                   <div className="grid grid-cols-3 gap-2">
@@ -1420,7 +1420,7 @@ export default function PosPage() {
                   </div>
                 </div>
 
-                {/* Cash Inputs / Split Inputs / QRIS Note */}
+                
                 {payment === 'CASH' && (
                   <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 shadow-3xs space-y-2.5 font-mono text-xs animate-in fade-in duration-150">
                     <div className="flex items-center justify-between">

@@ -160,7 +160,7 @@ export default function AttendancePage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-6 items-start">
-        {/* Absensi Action Card */}
+        
         <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-3xs space-y-6 text-center relative overflow-hidden">
           <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-indigo-500 to-purple-600"></div>
 
@@ -228,7 +228,7 @@ export default function AttendancePage() {
           </div>
         </div>
 
-        {/* Attendance History */}
+        
         <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-3xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div>

@@ -41,7 +41,7 @@ export default function ChatWidget() {
   const [loadingMessages, setLoadingMessages] = useState(false)
   const [sending, setSending] = useState(false)
 
-  // Current session context
+  
   const [myUserId, setMyUserId] = useState('')
   const [myUserType, setMyUserType] = useState('')
   const [mySenderName, setMySenderName] = useState('')
@@ -49,7 +49,7 @@ export default function ChatWidget() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Load current user info
+  
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedUser = localStorage.getItem('user')
@@ -60,7 +60,7 @@ export default function ChatWidget() {
           setMyUserType(user.type)
           
           let senderName = user.name
-          // If we are a Store/Outlet, check if a cashier (staff) is active on this terminal
+          
           const cachedCashier = localStorage.getItem('cashier')
           if (cachedCashier) {
             const cashierObj = JSON.parse(cachedCashier)
@@ -76,7 +76,7 @@ export default function ChatWidget() {
     }
   }, [isOpen])
 
-  // Fetch contacts when widget opens
+  
   useEffect(() => {
     if (isOpen) {
       fetchContacts()
@@ -86,7 +86,7 @@ export default function ChatWidget() {
     }
   }, [isOpen])
 
-  // Poll messages when contact is selected
+  
   useEffect(() => {
     if (selectedContact) {
       fetchMessages(selectedContact)
@@ -97,7 +97,7 @@ export default function ChatWidget() {
     }
   }, [selectedContact])
 
-  // Scroll to bottom when messages load
+  
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
@@ -106,7 +106,7 @@ export default function ChatWidget() {
     stopPolling()
     pollingRef.current = setInterval(() => {
       fetchMessages(contact, true)
-    }, 3000) // Poll every 3 seconds
+    }, 3000) 
   }
 
   function stopPolling() {
@@ -137,7 +137,7 @@ export default function ChatWidget() {
       const headers = { Authorization: `Bearer ${token}` }
       const res = await api.get(`/chat/messages/${contact.id}/${contact.type}`, { headers })
       
-      // Update state only if count changes to prevent rerender loops
+      
       if (res.data && res.data.length !== messages.length) {
         if (isSilent && res.data.length > messages.length) {
           const lastMsg = res.data[res.data.length - 1]
@@ -199,7 +199,7 @@ export default function ChatWidget() {
   return (
     <div className="fixed bottom-6 right-6 z-45 font-sans">
       
-      {/* Floating Action Button Bubble */}
+      
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
@@ -210,11 +210,11 @@ export default function ChatWidget() {
         </button>
       )}
 
-      {/* Expanded Chat Drawer */}
+      
       {isOpen && (
         <div className="w-80 sm:w-96 h-[480px] bg-white rounded-3xl border border-slate-200/90 shadow-2xl overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-5 duration-250">
           
-          {/* Header */}
+          
           <div className="bg-[#1a202c] text-white p-4 shrink-0 flex items-center justify-between">
             <div className="flex items-center gap-2 min-w-0">
               {selectedContact ? (
@@ -253,10 +253,10 @@ export default function ChatWidget() {
             </button>
           </div>
 
-          {/* Conversation History Pane */}
+          
           {selectedContact ? (
             <div className="flex-1 flex flex-col overflow-hidden bg-slate-50">
-              {/* Message scroll list */}
+              
               <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin">
                 {loadingMessages ? (
                   <div className="h-full flex items-center justify-center">
@@ -278,7 +278,7 @@ export default function ChatWidget() {
                           isMine ? 'ml-auto items-end' : 'mr-auto items-start'
                         }`}
                       >
-                        {/* Display sender identity if it's not mine */}
+                        
                         {!isMine && (
                           <span className="text-[8.5px] font-bold text-slate-400 mb-0.5 px-1 truncate max-w-full">
                             {msg.senderName}
@@ -303,7 +303,7 @@ export default function ChatWidget() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Message text input box */}
+              
               <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-slate-200/80 shrink-0 flex items-center gap-2">
                 <input
                   type="text"
@@ -323,7 +323,7 @@ export default function ChatWidget() {
               </form>
             </div>
           ) : (
-            /* Contacts list drawer */
+            
             <div className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-thin">
               <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 block mb-2 px-1">Daftar Kontak Peran</span>
               

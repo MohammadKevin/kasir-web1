@@ -49,19 +49,19 @@ export default function StoreDashboard() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   
-  // Store Attendance States
+  
   const [storeOpen, setStoreOpen] = useState(false)
   const [storeAttendance, setStoreAttendance] = useState<any>(null)
   const [checkingStore, setCheckingStore] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
 
-  // Recent Transactions States
+  
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loadingTransactions, setLoadingTransactions] = useState(true)
   const [isAdminKasir, setIsAdminKasir] = useState(false)
   const [storeId, setStoreId] = useState('')
 
-  // Void modal states
+  
   const [isOpenVoidModal, setIsOpenVoidModal] = useState(false)
   const [voidId, setVoidId] = useState('')
   const [voidReason, setVoidReason] = useState('')
@@ -139,7 +139,7 @@ export default function StoreDashboard() {
     const headers = { Authorization: `Bearer ${token}` }
     try {
       const res = await api.get(`/transactions/store/${id}`, { headers })
-      // Sort by date descending and take top 10
+      
       const sorted = (res.data || []).sort(
         (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       )
@@ -234,7 +234,7 @@ export default function StoreDashboard() {
       alert('Transaksi berhasil dibatalkan (Void)')
       if (storeId) {
         loadRecentTransactions(storeId)
-        loadDashboardData() // Refresh dashboard cards
+        loadDashboardData() 
       }
     } catch (error: any) {
       const msg = error.response?.data?.message || 'Gagal membatalkan transaksi'
@@ -263,7 +263,7 @@ export default function StoreDashboard() {
         </div>
       </div>
 
-      {/* Store Attendance Block */}
+      
       <div className={`p-5 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-200 ${
         storeOpen 
           ? 'bg-emerald-50/40 border-emerald-150 text-slate-800 animate-in fade-in duration-300' 
@@ -414,7 +414,7 @@ export default function StoreDashboard() {
         </div>
       </div>
 
-      {/* Riwayat Transaksi Terbaru Table Section */}
+      
       <div className="rounded-2xl border border-slate-200 bg-white shadow-3xs overflow-hidden">
         <div className="p-5 border-b border-slate-100 flex items-center justify-between">
           <div>
@@ -526,7 +526,7 @@ export default function StoreDashboard() {
         </div>
       </div>
 
-      {/* Void Confirmation Modal */}
+      
       {isOpenVoidModal && (
         <div 
           className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200"

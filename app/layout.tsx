@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: "Laila Collections - Aplikasi Kasir POS & Kelola Toko Modern",
   description: "Laila Collections - Aplikasi Kasir (POS) Butik Modern & Kelola Toko Terintegrasi. Optimalkan manajemen stok produk, transaksi, riwayat shift, dan laporan audit finansial Anda secara real-time.",
   verification: {
-    // Ganti nilai di bawah dengan tag kode verifikasi dari Google Search Console Anda
+    
     google: "proses-verifikasi-google-search-console",
   }
 };

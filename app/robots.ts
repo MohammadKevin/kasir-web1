@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: '/dashboard/', // Disallow crawlers from trying to crawl the protected dashboard routes
+      disallow: '/dashboard/', 
     },
     sitemap: `${baseUrl}/sitemap.xml`,
   }

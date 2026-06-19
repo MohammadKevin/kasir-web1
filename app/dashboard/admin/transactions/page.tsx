@@ -525,12 +525,12 @@ export default function TransactionAdminPage() {
             </div>
 
             <div id="receipt-print-content" className="mt-4 p-4 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 font-mono text-xs text-slate-700 space-y-3 print:p-0 print:border-none print:bg-white">
-              {/* Store Icon */}
+              
               <svg className="w-9 h-9 mx-auto text-slate-800" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M21.9 8.89l-1.05-4.37c-.22-.9-1-1.52-1.91-1.52H5.05c-.9 0-1.69.63-1.9 1.52L2.1 8.89c-.24.97.26 1.96 1.2 2.32c.12.04.24.07.37.08v7.71c0 .99.81 1.8 1.8 1.8h13c.99 0 1.8-.81 1.8-1.8v-7.71c.13-.01.25-.04.37-.08c.95-.36 1.45-1.35 1.21-2.32zM13 18H8v-4h5v4z"/>
               </svg>
 
-              {/* Store Header Info */}
+              
               <div className="text-center space-y-0.5">
                 <p className="font-bold text-xs text-slate-900 uppercase">{activeStoreName}</p>
                 <p className="text-[8.5px] leading-snug">
@@ -544,7 +544,7 @@ export default function TransactionAdminPage() {
 
               <div className="border-t border-dotted border-slate-400 my-1"></div>
 
-              {/* Transaction Meta */}
+              
               <div className="text-[8.5px] leading-tight flex justify-between">
                 <div>
                   <p>{formatDate(selectedTransaction.createdAt)}</p>
@@ -562,7 +562,7 @@ export default function TransactionAdminPage() {
 
               <div className="border-t border-dashed border-slate-400 my-1"></div>
 
-              {/* Items Block */}
+              
               <div id="receipt-print-items" className="space-y-2">
                 {selectedTransaction.items?.map((item) => {
                   const itemDiscount = ((item.masterDiscount || 0) + (item.cashierDiscount || 0)) * item.quantity
@@ -587,7 +587,7 @@ export default function TransactionAdminPage() {
 
               <div className="border-t border-dotted border-slate-400 my-1"></div>
 
-              {/* Summary Block */}
+              
               <div className="space-y-1 text-[9px] text-slate-600 border-t border-dashed border-slate-200 pt-2">
                 <div className="flex justify-between"><span>Total QTY : {selectedTransaction.items?.reduce((s, i) => s + i.quantity, 0)}</span></div>
                 <div className="flex justify-between"><span>Sub Total</span><span>Rp {selectedTransaction.subtotal.toLocaleString('id-ID')}</span></div>
@@ -601,7 +601,7 @@ export default function TransactionAdminPage() {
 
               <div className="border-t border-dotted border-slate-400 my-1"></div>
 
-              {/* Footer Block */}
+              
               <div className="text-center space-y-0.5 text-[8px] font-bold text-slate-900 pt-1">
                 <p>
                   {stores.find((s) => s.id === (selectedTransaction.storeId || selectedStoreId))?.receiptFooter || 'Terimakasih Telah Berbelanja'}

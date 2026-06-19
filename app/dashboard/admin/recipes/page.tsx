@@ -58,7 +58,7 @@ export default function RecipePage() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'ingredients' | 'recipes'>('ingredients')
 
-  // Ingredient management state
+  
   const [isOpenIngredModal, setIsOpenIngredModal] = useState(false)
   const [isSubmittingIngred, setIsSubmittingIngred] = useState(false)
   const [editingIngredId, setEditingIngredId] = useState<string | null>(null)
@@ -69,7 +69,7 @@ export default function RecipePage() {
     unit: 'gr'
   })
 
-  // Recipe management state
+  
   const [selectedProductId, setSelectedProductId] = useState('')
   const [currentRecipe, setCurrentRecipe] = useState<any[]>([])
   const [loadingRecipe, setLoadingRecipe] = useState(false)
@@ -151,7 +151,7 @@ export default function RecipePage() {
     }
   }
 
-  // Ingredient actions
+  
   function handleOpenCreateIngred() {
     setEditingIngredId(null)
     setIngredForm({ name: '', stock: 0, unit: 'gr' })
@@ -203,7 +203,7 @@ export default function RecipePage() {
     }
   }
 
-  // Recipe actions
+  
   function handleAddIngredientToRecipe(ingred: Ingredient) {
     const exist = currentRecipe.find(r => r.ingredientId === ingred.id)
     if (exist) return
@@ -401,7 +401,7 @@ export default function RecipePage() {
 
       {activeTab === 'recipes' && (
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
-          {/* Left Panel: Products List */}
+          
           <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 shadow-3xs max-h-[70vh] flex flex-col">
             <h3 className="text-xs font-black text-slate-900">1. Pilih Produk</h3>
             <div className="relative">
@@ -432,7 +432,7 @@ export default function RecipePage() {
             </div>
           </div>
 
-          {/* Right Panel: Recipe Builder */}
+          
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-3xs space-y-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 gap-3">
               <div>
@@ -459,7 +459,7 @@ export default function RecipePage() {
 
             {selectedProductId ? (
               <div className="grid grid-cols-1 xl:grid-cols-[1fr_260px] gap-6">
-                {/* Recipe Ingredients Table */}
+                
                 <div className="space-y-4">
                   <h4 className="text-xs font-extrabold text-slate-500 uppercase tracking-wider">Bahan Formulasi Aktif</h4>
                   {loadingRecipe ? (
@@ -512,7 +512,7 @@ export default function RecipePage() {
                   )}
                 </div>
 
-                {/* Available Ingredients Picker */}
+                
                 <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 space-y-3 max-h-[50vh] flex flex-col">
                   <h4 className="text-xs font-black text-slate-800 flex items-center gap-1.5">
                     <Sparkles size={13} className="text-indigo-600 animate-pulse" />
@@ -551,7 +551,7 @@ export default function RecipePage() {
         </div>
       )}
 
-      {/* Ingredient Create/Edit Modal */}
+      
       {isOpenIngredModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-150">

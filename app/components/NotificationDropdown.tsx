@@ -20,18 +20,18 @@ export default function NotificationDropdown() {
   const dropdownRef = useRef<HTMLDivElement>(null)
   const prevNotifIdsRef = useRef<string[] | null>(null)
 
-  // Unread notifications count
+  
   const unreadCount = notifications.filter(n => !n.isRead).length
 
   useEffect(() => {
     fetchNotifications()
 
-    // Setup polling every 15 seconds
+    
     const interval = setInterval(fetchNotifications, 15000)
     return () => clearInterval(interval)
   }, [])
 
-  // Close dropdown when clicking outside
+  
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -51,7 +51,7 @@ export default function NotificationDropdown() {
       const res = await api.get('/notifications', { headers })
       const data = res.data || []
 
-      // If we already have loaded previous items, toast the new unread ones
+      
       if (prevNotifIdsRef.current !== null) {
         const newUnread = data.filter((n: Notification) => !n.isRead && !prevNotifIdsRef.current!.includes(n.id))
         
@@ -85,7 +85,7 @@ export default function NotificationDropdown() {
       const headers = { Authorization: `Bearer ${token}` }
       await api.patch(`/notifications/${id}/read`, {}, { headers })
       
-      // Update locally
+      
       setNotifications(prev =>
         prev.map(n => (n.id === id ? { ...n, isRead: true } : n))
       )
@@ -102,7 +102,7 @@ export default function NotificationDropdown() {
       const headers = { Authorization: `Bearer ${token}` }
       await api.patch('/notifications/read-all', {}, { headers })
       
-      // Update all locally
+      
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))
     } catch (err) {
       console.error('Gagal menandai semua dibaca:', err)
@@ -122,7 +122,7 @@ export default function NotificationDropdown() {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Bell Trigger Icon */}
+      
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50 relative cursor-pointer transition-all active:scale-95"
@@ -135,11 +135,11 @@ export default function NotificationDropdown() {
         )}
       </button>
 
-      {/* Dropdown Pane */}
+      
       {isOpen && (
         <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl border border-slate-200 shadow-xl z-55 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
           
-          {/* Dropdown Header */}
+          
           <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
             <div>
               <h4 className="text-xs font-black text-slate-900">Notifikasi Peringatan</h4>
@@ -161,7 +161,7 @@ export default function NotificationDropdown() {
             )}
           </div>
 
-          {/* Notifications Scroll Area */}
+          
           <div className="max-h-64 overflow-y-auto divide-y divide-slate-100 scrollbar-thin">
             {notifications.length === 0 ? (
               <div className="p-8 text-center text-slate-400">
@@ -177,7 +177,7 @@ export default function NotificationDropdown() {
                     !notif.isRead ? 'bg-slate-50/30' : ''
                   }`}
                 >
-                  {/* Unread dot indicator */}
+                  
                   {!notif.isRead && (
                     <span className="h-2 w-2 rounded-full bg-rose-500 shrink-0 mt-1.5" />
                   )}

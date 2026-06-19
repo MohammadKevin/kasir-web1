@@ -668,7 +668,7 @@ export default function AdminDashboard() {
               </div>
 
               <div className="flex gap-3">
-                {/* Y-Axis Labels */}
+                
                 <div className="relative w-12 h-40 select-none text-right text-[8px] font-extrabold font-mono text-slate-450 pr-1">
                   <span className="absolute left-0 right-0 -translate-y-1/2" style={{ top: '10%' }}>
                     {chartData.niceMax.toLocaleString('id-ID')}
@@ -687,10 +687,10 @@ export default function AdminDashboard() {
                   </span>
                 </div>
 
-                {/* Chart Area */}
+                
                 <div className="flex-1 h-40 border-b border-l border-slate-200/75 relative">
                   
-                  {/* Tooltip */}
+                  
                   {activeIndex !== null && chartData.points[activeIndex] && (
                     (() => {
                       const pt = chartData.points[activeIndex]
@@ -727,7 +727,7 @@ export default function AdminDashboard() {
                       </linearGradient>
                     </defs>
 
-                    {/* Horizontal Grid Lines */}
+                    
                     <line x1="0" y1="10" x2="400" y2="10" stroke="#f1f5f9" strokeWidth="1" />
                     <line x1="0" y1="32.5" x2="400" y2="32.5" stroke="#f1f5f9" strokeWidth="1" />
                     <line x1="0" y1="55" x2="400" y2="55" stroke="#f1f5f9" strokeWidth="1" />
@@ -740,16 +740,16 @@ export default function AdminDashboard() {
                       <path fill="none" stroke="#3bc0f0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" d={chartData.strokePath} className="transition-all duration-300" />
                     )}
 
-                    {/* Small dots for all points */}
+                    
                     {chartData.points.length > 0 && chartData.points.map((pt, i) => {
                       const isHoveredOrMax = i === activeIndex
-                      if (isHoveredOrMax) return null // Draw large active dot separately below
+                      if (isHoveredOrMax) return null 
                       return (
                         <circle key={i} cx={pt.x} cy={pt.y} r="2" className="fill-slate-200" />
                       )
                     })}
 
-                    {/* Large active dot */}
+                    
                     {activeIndex !== null && chartData.points[activeIndex] && (
                       <g>
                         <circle 
@@ -770,10 +770,10 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* X-Axis Labels */}
+              
               <div className="flex justify-between text-[9px] text-slate-400 font-extrabold font-mono mt-3 pl-[60px] pr-1">
                 {chartData.labels.map((lbl, idx) => {
-                  // If 24 hours, only show labels at intervals to avoid overlap
+                  
                   if (chartData.labels.length === 24) {
                     if (idx % 3 !== 0 && idx !== 23) return <span key={lbl} className="w-0 overflow-visible invisible" />
                   }
@@ -786,7 +786,7 @@ export default function AdminDashboard() {
 
       </div>
 
-      {/* Pendapatan per Cabang Toko */}
+      
       <div className="rounded-2xl border border-slate-200/70 bg-white shadow-3xs flex flex-col overflow-hidden">
         <div className="border-b border-slate-100 p-5 bg-slate-50/50 flex items-center justify-between">
           <div>

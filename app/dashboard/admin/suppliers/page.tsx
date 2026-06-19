@@ -681,7 +681,7 @@ export default function SupplierPage() {
         >
           <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200/80 animate-in slide-in-from-bottom-3 duration-250 flex flex-col max-h-[85vh]">
             
-            {/* Header */}
+            
             <div className="p-6 pb-0 flex items-start justify-between shrink-0">
               <div>
                 <h3 className="text-base font-black text-slate-950">
@@ -706,10 +706,10 @@ export default function SupplierPage() {
 
             <div className="h-px bg-slate-100 my-4 mx-6 shrink-0" />
 
-            {/* Content */}
+            
             <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-5">
               
-              {/* Progress and status name */}
+              
               <div className="space-y-2">
                 <div className="flex justify-between text-xs font-bold text-slate-700">
                   <span>Progres</span>
@@ -718,7 +718,7 @@ export default function SupplierPage() {
                   </span>
                 </div>
                 
-                {/* Progress bar container */}
+                
                 <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
                   <div 
                     className="h-full bg-indigo-600 rounded-full transition-all duration-300 ease-out"
@@ -733,7 +733,7 @@ export default function SupplierPage() {
                 )}
               </div>
 
-              {/* Statistics Grid */}
+              
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-emerald-50/50 border border-emerald-200/50 rounded-xl p-3 flex items-center gap-3">
                   <div className="h-8 w-8 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600 shrink-0">
@@ -756,7 +756,7 @@ export default function SupplierPage() {
                 </div>
               </div>
 
-              {/* Error list (if any) */}
+              
               {importStatus.errors.length > 0 && (
                 <div className="space-y-2">
                   <label className="text-[9px] font-extrabold uppercase tracking-widest text-rose-600 block">Daftar Kesalahan ({importStatus.errors.length})</label>
@@ -773,7 +773,7 @@ export default function SupplierPage() {
 
             </div>
 
-            {/* Footer */}
+            
             {importStatus.isFinished && (
               <div className="p-6 border-t border-slate-100 bg-slate-50/50 shrink-0 flex justify-end">
                 <button 

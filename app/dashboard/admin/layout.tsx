@@ -43,10 +43,10 @@ function AdminLayoutContent({
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false) // Desktop collapse
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false) 
   const [user, setUser] = useState<{ name: string; type: string } | null>(null)
 
-  // Submenu states
+  
   const [isLaporanOpen, setIsLaporanOpen] = useState(false)
   const [isInventoriOpen, setIsInventoriOpen] = useState(false)
   const [isPembelianOpen, setIsPembelianOpen] = useState(false)
@@ -120,7 +120,7 @@ function AdminLayoutContent({
     }
   }
 
-  // Helper to determine breadcrumb title
+  
   const getBreadcrumbs = () => {
     const parts = []
     if (pathname === '/dashboard/admin') {
@@ -198,7 +198,7 @@ function AdminLayoutContent({
   return (
     <div className="flex min-h-screen bg-[#f4f6f9] text-slate-800 antialiased font-sans">
       
-      {/* Mobile Sidebar Overlay */}
+      
       {isSidebarOpen && (
         <div 
           className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-xs md:hidden"
@@ -206,7 +206,7 @@ function AdminLayoutContent({
         />
       )}
 
-      {/* Sidebar navigation */}
+      
       <aside className={`fixed inset-y-0 left-0 z-50 flex h-full flex-col bg-[#1a202c] justify-between transition-all duration-300 md:sticky md:top-0 md:h-screen md:translate-x-0 ${
         isSidebarCollapsed ? 'w-20 px-2' : 'w-64 px-4'
       } ${
@@ -215,7 +215,7 @@ function AdminLayoutContent({
         
         <div className="flex flex-col flex-1 overflow-y-auto pr-0.5 scrollbar-thin">
           
-          {/* Sidebar Header Brand */}
+          
           <div className={`mb-6 flex items-center justify-between ${isSidebarCollapsed ? 'px-2 justify-center' : 'px-3'}`}>
             <div className="flex items-center gap-2">
               {!isSidebarCollapsed && (
@@ -232,7 +232,7 @@ function AdminLayoutContent({
               )}
             </div>
             
-            {/* Mobile close button */}
+            
             <button 
               onClick={() => setIsSidebarOpen(false)}
               className="rounded-lg p-1 text-slate-400 hover:bg-[#2b3546] hover:text-white md:hidden"
@@ -241,10 +241,10 @@ function AdminLayoutContent({
             </button>
           </div>
 
-          {/* Menus */}
+          
           <div className="space-y-4">
             
-            {/* Dashboard Overview */}
+            
             <div>
               <Link
                 href="/dashboard/admin"
@@ -260,7 +260,7 @@ function AdminLayoutContent({
               </Link>
             </div>
 
-            {/* Laporan Submenu */}
+            
             <div className="space-y-1">
               <button
                 onClick={() => setIsLaporanOpen(!isLaporanOpen)}
@@ -317,7 +317,7 @@ function AdminLayoutContent({
               )}
             </div>
 
-            {/* PRODUK Section */}
+            
             <div>
               {!isSidebarCollapsed ? (
                 <div className="mb-2 px-3 text-[9px] font-extrabold uppercase tracking-wider text-slate-500">
@@ -328,7 +328,7 @@ function AdminLayoutContent({
               )}
               
               <div className="space-y-1">
-                {/* Catalog Produk */}
+                
                 <Link
                   href="/dashboard/admin/products"
                   className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200 ${
@@ -342,7 +342,7 @@ function AdminLayoutContent({
                   {!isSidebarCollapsed && <span>Daftar Produk</span>}
                 </Link>
 
-                {/* Kategori */}
+                
                 <Link
                   href="/dashboard/admin/categories"
                   className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200 ${
@@ -356,7 +356,7 @@ function AdminLayoutContent({
                   {!isSidebarCollapsed && <span>Kategori</span>}
                 </Link>
 
-                {/* Diskon */}
+                
                 <Link
                   href="/dashboard/admin/discounts"
                   className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200 ${
@@ -370,7 +370,7 @@ function AdminLayoutContent({
                   {!isSidebarCollapsed && <span>Diskon & Promo</span>}
                 </Link>
 
-                {/* Cetak Barcode */}
+                
                 <Link
                   href="/dashboard/admin/barcode"
                   className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200 ${
@@ -384,7 +384,7 @@ function AdminLayoutContent({
                   {!isSidebarCollapsed && <span>Cetak Barcode</span>}
                 </Link>
 
-                {/* Inventori Dropdown */}
+                
                 <div className="space-y-1">
                   <button
                     onClick={() => setIsInventoriOpen(!isInventoriOpen)}
@@ -461,7 +461,7 @@ function AdminLayoutContent({
                   )}
                 </div>
 
-                {/* Pembelian Dropdown */}
+                
                 <div className="space-y-1">
                   <button
                     onClick={() => setIsPembelianOpen(!isPembelianOpen)}
@@ -537,7 +537,7 @@ function AdminLayoutContent({
               </div>
             </div>
 
-            {/* BISNIS Section */}
+            
             <div>
               {!isSidebarCollapsed ? (
                 <div className="mb-2 px-3 text-[9px] font-extrabold uppercase tracking-wider text-slate-500">
@@ -548,7 +548,7 @@ function AdminLayoutContent({
               )}
               
               <div className="space-y-1">
-                {/* Outlet */}
+                
                 <Link
                   href="/dashboard/admin/stores"
                   className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200 ${
@@ -562,7 +562,7 @@ function AdminLayoutContent({
                   {!isSidebarCollapsed && <span>Outlet</span>}
                 </Link>
 
-                {/* Karyawan */}
+                
                 <Link
                   href="/dashboard/admin/cashier"
                   className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200 ${
@@ -576,7 +576,7 @@ function AdminLayoutContent({
                   {!isSidebarCollapsed && <span>Karyawan</span>}
                 </Link>
 
-                {/* Gaji Staf */}
+                
                 <Link
                   href="/dashboard/admin/salaries"
                   className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200 ${
@@ -590,7 +590,7 @@ function AdminLayoutContent({
                   {!isSidebarCollapsed && <span>Gaji Staf</span>}
                 </Link>
 
-                {/* Pelanggan */}
+                
                 <Link
                   href="/dashboard/admin/customers"
                   className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200 ${
@@ -604,7 +604,7 @@ function AdminLayoutContent({
                   {!isSidebarCollapsed && <span>Pelanggan</span>}
                 </Link>
 
-                {/* Pengaturan Meja / Receipt design */}
+                
                 <Link
                   href="/dashboard/admin/receipt-design"
                   className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200 ${
@@ -623,7 +623,7 @@ function AdminLayoutContent({
           </div>
         </div>
 
-        {/* User profile & Logout footer */}
+        
         <div className="pt-4 border-t border-slate-700/60 space-y-3 shrink-0">
           {!isSidebarCollapsed && user && (
             <div className="flex items-center gap-3 px-2 py-1">
@@ -657,14 +657,14 @@ function AdminLayoutContent({
 
       </aside>
 
-      {/* Main Frame content */}
+      
       <div className="flex-1 flex flex-col min-w-0">
         
-        {/* Top Header Navigation */}
+        
         <header className="flex h-14 items-center bg-white px-5 border-b border-slate-200/80 justify-between sticky top-0 z-35 shadow-3xs flex-shrink-0">
           
           <div className="flex items-center gap-3">
-            {/* Sidebar toggle button (Mobile) */}
+            
             <button
               onClick={() => setIsSidebarOpen(true)}
               className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 md:hidden"
@@ -672,7 +672,7 @@ function AdminLayoutContent({
               <Menu size={20} />
             </button>
 
-            {/* Sidebar toggle button (Desktop collapse) */}
+            
             <button
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
               className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hidden md:block"
@@ -680,7 +680,7 @@ function AdminLayoutContent({
               <ChevronLeft size={18} className={`transition-transform duration-250 ${isSidebarCollapsed ? 'rotate-180' : ''}`} />
             </button>
 
-            {/* Star and BASIC premium tier badge */}
+            
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1 bg-amber-50 border border-amber-200/80 rounded-md px-1.5 py-0.5 text-amber-600 font-extrabold text-[10px] uppercase shadow-3xs select-none">
                 <Star size={11} className="fill-amber-500 stroke-amber-500" />
@@ -690,7 +690,7 @@ function AdminLayoutContent({
 
             <div className="h-4 w-px bg-slate-200 hidden md:block" />
 
-            {/* Breadcrumbs */}
+            
             <div className="hidden sm:block">
               {getBreadcrumbs()}
             </div>
@@ -718,7 +718,7 @@ function AdminLayoutContent({
 
         </header>
 
-        {/* Main Content Area */}
+        
         <main className="flex-1 p-5 md:p-8 overflow-y-auto">
           <div className="mx-auto w-full max-w-7xl">
             {children}

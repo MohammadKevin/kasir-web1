@@ -61,26 +61,26 @@ export default function SalariesPage() {
   const [selectedStoreId, setSelectedStoreId] = useState('')
   const [selectedCashierId, setSelectedCashierId] = useState('')
   
-  // Date range defaults to first day of current month to today
+  
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
 
-  // Configurations
+  
   const [hourlyWage, setHourlyWage] = useState<number>(15000)
   const [commissionRate, setCommissionRate] = useState<number>(1)
   const [transactionBonus, setTransactionBonus] = useState<number>(1000)
 
-  // Loading States
+  
   const [loadingStores, setLoadingStores] = useState(true)
   const [loadingData, setLoadingData] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Raw Data lists
+  
   const [allAttendances, setAllAttendances] = useState<AttendanceType[]>([])
   const [allTransactions, setAllTransactions] = useState<TransactionType[]>([])
 
   useEffect(() => {
-    // Initialize default dates
+    
     const now = new Date()
     const year = now.getFullYear()
     const month = String(now.getMonth() + 1).padStart(2, '0')
@@ -124,18 +124,18 @@ export default function SalariesPage() {
       const token = localStorage.getItem('token')
       const headers = { Authorization: `Bearer ${token}` }
 
-      // 1. Fetch cashiers for the store
+      
       const cashiersRes = await api.get(`/cashier/store/${storeId}`, { headers })
       setCashiers(cashiersRes.data || [])
       if (cashiersRes.data?.length > 0) {
         setSelectedCashierId(cashiersRes.data[0].id)
       }
 
-      // 2. Fetch all attendance logs for the store
+      
       const attendanceRes = await api.get(`/attendance/store/${storeId}`, { headers })
       setAllAttendances(attendanceRes.data || [])
 
-      // 3. Fetch all transactions for the store
+      
       const transactionsRes = await api.get(`/transactions/store/${storeId}`, { headers })
       setAllTransactions(transactionsRes.data || [])
 
@@ -147,7 +147,7 @@ export default function SalariesPage() {
     }
   }
 
-  // Filter and compute attendance data for the selected cashier & date range
+  
   const filteredAttendances = useMemo(() => {
     if (!selectedCashierId || !startDate || !endDate) return []
     return allAttendances.filter(att => {
@@ -186,7 +186,7 @@ export default function SalariesPage() {
     }
   }, [filteredAttendances])
 
-  // Filter and compute transactions data for the selected cashier & date range
+  
   const filteredTransactions = useMemo(() => {
     if (!selectedCashierId || !startDate || !endDate) return []
     return allTransactions.filter(trx => {
@@ -205,7 +205,7 @@ export default function SalariesPage() {
     }
   }, [filteredTransactions])
 
-  // Salary breakdown calculations
+  
   const salaryBreakdown = useMemo(() => {
     const baseSalary = Math.round(attendanceMetrics.totalHours * hourlyWage)
     const salesCommission = Math.round(transactionMetrics.totalSales * (commissionRate / 100))
@@ -220,7 +220,7 @@ export default function SalariesPage() {
     }
   }, [attendanceMetrics, transactionMetrics, hourlyWage, commissionRate, transactionBonus])
 
-  // Save the salary payout as an operational expense
+  
   async function handleRecordExpense() {
     if (salaryBreakdown.grandTotal <= 0) {
       alert('Total nominal gaji yang dihitung bernilai Rp 0 atau kurang. Tidak dapat menyimpan.')
@@ -287,7 +287,7 @@ export default function SalariesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Title Header */}
+      
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200/80 pb-4">
         <div className="flex items-start gap-3">
           <div className="h-10 w-10 bg-indigo-50 border border-indigo-100/55 rounded-xl flex items-center justify-center text-indigo-600 shrink-0">
@@ -302,11 +302,11 @@ export default function SalariesPage() {
         </div>
       </div>
 
-      {/* Select Filters Panel */}
+      
       <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-3xs space-y-4">
         <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider">Parameter Audit Kinerja</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          {/* Store select */}
+          
           <div className="space-y-1.5">
             <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Cabang Toko / Outlet</label>
             <div className="relative">
@@ -321,7 +321,7 @@ export default function SalariesPage() {
             </div>
           </div>
 
-          {/* Cashier select */}
+          
           <div className="space-y-1.5">
             <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Pilih Staf Kasir</label>
             <div className="relative">
@@ -341,7 +341,7 @@ export default function SalariesPage() {
             </div>
           </div>
 
-          {/* Start date */}
+          
           <div className="space-y-1.5">
             <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Tanggal Mulai</label>
             <input
@@ -352,7 +352,7 @@ export default function SalariesPage() {
             />
           </div>
 
-          {/* End date */}
+          
           <div className="space-y-1.5">
             <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Tanggal Selesai</label>
             <input
@@ -382,17 +382,17 @@ export default function SalariesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 items-start">
-          {/* Main workspace */}
+          
           <div className="space-y-6">
             
-            {/* Rates Configuration Section */}
+            
             <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-3xs space-y-4">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
                 <Calculator size={15} className="text-indigo-600" />
                 <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider">Pengaturan Tarif Kompensasi</h2>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                {/* Hourly rate input */}
+                
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 flex items-center gap-1">
                     <Clock size={11} className="text-slate-400" />
@@ -407,7 +407,7 @@ export default function SalariesPage() {
                   />
                 </div>
 
-                {/* Commission rate input */}
+                
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 flex items-center gap-1">
                     <Percent size={11} className="text-slate-400" />
@@ -423,7 +423,7 @@ export default function SalariesPage() {
                   />
                 </div>
 
-                {/* Bonus rate input */}
+                
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 flex items-center gap-1">
                     <Banknote size={11} className="text-slate-400" />
@@ -440,10 +440,10 @@ export default function SalariesPage() {
               </div>
             </div>
 
-            {/* Performance Results details */}
+            
             <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-3xs space-y-6">
               
-              {/* Attendances Summary */}
+              
               <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                   <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
@@ -499,7 +499,7 @@ export default function SalariesPage() {
                 </div>
               </div>
 
-              {/* Transactions Summary */}
+              
               <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                   <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
@@ -545,7 +545,7 @@ export default function SalariesPage() {
 
           </div>
 
-          {/* Sidebar calculations & Record payout card */}
+          
           <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-3xs space-y-6 relative overflow-hidden">
             <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-blue-600 to-indigo-600" />
             
@@ -561,10 +561,10 @@ export default function SalariesPage() {
               </p>
             </div>
 
-            {/* Calculations metrics breakdown */}
+            
             <div className="space-y-3.5">
               
-              {/* Base salary element */}
+              
               <div className="flex justify-between items-start text-xs">
                 <div>
                   <p className="font-extrabold text-slate-800">Gaji Pokok</p>
@@ -577,7 +577,7 @@ export default function SalariesPage() {
                 </span>
               </div>
 
-              {/* Commission element */}
+              
               <div className="flex justify-between items-start text-xs">
                 <div>
                   <p className="font-extrabold text-slate-800">Komisi Penjualan</p>
@@ -590,7 +590,7 @@ export default function SalariesPage() {
                 </span>
               </div>
 
-              {/* Transaction bonus element */}
+              
               <div className="flex justify-between items-start text-xs">
                 <div>
                   <p className="font-extrabold text-slate-800">Insentif Transaksi</p>
@@ -603,10 +603,10 @@ export default function SalariesPage() {
                 </span>
               </div>
 
-              {/* Divider */}
+              
               <div className="h-px bg-slate-100 my-2" />
 
-              {/* Grand total */}
+              
               <div className="flex justify-between items-center bg-indigo-50/50 border border-indigo-100/50 p-4.5 rounded-2xl">
                 <div>
                   <p className="text-[9px] font-black uppercase text-indigo-500 tracking-wider">Total Dibayarkan</p>
@@ -617,7 +617,7 @@ export default function SalariesPage() {
               </div>
             </div>
 
-            {/* Record as expense */}
+            
             <button
               onClick={handleRecordExpense}
               disabled={isSubmitting || salaryBreakdown.grandTotal <= 0}
