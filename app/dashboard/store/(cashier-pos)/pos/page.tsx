@@ -26,6 +26,7 @@ import {
   Tag
 } from 'lucide-react'
 import { api } from '@/lib/api'
+import { toast } from 'sonner'
 
 type Product = {
   categoryId: string
@@ -233,16 +234,21 @@ export default function PosPage() {
 
   async function checkStoreOpenStatus() {
     try {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        return
+      }
       const token = localStorage.getItem('token')
       const headers = { Authorization: `Bearer ${token}` }
       const res = await api.get('/attendance/store/status', { headers })
-      if (!res.data.isOpen) {
+      if (res.data && res.data.isOpen === false) {
         alert('Akses POS Terkunci! Operasional Toko belum dibuka.')
         window.location.href = '/dashboard/store'
       }
-    } catch (err) {
-      console.error(err)
-      window.location.href = '/dashboard/store'
+    } catch (err: any) {
+      console.warn('Gagal mengecek status operasional toko:', err?.message || err)
+      if (err.response && err.response.status === 403) {
+        window.location.href = '/dashboard/store'
+      }
     }
   }
 
@@ -302,16 +308,129 @@ export default function PosPage() {
         api.get(`/stores/${storeId}`, { headers }),
         api.get(`/tables/store/${storeId}`, { headers }).catch(() => ({ data: [] }))
       ])
-      setProducts(productsRes.data || [])
-      setCategories(categoriesRes.data || [])
-      setCurrentStore(storeRes.data || null)
-      setTables(tablesRes.data || [])
-    } catch (err) {
-      console.error('Gagal memuat data POS:', err)
+
+      const productsData = productsRes.data || []
+      const categoriesData = categoriesRes.data || []
+      const storeData = storeRes.data || null
+      const tablesData = tablesRes.data || []
+
+      setProducts(productsData)
+      setCategories(categoriesData)
+      setCurrentStore(storeData)
+      setTables(tablesData)
+
+      localStorage.setItem('cached_products', JSON.stringify(productsData))
+      localStorage.setItem('cached_categories', JSON.stringify(categoriesData))
+      localStorage.setItem('cached_store', JSON.stringify(storeData))
+      localStorage.setItem('cached_tables', JSON.stringify(tablesData))
+    } catch (err: any) {
+      console.warn('Gagal memuat data POS:', err?.message || err)
+
+      const cachedProducts = localStorage.getItem('cached_products')
+      const cachedCategories = localStorage.getItem('cached_categories')
+      const cachedStore = localStorage.getItem('cached_store')
+      const cachedTables = localStorage.getItem('cached_tables')
+
+      if (cachedProducts || cachedCategories || cachedStore || cachedTables) {
+        if (cachedProducts) setProducts(JSON.parse(cachedProducts))
+        if (cachedCategories) setCategories(JSON.parse(cachedCategories))
+        if (cachedStore) setCurrentStore(JSON.parse(cachedStore))
+        if (cachedTables) setTables(JSON.parse(cachedTables))
+        
+        toast.warning('Gagal terhubung ke server. Menggunakan data cache lokal.', {
+          description: 'Anda sedang berada dalam Mode Offline.',
+          duration: 5000,
+        })
+      } else {
+        toast.error('Gagal memuat data POS dan tidak ada cache lokal tersedia.', {
+          description: 'Periksa koneksi internet Anda.',
+          duration: 5000,
+        })
+      }
     } finally {
       setLoading(false)
     }
   }
+
+  const isSyncingRef = useRef(false)
+
+  async function syncOfflineTransactions() {
+    if (isSyncingRef.current) return
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
+
+    const offlineTxStr = localStorage.getItem('offlineTransactions')
+    if (!offlineTxStr) return
+    
+    let txs = []
+    try {
+      txs = JSON.parse(offlineTxStr)
+      if (!Array.isArray(txs) || txs.length === 0) return
+    } catch {
+      return
+    }
+
+    isSyncingRef.current = true
+    
+    toast.info(`Menyinkronkan ${txs.length} transaksi offline...`, {
+      id: 'sync-status',
+      duration: 0
+    })
+
+    const token = localStorage.getItem('token')
+    const headers = { Authorization: `Bearer ${token}` }
+    const successfulInvoices: string[] = []
+    let failedCount = 0
+
+    for (const tx of txs) {
+      try {
+        await api.post('/transactions', tx.payload, { headers })
+        successfulInvoices.push(tx.id)
+      } catch (err: any) {
+        console.warn(`Gagal sinkronisasi transaksi ${tx.id}:`, err?.message || err)
+        failedCount++
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          toast.error('Gagal sinkronisasi: Sesi login berakhir. Silakan login kembali.', {
+            id: 'sync-status',
+            duration: 5000
+          })
+          isSyncingRef.current = false
+          return
+        }
+      }
+    }
+
+    const updatedTxs = txs.filter(tx => !successfulInvoices.includes(tx.id))
+    localStorage.setItem('offlineTransactions', JSON.stringify(updatedTxs))
+
+    if (successfulInvoices.length > 0) {
+      toast.success(`Berhasil menyinkronkan ${successfulInvoices.length} transaksi ke server!`, {
+        id: 'sync-status',
+        description: failedCount > 0 ? `${failedCount} transaksi masih tertunda.` : undefined,
+        duration: 5000
+      })
+      loadData()
+    } else {
+      toast.dismiss('sync-status')
+    }
+    
+    isSyncingRef.current = false
+  }
+
+  useEffect(() => {
+    syncOfflineTransactions()
+
+    const handleOnlineEvent = () => {
+      syncOfflineTransactions()
+    }
+    window.addEventListener('network-online', handleOnlineEvent)
+
+    const interval = setInterval(syncOfflineTransactions, 20000)
+
+    return () => {
+      window.removeEventListener('network-online', handleOnlineEvent)
+      clearInterval(interval)
+    }
+  }, [])
 
   async function searchCustomerByPhone(phone: string) {
     try {
@@ -626,38 +745,99 @@ export default function PosPage() {
     if (!finalStoreId || !finalCashierId)
       return alert('Autentikasi gagal. Silakan login kembali.')
 
-    try {
-      setSubmitting(true)
-      const originalSubtotal = cart.reduce((sum, item) => sum + (item.sellingPrice * item.qty), 0)
-      const itemDiscountsSum = cart.reduce((sum, item) => sum + ((getProductMasterDiscount(item) + item.cashierDiscount) * item.qty), 0)
-      const computedTotalDiscount = itemDiscountsSum + globalCalculatedDiscount
+    const originalSubtotal = cart.reduce((sum, item) => sum + (item.sellingPrice * item.qty), 0)
+    const itemDiscountsSum = cart.reduce((sum, item) => sum + ((getProductMasterDiscount(item) + item.cashierDiscount) * item.qty), 0)
+    const computedTotalDiscount = itemDiscountsSum + globalCalculatedDiscount
 
-      const payload = {
-        storeId: String(finalStoreId),
-        cashierId: String(finalCashierId),
-        paymentMethod: payment,
-        paidAmount: payment === 'CASH' ? Math.round(Number(paid)) : (payment === 'SPLIT' ? Math.round(Object.values(splitAmounts).reduce((a, b) => a + b, 0)) : Math.round(finalTotal)),
+    const payload = {
+      storeId: String(finalStoreId),
+      cashierId: String(finalCashierId),
+      paymentMethod: payment,
+      paidAmount: payment === 'CASH' ? Math.round(Number(paid)) : (payment === 'SPLIT' ? Math.round(Object.values(splitAmounts).reduce((a, b) => a + b, 0)) : Math.round(finalTotal)),
+      subtotal: Math.round(originalSubtotal),
+      totalDiscount: Math.round(computedTotalDiscount),
+      total: Math.round(finalTotal),
+      phone: isCustomerMode && customerPhone.trim() ? customerPhone.trim() : undefined,
+      customerName: isCustomerMode && customerName.trim() ? customerName.trim() : undefined,
+      saveCustomer: isCustomerMode ? saveCustomer : false,
+      orderType,
+      tableId: orderType === 'DINEIN' ? selectedTableId : undefined,
+      taxAmount: Math.round(ppnAmount),
+      serviceAmount: Math.round(serviceAmount),
+      splitPayments: payment === 'SPLIT' ? splitAmounts : undefined,
+      pointsRedeemed: isRedeemingPoints ? pointsToRedeem : undefined,
+      items: cart.map(x => {
+        return {
+          productId: x.id,
+          quantity: Math.round(Number(x.qty)),
+          cashierDiscount: Math.round(Number(x.cashierDiscount))
+        }
+      })
+    }
+
+    const isOffline = typeof navigator !== 'undefined' ? !navigator.onLine : false
+
+    const processOfflineCheckout = () => {
+      const timestamp = Date.now()
+      const invoice = `INV-OFFLINE-${timestamp}`
+      
+      const mockReceipt = {
+        invoice,
+        createdAt: new Date().toISOString(),
+        store: currentStore?.name || 'Outlet Utama',
+        customer: isCustomerMode && customerName.trim() ? customerName.trim() : '-',
+        cashier: cashier?.name || 'Kasir',
         subtotal: Math.round(originalSubtotal),
-        totalDiscount: Math.round(computedTotalDiscount),
-        total: Math.round(finalTotal),
-        phone: isCustomerMode && customerPhone.trim() ? customerPhone.trim() : undefined,
-        customerName: isCustomerMode && customerName.trim() ? customerName.trim() : undefined,
-        saveCustomer: isCustomerMode ? saveCustomer : false,
-        orderType,
-        tableId: orderType === 'DINEIN' ? selectedTableId : undefined,
-        taxAmount: Math.round(ppnAmount),
+        discount: Math.round(computedTotalDiscount),
         serviceAmount: Math.round(serviceAmount),
+        taxAmount: Math.round(ppnAmount),
+        total: Math.round(finalTotal),
+        paidAmount: payload.paidAmount,
+        changeAmount: Math.max(0, payload.paidAmount - Math.round(finalTotal)),
+        pointsEarned: 0,
+        pointsRedeemed: isRedeemingPoints ? pointsToRedeem : 0,
         splitPayments: payment === 'SPLIT' ? splitAmounts : undefined,
-        pointsRedeemed: isRedeemingPoints ? pointsToRedeem : undefined,
-        items: cart.map(x => {
-          return {
-            productId: x.id,
-            quantity: Math.round(Number(x.qty)),
-            cashierDiscount: Math.round(Number(x.cashierDiscount))
-          }
-        })
+        items: cart.map(x => ({
+          product: x.name,
+          quantity: Math.round(Number(x.qty)),
+          originalPrice: x.sellingPrice,
+          discount: getProductMasterDiscount(x) + x.cashierDiscount
+        }))
       }
 
+      const existingTxStr = localStorage.getItem('offlineTransactions') || '[]'
+      let existingTx = []
+      try {
+        existingTx = JSON.parse(existingTxStr)
+        if (!Array.isArray(existingTx)) existingTx = []
+      } catch {
+        existingTx = []
+      }
+      
+      existingTx.push({
+        id: invoice,
+        payload,
+        receipt: mockReceipt
+      })
+      localStorage.setItem('offlineTransactions', JSON.stringify(existingTx))
+
+      setReceiptData(mockReceipt)
+      setIsOpenReceipt(true)
+      autoPrintReceipt(mockReceipt, payment)
+
+      toast.warning('Transaksi Berhasil Disimpan Offline', {
+        description: `Invoice: ${invoice}. Data akan disinkronisasikan otomatis saat jaringan aktif.`,
+        duration: 5000
+      })
+    }
+
+    if (isOffline) {
+      processOfflineCheckout()
+      return
+    }
+
+    try {
+      setSubmitting(true)
       const res = await api.post('/transactions', payload, {
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -672,7 +852,13 @@ export default function PosPage() {
       autoPrintReceipt(data, payment)
 
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Transaksi gagal')
+      console.warn('Checkout error:', err?.message || err)
+      const isNetworkError = !err.response || err.message === 'Network Error' || err.code === 'ERR_NETWORK'
+      if (isNetworkError) {
+        processOfflineCheckout()
+      } else {
+        alert(err.response?.data?.message || 'Transaksi gagal')
+      }
     } finally {
       setSubmitting(false)
     }

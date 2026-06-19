@@ -24,6 +24,9 @@ export default function PosLayout({
   const [openingCashInput, setOpeningCashInput] = useState<number | ''>('')
   const [isOpeningShift, setIsOpeningShift] = useState(false)
 
+  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true)
+  const [pendingCount, setPendingCount] = useState(0)
+
   useEffect(() => {
     const hasCookieToken = typeof document !== 'undefined' ? document.cookie.split('; ').some((row) => row.startsWith('token=')) : false
     const isCashierActive = localStorage.getItem('cashierActive') === 'true'
@@ -70,7 +73,12 @@ export default function PosLayout({
       })
       .catch((err) => {
         console.error('Gagal mengecek status shift:', err)
-        setIsOpenOpenShiftModal(true)
+        const currentShiftId = localStorage.getItem('currentShiftId')
+        if (currentShiftId) {
+          setIsOpenOpenShiftModal(false)
+        } else {
+          setIsOpenOpenShiftModal(true)
+        }
       })
       .finally(() => {
         setCheckingShift(false)
@@ -79,6 +87,42 @@ export default function PosLayout({
       setCheckingShift(false)
     }
   }, [router])
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true)
+      window.dispatchEvent(new Event('network-online'))
+    }
+    const handleOffline = () => {
+      setIsOnline(false)
+    }
+
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
+    const checkPending = () => {
+      const offlineTx = localStorage.getItem('offlineTransactions')
+      if (offlineTx) {
+        try {
+          const txs = JSON.parse(offlineTx)
+          setPendingCount(Array.isArray(txs) ? txs.length : 0)
+        } catch (e) {
+          setPendingCount(0)
+        }
+      } else {
+        setPendingCount(0)
+      }
+    }
+
+    checkPending()
+    const interval = setInterval(checkPending, 3000)
+
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+      clearInterval(interval)
+    }
+  }, [])
 
   function handleExitPos() {
     if (confirm('Keluar dari layar kasir? Sesi shift Anda akan tetap aktif di background.')) {
@@ -195,6 +239,32 @@ export default function PosLayout({
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Status Koneksi */}
+          <div className="flex items-center gap-2 mr-2">
+            {isOnline ? (
+              <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-xl text-xs font-bold text-emerald-600">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="hidden sm:inline">Online</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-xl text-xs font-bold text-rose-600 animate-pulse">
+                <span className="h-2 w-2 rounded-full bg-rose-500" />
+                <span>Offline</span>
+                {pendingCount > 0 && (
+                  <span className="bg-rose-600 text-white text-[9px] px-1.5 py-0.5 rounded-full leading-none font-black animate-bounce">
+                    {pendingCount}
+                  </span>
+                )}
+              </div>
+            )}
+            {isOnline && pendingCount > 0 && (
+              <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-xl text-xs font-bold text-amber-600 animate-pulse">
+                <span className="h-2 w-2 rounded-full bg-amber-500" />
+                <span>Sinkronisasi ({pendingCount})</span>
+              </div>
+            )}
+          </div>
+
           <div className="flex items-center gap-2 border-r border-slate-200 pr-4">
             <div className="h-7 w-7 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 font-bold text-[10px]">
               {cashier?.name?.charAt(0).toUpperCase()}
