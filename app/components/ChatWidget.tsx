@@ -9,9 +9,8 @@ import {
   Send,
   Loader2,
   Building2,
-  ShieldAlert,
-  User,
-  ShieldCheck
+  ShieldCheck,
+  Trash2
 } from 'lucide-react'
 
 type Contact = {
@@ -187,6 +186,20 @@ export default function ChatWidget() {
     }
   }
 
+  async function handleDeleteMessage(id: string) {
+    if (!confirm('Apakah Anda yakin ingin menghapus pesan ini?')) return
+
+    try {
+      const token = localStorage.getItem('token')
+      const headers = { Authorization: `Bearer ${token}` }
+      await api.delete(`/chat/message/${id}`, { headers })
+      setMessages(prev => prev.filter(msg => msg.id !== id))
+    } catch (err) {
+      console.error('Gagal menghapus pesan:', err)
+      alert('Gagal menghapus pesan.')
+    }
+  }
+
   function formatTime(dateStr: string) {
     try {
       const date = new Date(dateStr)
@@ -274,7 +287,7 @@ export default function ChatWidget() {
                     return (
                       <div
                         key={msg.id}
-                        className={`flex flex-col max-w-[80%] ${
+                        className={`flex flex-col max-w-[85%] ${
                           isMine ? 'ml-auto items-end' : 'mr-auto items-start'
                         }`}
                       >
@@ -284,14 +297,25 @@ export default function ChatWidget() {
                             {msg.senderName}
                           </span>
                         )}
-                        <div
-                          className={`px-3 py-2 rounded-2xl text-[11.5px] font-semibold break-words leading-relaxed shadow-3xs ${
-                            isMine
-                              ? 'bg-indigo-600 text-white rounded-tr-none'
-                              : 'bg-white text-slate-800 border border-slate-200/70 rounded-tl-none'
-                          }`}
-                        >
-                          {msg.content}
+                        <div className="flex items-center gap-1.5 group max-w-full">
+                          {isMine && (
+                            <button
+                              onClick={() => handleDeleteMessage(msg.id)}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-slate-100 cursor-pointer"
+                              title="Hapus pesan"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                          <div
+                            className={`px-3 py-2 rounded-2xl text-[11.5px] font-semibold break-words leading-relaxed shadow-3xs ${
+                              isMine
+                                ? 'bg-indigo-600 text-white rounded-tr-none'
+                                : 'bg-white text-slate-800 border border-slate-200/70 rounded-tl-none'
+                            }`}
+                          >
+                            {msg.content}
+                          </div>
                         </div>
                         <span className="text-[8px] text-slate-350 font-mono mt-0.5 px-1">
                           {formatTime(msg.createdAt)}
