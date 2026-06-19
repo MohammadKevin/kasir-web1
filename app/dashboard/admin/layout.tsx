@@ -4,6 +4,8 @@ import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { api } from '@/lib/api'
+import NotificationDropdown from '@/app/components/NotificationDropdown'
+import ChatWidget from '@/app/components/ChatWidget'
 
 import {
   LayoutDashboard,
@@ -96,7 +98,8 @@ function AdminLayoutContent({
     if (
       pathname.includes('/suppliers') ||
       pathname.includes('/purchases') ||
-      pathname.includes('/expenses')
+      pathname.includes('/expenses') ||
+      pathname.includes('/shopping-list')
     ) {
       setIsPembelianOpen(true)
     }
@@ -153,6 +156,9 @@ function AdminLayoutContent({
     } else if (pathname.includes('/purchases')) {
       parts.push('Pembelian')
       parts.push('Purchase Order')
+    } else if (pathname.includes('/shopping-list')) {
+      parts.push('Pembelian')
+      parts.push('Daftar Belanja')
     } else if (pathname.includes('/expenses')) {
       parts.push('Pembelian')
       parts.push('Daftar Pengeluaran')
@@ -504,9 +510,16 @@ function AdminLayoutContent({
                       >
                         <span>Purchase Order</span>
                       </Link>
-                      <div className="px-3 py-1.5 text-[11px] font-bold text-slate-600 select-none">
-                        Daftar Belanja
-                      </div>
+                      <Link
+                        href="/dashboard/admin/shopping-list"
+                        className={`flex items-center gap-3 px-3 py-1.5 text-[11px] font-bold rounded-md transition-all ${
+                          pathname === '/dashboard/admin/shopping-list'
+                            ? 'text-sky-400 font-extrabold'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        <span>Daftar Belanja</span>
+                      </Link>
                       <Link
                         href="/dashboard/admin/expenses"
                         className={`flex items-center gap-3 px-3 py-1.5 text-[11px] font-bold rounded-md transition-all ${
@@ -671,7 +684,7 @@ function AdminLayoutContent({
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1 bg-amber-50 border border-amber-200/80 rounded-md px-1.5 py-0.5 text-amber-600 font-extrabold text-[10px] uppercase shadow-3xs select-none">
                 <Star size={11} className="fill-amber-500 stroke-amber-500" />
-                <span>BASIC</span>
+                <span>Executive</span>
               </div>
             </div>
 
@@ -684,10 +697,7 @@ function AdminLayoutContent({
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50 relative">
-              <Bell size={18} />
-              <span className="absolute top-1 right-1 h-1.5 w-1.5 bg-sky-500 rounded-full" />
-            </button>
+            <NotificationDropdown />
 
             <div className="h-5 w-px bg-slate-200" />
 
@@ -715,7 +725,7 @@ function AdminLayoutContent({
           </div>
         </main>
       </div>
-
+      <ChatWidget />
     </div>
   )
 }

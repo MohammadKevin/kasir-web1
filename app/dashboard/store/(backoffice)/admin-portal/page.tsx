@@ -75,6 +75,19 @@ export default function AdminPortalPage() {
       })
 
       if (data.success && data.cashier) {
+        // Save original cashier session if one exists and isn't already admin
+        const current = localStorage.getItem('cashier')
+        if (current) {
+          try {
+            const parsed = JSON.parse(current)
+            if (!(parsed.isStoreAdmin || (parsed.name && parsed.name.toLowerCase().includes('admin')))) {
+              localStorage.setItem('previousCashier', current)
+            }
+          } catch (e) {
+            console.error(e)
+          }
+        }
+
         // Save to localstorage and activate
         localStorage.setItem('cashier', JSON.stringify(data.cashier))
         localStorage.setItem('cashierActive', 'true')
@@ -92,10 +105,22 @@ export default function AdminPortalPage() {
     }
   }
 
+  function exitAdminStore() {
+    const prev = localStorage.getItem('previousCashier')
+    if (prev) {
+      localStorage.setItem('cashier', prev)
+      localStorage.removeItem('previousCashier')
+    } else {
+      localStorage.removeItem('cashier')
+      localStorage.removeItem('cashierActive')
+    }
+    window.location.href = '/dashboard/store'
+  }
+
   if (loading) {
     return (
       <div className="py-24 flex flex-col items-center justify-center gap-2">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-650" />
         <p className="text-xs font-bold text-slate-500">Memeriksa hak akses...</p>
       </div>
     )
@@ -104,7 +129,7 @@ export default function AdminPortalPage() {
   // Render Lock Screen if not Admin Store
   if (!isAdmin) {
     return (
-      <div className="max-w-md mx-auto py-12 px-4">
+      <div className="max-w-md mx-auto py-12 px-4 animate-in fade-in duration-200">
         <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6 relative overflow-hidden text-center">
           <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-amber-500 to-amber-600"></div>
           
@@ -154,7 +179,7 @@ export default function AdminPortalPage() {
               <button
                 type="submit"
                 disabled={verifying}
-                className="flex-2 rounded-xl bg-indigo-650 hover:bg-indigo-700 py-3 text-xs font-bold text-white transition-all shadow-md shadow-indigo-600/10 cursor-pointer active:scale-97 disabled:opacity-50 flex items-center justify-center gap-1.5"
+                className="flex-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 py-3 text-xs font-bold text-white transition-all shadow-md shadow-indigo-600/10 cursor-pointer active:scale-97 disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
                 {verifying ? (
                   <>
@@ -177,7 +202,7 @@ export default function AdminPortalPage() {
 
   // Render Portal Dashboard if Admin Store
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-200">
       
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
         <div className="flex items-center gap-3">
@@ -191,13 +216,22 @@ export default function AdminPortalPage() {
             </p>
           </div>
         </div>
-        <button
-          onClick={() => router.push('/dashboard/store/cashier')}
-          className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-4 py-2.5 text-xs font-bold text-slate-750 shadow-3xs transition-all active:scale-97 cursor-pointer"
-        >
-          <Wallet size={14} className="text-slate-500" />
-          <span>Buka Terminal Kasir</span>
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={exitAdminStore}
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 px-4 py-2.5 text-xs font-bold text-amber-700 shadow-3xs transition-all active:scale-97 cursor-pointer"
+          >
+            <ShieldCheck size={14} />
+            <span>Kembali ke Sesi Kasir</span>
+          </button>
+          <button
+            onClick={() => router.push('/dashboard/store/cashier')}
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-4 py-2.5 text-xs font-bold text-slate-750 shadow-3xs transition-all active:scale-97 cursor-pointer"
+          >
+            <Wallet size={14} className="text-slate-500" />
+            <span>Buka Terminal Kasir</span>
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

@@ -20,6 +20,8 @@ import {
   Package
 } from 'lucide-react'
 import { api } from '@/lib/api'
+import NotificationDropdown from '@/app/components/NotificationDropdown'
+import ChatWidget from '@/app/components/ChatWidget'
 
 const menus = [
   { name: 'Dashboard', path: '/dashboard/store', icon: LayoutDashboard },
@@ -28,7 +30,6 @@ const menus = [
   { name: 'Katalog Produk', path: '/dashboard/store/products', icon: Package },
   { name: 'Barcode SKU', path: '/dashboard/store/barcode', icon: Barcode },
   { name: 'Riwayat Shift', path: '/dashboard/store/shifts', icon: Clock3 },
-  { name: 'Presensi Staf', path: '/dashboard/store/attendance', icon: UserCheck },
 ]
 
 export default function StoreLayout({
@@ -140,6 +141,19 @@ export default function StoreLayout({
   }
 
 
+  function exitAdminStore() {
+    const prev = localStorage.getItem('previousCashier')
+    if (prev) {
+      localStorage.setItem('cashier', prev)
+      localStorage.removeItem('previousCashier')
+    } else {
+      localStorage.removeItem('cashier')
+      localStorage.removeItem('cashierActive')
+    }
+    window.location.href = '/dashboard/store'
+  }
+
+
   return (
     <div className="flex h-screen bg-slate-50 antialiased text-slate-800">
       
@@ -175,6 +189,8 @@ export default function StoreLayout({
               {menus
                 .filter((m) => m.path !== '/dashboard/store/kds' || hasTables)
                 .filter((m) => m.path !== '/dashboard/store/barcode' || isAdminKasir)
+                .filter((m) => m.path !== '/dashboard/store/products' || isAdminKasir)
+                .filter((m) => m.path !== '/dashboard/store/shifts' || isAdminKasir)
                 .map((m) => {
                   const Icon = m.icon
                   const isActive = pathname === m.path
@@ -211,6 +227,15 @@ export default function StoreLayout({
           </div>
 
           <div className="pt-4 border-t border-slate-100 space-y-3">
+            {isAdminKasir && (
+              <button
+                onClick={exitAdminStore}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 py-2.5 text-xs font-bold text-amber-700 transition-all hover:bg-amber-100 hover:text-amber-800 hover:border-amber-300 cursor-pointer active:scale-[0.98]"
+              >
+                <ShieldCheck size={14} />
+                <span>Exit Admin Store</span>
+              </button>
+            )}
             <button
               onClick={logout}
               className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-bold text-slate-500 transition-all hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 cursor-pointer active:scale-[0.98]"
@@ -227,7 +252,7 @@ export default function StoreLayout({
 
       {/* Main Container Viewport */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="h-16 bg-white border-b border-slate-200/80 px-6 flex items-center justify-between lg:justify-start flex-shrink-0">
+        <header className="h-16 bg-white border-b border-slate-200/80 px-6 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2">
             <button className="lg:hidden p-1 text-slate-600 rounded-lg hover:bg-slate-100" onClick={() => setSidebarOpen(true)}>
               <Menu size={20} />
@@ -236,9 +261,12 @@ export default function StoreLayout({
               {menus.find((x) => x.path === pathname)?.name || 'Panel Toko'}
             </h2>
           </div>
-          <span className="text-xs font-extrabold tracking-tight text-slate-900 lg:hidden block">
-            laila<span className="text-indigo-600">collections</span>
-          </span>
+          <div className="flex items-center gap-4">
+            <NotificationDropdown />
+            <span className="text-xs font-extrabold tracking-tight text-slate-900 hidden sm:block">
+              laila<span className="text-indigo-600">collections</span>
+            </span>
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto p-6">
@@ -247,7 +275,7 @@ export default function StoreLayout({
           </div>
         </main>
       </div>
-
+      <ChatWidget />
     </div>
   )
 }
