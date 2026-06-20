@@ -1515,7 +1515,7 @@ export default function PosPage() {
               
               <div className="bg-indigo-50/30 border border-indigo-100/50 rounded-xl p-3.5 mt-4 text-[10px] text-indigo-700 font-bold flex items-start gap-2 shrink-0">
                 <Sparkles size={14} className="shrink-0 mt-0.5" />
-                <span>Pastikan semua kuantitas barang sesuai sebelum menekan tombol Bayar. Gunakan tombol 'Kembali & Edit' jika ada revisi belanja.</span>
+                <span>Pastikan semua kuantitas barang sesuai sebelum menekan tombol Bayar. Gunakan tombol &quot;Kembali &amp; Edit&quot; jika ada revisi belanja.</span>
               </div>
             </div>
 

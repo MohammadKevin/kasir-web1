@@ -157,7 +157,7 @@ export default function AdminDashboard() {
       let totalTransactions = 0
       let totalRevenue = 0
       let allTransactions: Transaction[] = []
-      let storeStats: StoreStat[] = []
+      const storeStats: StoreStat[] = []
 
       await Promise.all(
         stores.map(async (store: StoreType) => {
