@@ -241,7 +241,7 @@ export default function PosPage() {
       const headers = { Authorization: `Bearer ${token}` }
       const res = await api.get('/attendance/store/status', { headers })
       if (res.data && res.data.isOpen === false) {
-        alert('Akses POS Terkunci! Operasional Toko belum dibuka.')
+        alert('Akses POS Terkunci! Operasional Toko belum dibuka,Silahkan buka operasional toko terlebih dahulu!')
         window.location.href = '/dashboard/store'
       }
     } catch (err: any) {
