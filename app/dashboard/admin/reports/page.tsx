@@ -34,6 +34,7 @@ type StoreType = {
 
 type ProfitData = {
   totalSales: number
+  totalDiscount: number
   totalExpense: number
   estimatedProfit: number
 }
@@ -51,7 +52,7 @@ function ReportPageContent() {
   const [loadingTable, setLoadingTable] = useState(true)
   const [downloading, setDownloading] = useState<string | null>(null)
 
-  const [profit, setProfit] = useState<ProfitData>({ totalSales: 0, totalExpense: 0, estimatedProfit: 0 })
+  const [profit, setProfit] = useState<ProfitData>({ totalSales: 0, totalDiscount: 0, totalExpense: 0, estimatedProfit: 0 })
   const [tableData, setTableData] = useState<any[]>([])
 
   const [startDate, setStartDate] = useState('')
@@ -486,6 +487,12 @@ function ReportPageContent() {
             <div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Omset Penjualan</p>
               <p className="text-base font-black text-slate-900 font-mono mt-0.5">Rp {(profit.totalSales ?? 0).toLocaleString('id-ID')}</p>
+              {profit.totalDiscount > 0 ? (
+                <div className="text-[9px] text-slate-500 font-semibold mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                  <span>Gross: Rp {((profit.totalSales ?? 0) + (profit.totalDiscount ?? 0)).toLocaleString('id-ID')}</span>
+                  <span className="text-rose-600 font-bold">(-Rp {(profit.totalDiscount ?? 0).toLocaleString('id-ID')} diskon)</span>
+                </div>
+              ) : null}
               <p className="text-[8.5px] text-slate-450 font-semibold mt-1">Total nilai transaksi kotor</p>
             </div>
           </div>

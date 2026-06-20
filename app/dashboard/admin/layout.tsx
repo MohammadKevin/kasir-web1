@@ -32,7 +32,8 @@ import {
   Bell,
   ChevronLeft,
   ChevronRight,
-  Loader2
+  Loader2,
+  Shield
 } from 'lucide-react'
 
 function AdminLayoutContent({
@@ -174,6 +175,9 @@ function AdminLayoutContent({
     } else if (pathname.includes('/receipt-design')) {
       parts.push('Bisnis')
       parts.push('Perangkat')
+    } else if (pathname.includes('/admins')) {
+      parts.push('Bisnis')
+      parts.push('Kelola Admin')
     } else {
       parts.push('Backoffice')
     }
@@ -574,6 +578,20 @@ function AdminLayoutContent({
                 >
                   <Users size={16} className={pathname === '/dashboard/admin/cashier' ? 'text-sky-400' : 'text-slate-400'} />
                   {!isSidebarCollapsed && <span>Karyawan</span>}
+                </Link>
+
+                {/* Kelola Admin */}
+                <Link
+                  href="/dashboard/admin/admins"
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200 ${
+                    pathname === '/dashboard/admin/admins'
+                      ? 'bg-[#2b3546] text-sky-400 shadow-inner'
+                      : 'text-slate-400 hover:bg-[#202836] hover:text-white'
+                  } ${isSidebarCollapsed ? 'justify-center' : ''}`}
+                  title="Kelola Admin"
+                >
+                  <Shield size={16} className={pathname === '/dashboard/admin/admins' ? 'text-sky-400' : 'text-slate-400'} />
+                  {!isSidebarCollapsed && <span>Kelola Admin</span>}
                 </Link>
 
                 
