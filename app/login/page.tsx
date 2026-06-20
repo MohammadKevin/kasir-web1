@@ -37,9 +37,9 @@ export default function LoginPage() {
       localStorage.setItem('token', accessToken)
       localStorage.setItem('user', JSON.stringify(user))
 
-      document.cookie = `token=${accessToken}; path=/; max-age=57600; SameSite=Lax`
-      document.cookie = `userRole=${user.type}; path=/; max-age=57600; SameSite=Lax`
-      document.cookie = `user=${encodeURIComponent(JSON.stringify(user))}; path=/; max-age=57600; SameSite=Lax`
+      document.cookie = `token=${accessToken}; path=/; max-age=604800; SameSite=Lax`
+      document.cookie = `userRole=${user.type}; path=/; max-age=604800; SameSite=Lax`
+      document.cookie = `user=${encodeURIComponent(JSON.stringify(user))}; path=/; max-age=604800; SameSite=Lax`
 
       switch (user.type) {
         case 'ADMIN':

@@ -62,6 +62,7 @@ export default function ProductPage() {
   const [stores, setStores] = useState<StoreType[]>([])
   const [categories, setCategories] = useState<CategoryType[]>([])
   const [selectedStoreId, setSelectedStoreId] = useState('')
+  const [selectedCategoryId, setSelectedCategoryId] = useState('')
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [isOpenModal, setIsOpenModal] = useState(false)
@@ -87,6 +88,7 @@ export default function ProductPage() {
     if (selectedStoreId) { 
       loadProducts(selectedStoreId)
       loadCategories(selectedStoreId) 
+      setSelectedCategoryId('')
     } 
   }, [selectedStoreId])
 
@@ -468,11 +470,13 @@ export default function ProductPage() {
     }
   }
 
-  const filtered = products.filter(p =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.barcode?.includes(searchQuery)
-  )
+  const filtered = products.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.barcode?.includes(searchQuery)
+    const matchesCategory = selectedCategoryId ? p.categoryId === selectedCategoryId : true
+    return matchesSearch && matchesCategory
+  })
 
   const lowStockCount = products.filter(p => p.stock <= p.minimumStock && p.isActive).length
 
@@ -552,6 +556,18 @@ export default function ProductPage() {
               <X size={15} />
             </button>
           )}
+        </div>
+
+        <div className="relative shrink-0">
+          <select 
+            value={selectedCategoryId} 
+            onChange={e => setSelectedCategoryId(e.target.value)}
+            className="w-full sm:w-48 appearance-none bg-white border border-slate-200/80 pl-4 pr-10 py-3.5 rounded-xl text-xs font-bold text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 cursor-pointer transition-all"
+          >
+            <option value="">Semua Kategori</option>
+            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         </div>
 
         <div className="relative shrink-0">
