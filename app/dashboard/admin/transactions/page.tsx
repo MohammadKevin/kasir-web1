@@ -575,10 +575,15 @@ export default function TransactionAdminPage() {
                         <span className="font-semibold text-slate-800">Rp {itemTotal.toLocaleString('id-ID')}</span>
                       </div>
                       {itemDiscount > 0 && (
-                        <div className="flex justify-between pl-2.5 text-rose-500 italic">
-                          <span>Diskon Item</span>
-                          <span>-Rp {itemDiscount.toLocaleString('id-ID')}</span>
-                        </div>
+                        <>
+                          <div className="flex justify-between pl-2.5 text-rose-500 italic">
+                            <span>Diskon Item</span>
+                            <span>-Rp {itemDiscount.toLocaleString('id-ID')}</span>
+                          </div>
+                          <div className="pl-2.5 text-[8.5px] text-slate-400 font-medium font-sans">
+                            (Rp {item.originalPrice.toLocaleString('id-ID')} - Rp {((item.masterDiscount || 0) + (item.cashierDiscount || 0)).toLocaleString('id-ID')} = Rp {item.finalPrice.toLocaleString('id-ID')})
+                          </div>
+                        </>
                       )}
                     </div>
                   )

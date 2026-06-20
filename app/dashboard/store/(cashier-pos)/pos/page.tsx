@@ -577,6 +577,14 @@ export default function PosPage() {
     return 0
   }, [paid, finalTotal, payment, splitAmounts])
 
+  const shortage = useMemo(() => {
+    if (payment === 'CASH' && paid !== '') {
+      const diff = finalTotal - Number(paid || 0)
+      return diff > 0 ? diff : 0
+    }
+    return 0
+  }, [paid, finalTotal, payment])
+
   function autoPrintReceipt(data: any, paymentMethod: PaymentMethod) {
     const printWindow = window.open('', '_blank')
     if (!printWindow) return
@@ -667,6 +675,9 @@ export default function PosPage() {
                 <div class="item-details" style="color: #000; font-style: italic;">
                   <span>Diskon Item</span>
                   <span>-Rp ${itemDiscount.toLocaleString('id-ID')}</span>
+                </div>
+                <div class="item-details" style="color: #666; font-size: 8px; padding-left: 10px;">
+                  <span>(Rp ${item.originalPrice.toLocaleString('id-ID')} - Rp ${(item.discount || 0).toLocaleString('id-ID')} = Rp ${(item.originalPrice - (item.discount || 0)).toLocaleString('id-ID')})</span>
                 </div>
               ` : ''}
             </div>
@@ -929,7 +940,7 @@ export default function PosPage() {
   ]
 
   return (
-    <div className="grid gap-3 sm:gap-6 lg:grid-cols-[1fr_390px] h-full overflow-hidden relative">
+    <div className="grid gap-3 sm:gap-6 lg:grid-cols-[1fr_390px] flex-1 min-h-0 overflow-hidden relative">
 
       <div className={`flex flex-col h-full overflow-hidden space-y-3 sm:space-y-4 ${mobileView === 'catalog' ? 'flex' : 'hidden lg:flex'}`}>
 
@@ -999,10 +1010,23 @@ export default function PosPage() {
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto pr-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 content-start pb-24 sm:pb-6 scrollbar-thin">
+        <div className="flex-1 overflow-y-auto pr-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 content-start pb-24 sm:pb-6 scrollbar-thin auto-rows-max">
           {loading ? (
-            Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-48 sm:h-56 rounded-xl sm:rounded-3xl bg-slate-100 animate-pulse border border-slate-150" />
+            Array.from({ length: 10 }).map((_, i) => (
+              <div key={i} className="bg-white border border-slate-200/80 rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-3xs flex flex-col gap-3 animate-pulse">
+                <div className="w-full aspect-square rounded-lg sm:rounded-xl bg-slate-100 shrink-0" />
+                <div className="space-y-2 flex-grow">
+                  <div className="h-3 w-1/3 bg-slate-100 rounded-md" />
+                  <div className="h-4 w-3/4 bg-slate-200 rounded-md" />
+                </div>
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-1.5">
+                  <div className="space-y-1.5 flex-1">
+                    <div className="h-3 w-1/2 bg-slate-200 rounded-md" />
+                    <div className="h-3 w-1/3 bg-slate-100 rounded-md" />
+                  </div>
+                  <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg sm:rounded-xl bg-slate-200 shrink-0" />
+                </div>
+              </div>
             ))
           ) : categoryFilter === null && search.trim() === '' ? (
             <>
@@ -1068,7 +1092,7 @@ export default function PosPage() {
                       : 'border-slate-200/80 hover:border-indigo-400'
                   }`}
                 >
-                  <div className="aspect-square w-full overflow-hidden rounded-lg sm:rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 relative">
+                  <div className="w-full aspect-square relative overflow-hidden rounded-lg sm:rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0">
                     {p.image ? (
                       <img src={p.image} alt={p.name} className="w-full h-full object-cover transition-transform duration-350 group-hover:scale-105" />
                     ) : (
@@ -1092,18 +1116,20 @@ export default function PosPage() {
                     )}
                   </div>
 
-                  <div className="mt-2.5">
+                  <div className="mt-2.5 shrink-0">
                     <p className="text-[8px] sm:text-[8.5px] font-mono text-slate-500 uppercase tracking-widest font-semibold">{p.sku || '–'}</p>
                     <div className="h-8 sm:h-9 overflow-hidden mt-0.5">
                       <h3 className="font-extrabold text-slate-905 text-[11px] sm:text-xs line-clamp-2 leading-snug group-hover:text-indigo-650 transition-colors" title={p.name}>{p.name}</h3>
                     </div>
                   </div>
 
-                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-end justify-between gap-1.5">
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-end justify-between gap-1.5 shrink-0">
                     <div className="min-w-0 flex-1">
                       <span className="text-[11px] sm:text-xs font-black font-mono text-indigo-600 block truncate">{fmt(discountedPrice)}</span>
-                      {hasDiscount && (
+                      {hasDiscount ? (
                         <span className="block text-[8px] sm:text-[8.5px] text-slate-400 font-mono line-through mt-0.5 truncate">{fmt(p.sellingPrice)}</span>
+                      ) : (
+                        <span className="block text-[8px] sm:text-[8.5px] text-transparent font-mono mt-0.5 select-none">&nbsp;</span>
                       )}
                       <span className={`block text-[8.5px] sm:text-[9px] mt-1 sm:mt-1.5 font-bold truncate ${isLowStock ? 'text-rose-600' : 'text-slate-500'}`}>
                         Stok: {p.stock}
@@ -1369,10 +1395,15 @@ export default function PosPage() {
                         <span className="font-semibold text-slate-800">Rp {itemTotal.toLocaleString('id-ID')}</span>
                       </div>
                       {itemDiscount > 0 && (
-                        <div className="flex justify-between pl-2.5 text-rose-500 italic">
-                          <span>Diskon Item</span>
-                          <span>-Rp {itemDiscount.toLocaleString('id-ID')}</span>
-                        </div>
+                        <>
+                          <div className="flex justify-between pl-2.5 text-rose-500 italic">
+                            <span>Diskon Item</span>
+                            <span>-Rp {itemDiscount.toLocaleString('id-ID')}</span>
+                          </div>
+                          <div className="pl-2.5 text-[8.5px] text-slate-400 font-medium font-sans">
+                            (Rp {item.originalPrice.toLocaleString('id-ID')} - Rp {(item.discount || 0).toLocaleString('id-ID')} = Rp {(item.originalPrice - (item.discount || 0)).toLocaleString('id-ID')})
+                          </div>
+                        </>
                       )}
                     </div>
                   )
@@ -1622,10 +1653,17 @@ export default function PosPage() {
                         />
                       </div>
                     </div>
-                    <div className="flex justify-between items-center border-t border-slate-100 pt-2">
-                      <span className="font-sans font-bold text-slate-400 text-[9px] uppercase">Kembalian</span>
-                      <span className={`font-bold text-sm ${change > 0 ? 'text-emerald-600' : 'text-slate-650'}`}>{fmt(change)}</span>
-                    </div>
+                    {shortage > 0 ? (
+                      <div className="flex justify-between items-center border-t border-slate-100 pt-2 text-rose-600">
+                        <span className="font-sans font-bold text-[9px] uppercase">Uang Kurang</span>
+                        <span className="font-bold text-sm">{fmt(shortage)}</span>
+                      </div>
+                    ) : (
+                      <div className="flex justify-between items-center border-t border-slate-100 pt-2">
+                        <span className="font-sans font-bold text-slate-400 text-[9px] uppercase">Kembalian</span>
+                        <span className={`font-bold text-sm ${change > 0 ? 'text-emerald-600' : 'text-slate-650'}`}>{fmt(change)}</span>
+                      </div>
+                    )}
                   </div>
                 )}
 

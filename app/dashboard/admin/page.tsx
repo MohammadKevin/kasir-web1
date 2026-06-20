@@ -10,7 +10,9 @@ import {
   DollarSign, 
   RefreshCw, 
   AlertCircle, 
-  TrendingUp
+  TrendingUp,
+  X,
+  Loader2
 } from 'lucide-react'
 
 type StoreType = {
@@ -129,6 +131,12 @@ export default function AdminDashboard() {
   const [error, setError] = useState<string | null>(null)
   const [period, setPeriod] = useState<FilterPeriod>('1w')
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+  const [detailModalOpen, setDetailModalOpen] = useState(false)
+  const [detailModalType, setDetailModalType] = useState<'TRANSACTION' | 'REVENUE' | null>(null)
+  const [txDetails, setTxDetails] = useState<Record<string, any>>({})
+  const [loadingTxId, setLoadingTxId] = useState<string | null>(null)
+  const [expandedTxId, setExpandedTxId] = useState<string | null>(null)
+
   const [data, setData] = useState<DashboardData>({
     totalStores: 0,
     totalCashiers: 0,
@@ -414,42 +422,63 @@ export default function AdminDashboard() {
     return maxIdx
   }, [chartData.points, chartData.values, hoveredIndex])
 
-  const filteredRevenue = useMemo(() => {
+  const filteredTransactions = useMemo(() => {
     const now = new Date()
-    const paidTransactions = data.allTransactions.filter(tx => tx.status === 'PAID')
+    return data.allTransactions.filter(tx => {
+      const txDate = new Date(tx.createdAt)
+      if (period === '1d') {
+        return txDate.toDateString() === now.toDateString()
+      }
+      if (period === '1w') {
+        const start = new Date()
+        start.setDate(now.getDate() - 6)
+        start.setHours(0, 0, 0, 0)
+        return txDate >= start
+      }
+      if (period === '1m') {
+        const start = new Date()
+        start.setDate(now.getDate() - 27)
+        start.setHours(0, 0, 0, 0)
+        return txDate >= start
+      }
+      if (period === '1y') {
+        return txDate.getFullYear() === now.getFullYear()
+      }
+      return true
+    })
+  }, [data.allTransactions, period])
 
-    if (period === '1d') {
-      return paidTransactions
-        .filter(tx => new Date(tx.createdAt).toDateString() === now.toDateString())
-        .reduce((sum, tx) => sum + tx.total, 0)
+  const filteredRevenue = useMemo(() => {
+    return filteredTransactions
+      .filter(tx => tx.status === 'PAID')
+      .reduce((sum, tx) => sum + tx.total, 0)
+  }, [filteredTransactions])
+
+  const handleCardClick = (type: 'TRANSACTION' | 'REVENUE') => {
+    setDetailModalType(type)
+    setDetailModalOpen(true)
+  }
+
+  const toggleExpandRow = async (id: string) => {
+    if (expandedTxId === id) {
+      setExpandedTxId(null)
+      return
     }
-
-    if (period === '1w') {
-      const start = new Date()
-      start.setDate(now.getDate() - 6)
-      start.setHours(0, 0, 0, 0)
-      return paidTransactions
-        .filter(tx => new Date(tx.createdAt) >= start)
-        .reduce((sum, tx) => sum + tx.total, 0)
+    setExpandedTxId(id)
+    if (!txDetails[id]) {
+      setLoadingTxId(id)
+      try {
+        const token = localStorage.getItem('token')
+        const headers = { Authorization: `Bearer ${token}` }
+        const res = await api.get(`/transactions/${id}`, { headers })
+        setTxDetails(prev => ({ ...prev, [id]: res.data }))
+      } catch (err) {
+        console.error('Failed to load transaction details:', err)
+      } finally {
+        setLoadingTxId(null)
+      }
     }
-
-    if (period === '1m') {
-      const start = new Date()
-      start.setDate(now.getDate() - 27)
-      start.setHours(0, 0, 0, 0)
-      return paidTransactions
-        .filter(tx => new Date(tx.createdAt) >= start)
-        .reduce((sum, tx) => sum + tx.total, 0)
-    }
-
-    if (period === '1y') {
-      return paidTransactions
-        .filter(tx => new Date(tx.createdAt).getFullYear() === now.getFullYear())
-        .reduce((sum, tx) => sum + tx.total, 0)
-    }
-
-    return data.totalRevenue
-  }, [data.allTransactions, data.totalRevenue, period])
+  }
 
   const periodLabels = {
     '1d': 'Hari Ini',
@@ -480,24 +509,26 @@ export default function AdminDashboard() {
       iconTextClass: 'text-emerald-600',
     },
     { 
-      title: 'Total Transaksi', 
-      value: data.totalTransactions.toLocaleString('id-ID'), 
+      title: `Total Transaksi (${periodLabels[period]})`, 
+      value: filteredTransactions.length.toLocaleString('id-ID'), 
       icon: ShoppingBag,
       bgClass: 'bg-gradient-to-br from-violet-50/40 via-white to-white',
-      borderClass: 'border-slate-200/70 hover:border-violet-350 hover:shadow-violet-500/5',
+      borderClass: 'border-slate-200/70 hover:border-violet-350 hover:shadow-violet-500/5 cursor-pointer active:scale-[0.99]',
       textClass: 'text-slate-900',
       iconBgClass: 'bg-violet-50 border border-violet-100/50',
       iconTextClass: 'text-violet-600',
+      onClick: () => handleCardClick('TRANSACTION')
     },
     { 
       title: `Total Pendapatan (${periodLabels[period]})`, 
       value: `Rp ${filteredRevenue.toLocaleString('id-ID')}`, 
       icon: DollarSign,
       bgClass: 'bg-gradient-to-br from-amber-50/40 via-white to-white',
-      borderClass: 'border-slate-200/70 hover:border-amber-350 hover:shadow-amber-500/5',
+      borderClass: 'border-slate-200/70 hover:border-amber-350 hover:shadow-amber-500/5 cursor-pointer active:scale-[0.99]',
       textClass: 'text-slate-900',
       iconBgClass: 'bg-amber-50 border border-amber-100/50',
       iconTextClass: 'text-amber-600',
+      onClick: () => handleCardClick('REVENUE')
     },
   ]
 
@@ -556,12 +587,13 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {cards.map((card) => {
+        {cards.map((card, idx) => {
           const Icon = card.icon
           return (
             <div 
-              key={card.title} 
-              className={`group relative overflow-hidden rounded-2xl border ${card.bgClass} ${card.borderClass} p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-md`}
+              key={idx} 
+              onClick={card.onClick}
+              className={`group relative overflow-hidden rounded-2xl border ${card.bgClass} ${card.borderClass} p-6 transition-all duration-300 ${card.onClick ? 'hover:-translate-y-1 hover:shadow-md cursor-pointer active:scale-[0.98]' : ''}`}
             >
               <div className="absolute top-0 right-0 -mr-6 -mt-6 h-24 w-24 rounded-full bg-slate-950/[0.01] transition-transform duration-300 group-hover:scale-150" />
               <div className="flex items-center justify-between relative z-10">
@@ -843,6 +875,182 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+
+      {detailModalOpen && detailModalType && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-all duration-200">
+          <div className="w-full max-w-4xl h-[85vh] overflow-hidden rounded-2xl border border-slate-150 bg-white shadow-xl relative animate-in fade-in zoom-in-95 duration-150 flex flex-col">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 p-5 bg-slate-50/50 flex-shrink-0">
+              <div className="flex items-center gap-3 text-slate-900">
+                <div className="h-9 w-9 bg-indigo-50 border border-indigo-100 rounded-lg flex items-center justify-center text-indigo-650 shrink-0">
+                  <ShoppingBag size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black uppercase tracking-wider text-slate-900">
+                    {detailModalType === 'REVENUE' ? 'Rincian Pendapatan' : 'Rincian Transaksi'} ({periodLabels[period]})
+                  </h3>
+                  <p className="text-[10px] font-semibold text-slate-400 mt-0.5">
+                    Daftar log aktivitas penjualan terfilter periodik
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => { setDetailModalOpen(false); setExpandedTxId(null); }} 
+                className="rounded-lg p-1.5 border border-slate-200 bg-white text-slate-405 hover:text-slate-600 hover:bg-slate-50 cursor-pointer transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Modal Summary Cards */}
+            <div className="grid grid-cols-2 gap-4 p-5 bg-slate-50/20 border-b border-slate-100 flex-shrink-0">
+              <div className="border border-slate-250/70 rounded-xl p-4 bg-white shadow-3xs flex justify-between items-center">
+                <div>
+                  <p className="text-[8.5px] font-extrabold uppercase tracking-widest text-slate-400">Total Transaksi ({periodLabels[period]})</p>
+                  <h4 className="text-lg font-black text-slate-950 mt-1 font-mono">{filteredTransactions.length}</h4>
+                </div>
+                <div className="h-8 w-8 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center border border-violet-100/50"><ShoppingBag size={15}/></div>
+              </div>
+              <div className="border border-slate-250/70 rounded-xl p-4 bg-white shadow-3xs flex justify-between items-center">
+                <div>
+                  <p className="text-[8.5px] font-extrabold uppercase tracking-widest text-slate-400">Total Pendapatan ({periodLabels[period]})</p>
+                  <h4 className="text-lg font-black text-slate-955 mt-1 font-mono">Rp {filteredRevenue.toLocaleString('id-ID')}</h4>
+                </div>
+                <div className="h-8 w-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100/50"><DollarSign size={15}/></div>
+              </div>
+            </div>
+
+            {/* Modal Table Body */}
+            <div className="flex-1 overflow-y-auto p-5 scrollbar-thin">
+              {(() => {
+                const modalTx = detailModalType === 'REVENUE' 
+                  ? filteredTransactions.filter(tx => tx.status === 'PAID') 
+                  : filteredTransactions;
+
+                if (modalTx.length === 0) {
+                  return (
+                    <div className="flex flex-col items-center justify-center py-20 text-slate-450 gap-2">
+                      <div className="p-3 bg-slate-50 border border-slate-150 rounded-2xl text-slate-400">
+                        <ShoppingBag className="w-6 h-6" />
+                      </div>
+                      <p className="text-xs font-bold text-slate-500">Belum ada data terekam pada rentang waktu ini</p>
+                    </div>
+                  )
+                }
+
+                return (
+                  <div className="space-y-4">
+                    {modalTx.map((tx) => {
+                      const isExpanded = expandedTxId === tx.id
+                      return (
+                        <div key={tx.id} className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-3xs transition-all hover:border-slate-350">
+                          {/* Row Header */}
+                          <div 
+                            onClick={() => toggleExpandRow(tx.id)}
+                            className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 cursor-pointer select-none bg-slate-50/20 hover:bg-slate-50/60"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="font-mono font-bold text-slate-900">{tx.invoiceNumber}</span>
+                              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-bold border text-[8.5px] uppercase tracking-wider ${
+                                tx.status === 'PAID' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-rose-50 border-rose-200 text-rose-700'
+                              }`}>
+                                {tx.status === 'PAID' ? 'Lunas' : 'Void'}
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px] font-semibold text-slate-500">
+                              <span>Toko: <strong className="text-slate-800">{tx.storeName}</strong></span>
+                              <span>Kasir: <strong className="text-slate-700">{tx.cashier?.name}</strong></span>
+                              <span>Tanggal: <strong className="text-slate-600">{new Date(tx.createdAt).toLocaleDateString('id-ID')}</strong></span>
+                              <span className="font-mono font-black text-slate-950 text-xs md:text-sm">Rp {tx.total.toLocaleString('id-ID')}</span>
+                            </div>
+                          </div>
+
+                          {/* Row Expandable Content */}
+                          {isExpanded && (
+                            <div className="border-t border-slate-100 p-4 bg-slate-50/30 animate-in fade-in duration-200">
+                              {loadingTxId === tx.id ? (
+                                <div className="flex items-center justify-center py-6 gap-2">
+                                  <Loader2 className="w-4 h-4 animate-spin text-indigo-650" />
+                                  <span className="text-[10px] text-slate-400 font-bold">Memuat rincian barang...</span>
+                                </div>
+                              ) : txDetails[tx.id] ? (
+                                <div className="space-y-3">
+                                  <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
+                                    <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Barang Belanjaan</h5>
+                                    <span className="text-[9.5px] font-extrabold text-slate-500 font-mono">
+                                      {txDetails[tx.id].items?.reduce((s: number, i: any) => s + i.quantity, 0)} Items
+                                    </span>
+                                  </div>
+
+                                  <div className="space-y-3.5">
+                                    {txDetails[tx.id].items?.map((item: any) => {
+                                      const discount = (item.masterDiscount || 0) + (item.cashierDiscount || 0)
+                                      return (
+                                        <div key={item.id} className="text-xs space-y-1 bg-white border border-slate-150 p-3 rounded-xl shadow-3xs">
+                                          <div className="flex justify-between font-extrabold text-slate-900">
+                                            <span>{item.product?.name}</span>
+                                            <div className="flex gap-8 shrink-0 text-slate-800">
+                                              <span>{item.quantity} Pcs</span>
+                                              <span className="w-24 text-right font-mono">Rp {item.subtotal.toLocaleString('id-ID')}</span>
+                                            </div>
+                                          </div>
+                                          <div className="flex justify-between pl-1 text-[10px] text-slate-500 font-bold">
+                                            <span>Harga Satuan: Rp {item.originalPrice.toLocaleString('id-ID')}</span>
+                                          </div>
+                                          {discount > 0 && (
+                                            <div className="pl-1 text-[10px] text-rose-500 font-extrabold italic flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                                              <span>Diskon: -Rp {discount.toLocaleString('id-ID')}</span>
+                                              <span>(Rp {item.originalPrice.toLocaleString('id-ID')} - Rp {discount.toLocaleString('id-ID')} = Rp {item.finalPrice.toLocaleString('id-ID')})</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+
+                                  {/* Price calculation block */}
+                                  <div className="border-t border-dashed border-slate-300 pt-3 flex flex-col items-end text-xs space-y-1.5 font-bold font-mono">
+                                    <div className="flex justify-between w-full max-w-[280px] text-slate-500">
+                                      <span>Subtotal</span><span>Rp {txDetails[tx.id].subtotal.toLocaleString('id-ID')}</span>
+                                    </div>
+                                    <div className="flex justify-between w-full max-w-[280px] text-rose-500">
+                                      <span>Total Diskon</span><span>-Rp {txDetails[tx.id].totalDiscount.toLocaleString('id-ID')}</span>
+                                    </div>
+                                    {txDetails[tx.id].taxAmount > 0 && (
+                                      <div className="flex justify-between w-full max-w-[280px] text-slate-550">
+                                        <span>PPN</span><span>Rp {txDetails[tx.id].taxAmount.toLocaleString('id-ID')}</span>
+                                      </div>
+                                    )}
+                                    {txDetails[tx.id].serviceAmount > 0 && (
+                                      <div className="flex justify-between w-full max-w-[280px] text-slate-550">
+                                        <span>Service Charge</span><span>Rp {txDetails[tx.id].serviceAmount.toLocaleString('id-ID')}</span>
+                                      </div>
+                                    )}
+                                    <div className="flex justify-between w-full max-w-[280px] text-sm font-black text-slate-955 pt-2 border-t border-slate-200">
+                                      <span>Total Akhir</span><span>Rp {txDetails[tx.id].total.toLocaleString('id-ID')}</span>
+                                    </div>
+                                    <div className="flex justify-between w-full max-w-[280px] text-slate-500">
+                                      <span>Bayar</span><span>Rp {txDetails[tx.id].paidAmount.toLocaleString('id-ID')}</span>
+                                    </div>
+                                    <div className="flex justify-between w-full max-w-[280px] text-slate-500">
+                                      <span>Kembali</span><span>Rp {txDetails[tx.id].changeAmount.toLocaleString('id-ID')}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : null}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )
