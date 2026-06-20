@@ -330,8 +330,8 @@ function ReportPageContent() {
               }}
               className="w-full sm:w-60 appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-lg text-xs font-bold text-slate-700 focus:border-sky-500 focus:outline-none cursor-pointer transition-all"
             >
-              {stores.map((store) => (
-                <option key={store.id} value={store.id}>{store.name}</option>
+              {stores.map((store, idx) => (
+                <option key={store.id || idx} value={store.id}>{store.name}</option>
               ))}
             </select>
             <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -402,8 +402,8 @@ function ReportPageContent() {
             }}
             className="w-full sm:w-60 appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-lg text-xs font-bold text-slate-700 focus:border-sky-500 focus:outline-none cursor-pointer transition-all"
           >
-            {stores.map((store) => (
-              <option key={store.id} value={store.id}>{store.name}</option>
+            {stores.map((store, idx) => (
+              <option key={store.id || idx} value={store.id}>{store.name}</option>
             ))}
           </select>
           <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -568,12 +568,13 @@ function ReportPageContent() {
                       <th className="p-4">Operator Kasir</th>
                       <th className="p-4">Member Pelanggan</th>
                       <th className="p-4">Metode Bayar</th>
+                      <th className="p-4">Diskon</th>
                       <th className="p-4 pr-6">Total Jual</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {tableData.map((tx: any) => (
-                      <tr key={tx.id} className="hover:bg-slate-50/45 transition-colors">
+                    {tableData.map((tx: any, idx: number) => (
+                      <tr key={tx.id || idx} className="hover:bg-slate-50/45 transition-colors">
                         <td className="p-4 pl-6 font-mono font-bold text-slate-900">{tx.invoiceNumber}</td>
                         <td className="p-4 text-slate-500 font-medium">{new Date(tx.createdAt).toLocaleString('id-ID')}</td>
                         <td className="p-4 text-slate-800">{tx.cashier?.name}</td>
@@ -582,6 +583,15 @@ function ReportPageContent() {
                           <span className="bg-sky-50 text-sky-700 border border-sky-100 text-[10px] px-2 py-0.5 rounded-full font-bold">
                             {tx.paymentMethod}
                           </span>
+                        </td>
+                        <td className="p-4">
+                          {tx.totalDiscount > 0 ? (
+                            <span className="bg-rose-50 text-rose-700 border border-rose-100 text-[10px] px-2.5 py-0.5 rounded-full font-bold">
+                              -Rp {tx.totalDiscount.toLocaleString('id-ID')}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 font-medium font-mono">Rp 0</span>
+                          )}
                         </td>
                         <td className="p-4 pr-6 font-bold text-slate-950 font-mono">Rp {(tx.total ?? 0).toLocaleString('id-ID')}</td>
                       </tr>
@@ -663,6 +673,7 @@ function ReportPageContent() {
                     <tr>
                       <th className="p-4 pl-6">Nama Kategori Produk</th>
                       <th className="p-4">Kuantitas Terjual</th>
+                      <th className="p-4">Total Diskon</th>
                       <th className="p-4 pr-6">Total Omset Penjualan</th>
                     </tr>
                   </thead>
@@ -671,6 +682,15 @@ function ReportPageContent() {
                       <tr key={idx} className="hover:bg-slate-50/45 transition-colors">
                         <td className="p-4 pl-6 font-bold text-slate-900">{row.categoryName}</td>
                         <td className="p-4 text-slate-500 font-mono">{row.quantity} Pcs</td>
+                        <td className="p-4">
+                          {row.totalDiscount > 0 ? (
+                            <span className="bg-rose-50 text-rose-700 border border-rose-100 text-[10px] px-2.5 py-0.5 rounded-full font-bold">
+                              -Rp {row.totalDiscount.toLocaleString('id-ID')}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 font-medium font-mono">Rp 0</span>
+                          )}
+                        </td>
                         <td className="p-4 pr-6 font-bold text-sky-600 font-mono">Rp {(row.totalSales ?? 0).toLocaleString('id-ID')}</td>
                       </tr>
                     ))}
@@ -840,8 +860,8 @@ function ReportPageContent() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {tableData.map((sh: any) => (
-                      <tr key={sh.id} className="hover:bg-slate-50/45 transition-colors">
+                    {tableData.map((sh: any, idx: number) => (
+                      <tr key={sh.id || idx} className="hover:bg-slate-50/45 transition-colors">
                         <td className="p-4 pl-6 font-bold text-slate-900">{sh.user?.name}</td>
                         <td className="p-4 text-slate-500 font-medium">{new Date(sh.createdAt).toLocaleString('id-ID')}</td>
                         <td className="p-4 font-mono">Rp {(sh.openingCash ?? 0).toLocaleString('id-ID')}</td>
@@ -873,8 +893,8 @@ function ReportPageContent() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {tableData.map((st: any) => (
-                      <tr key={st.id} className="hover:bg-slate-50/45 transition-colors">
+                    {tableData.map((st: any, idx: number) => (
+                      <tr key={st.id || idx} className="hover:bg-slate-50/45 transition-colors">
                         <td className="p-4 pl-6">
                           <p className="font-extrabold text-slate-900">{st.product?.name}</p>
                           <p className="text-[10px] font-mono text-slate-400 mt-0.5">SKU: {st.product?.sku}</p>
@@ -931,8 +951,8 @@ function ReportPageContent() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {tableData.map((ex: any) => (
-                      <tr key={ex.id} className="hover:bg-slate-50/45 transition-colors">
+                    {tableData.map((ex: any, idx: number) => (
+                      <tr key={ex.id || idx} className="hover:bg-slate-50/45 transition-colors">
                         <td className="p-4 pl-6 font-bold text-slate-900">{ex.title}</td>
                         <td className="p-4 whitespace-nowrap">
                           <span className="bg-slate-100 border border-slate-200 text-[10px] px-2 py-0.5 rounded-full font-bold text-slate-600">
