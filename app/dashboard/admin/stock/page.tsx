@@ -451,8 +451,149 @@ function StockMovementPageContent() {
     alert(status === 'SUBMITTED' ? 'Stock opname berhasil disubmit dan stok disesuaikan!' : 'Draft stock opname berhasil disimpan sementara!')
   }
 
+  const parsedDbOpnames = useMemo(() => {
+    // Filter movements that are related to Stock Opname
+    const opnameMovements = movements.filter(m => 
+      m.note && (
+        m.note.toLowerCase().includes('stock opname') || 
+        m.note.toLowerCase().includes('excel import')
+      )
+    )
+
+    // Group by timestamp/date. Group movements that have similar creation time (within 30 seconds) and same storeId
+    const groups: { [key: string]: StockMovement[] } = {}
+    
+    opnameMovements.forEach(m => {
+      const timeMs = new Date(m.createdAt).getTime()
+      // Find an existing group within 30 seconds and with same storeId
+      const groupKey = Object.keys(groups).find(key => {
+        const groupTimeMs = Number(key)
+        const sameTime = Math.abs(groupTimeMs - timeMs) < 30000 // 30 seconds
+        const firstM = groups[key][0]
+        return sameTime && firstM.storeId === m.storeId
+      })
+      
+      if (groupKey) {
+        groups[groupKey].push(m)
+      } else {
+        groups[timeMs.toString()] = [m]
+      }
+    })
+
+    // Convert groups to StockOpnameRecord[]
+    const records: StockOpnameRecord[] = Object.entries(groups).map(([timeStr, groupMovements]) => {
+      const firstMovement = groupMovements[0]
+      const createdAt = firstMovement.createdAt
+      const dateObj = new Date(createdAt)
+      
+      const dateString = `${dateObj.getFullYear()}${String(dateObj.getMonth() + 1).padStart(2, '0')}${String(dateObj.getDate()).padStart(2, '0')}`
+      const timeString = `${String(dateObj.getHours()).padStart(2, '0')}${String(dateObj.getMinutes()).padStart(2, '0')}`
+      const lastDigits = firstMovement.id.substring(0, 4).toUpperCase()
+      const id = `OPN-${dateString}-${timeString}-${lastDigits}`
+
+      const storeName = stores.find(s => s.id === firstMovement.storeId)?.name || 'Outlet'
+
+      // Parse the general note/details
+      let generalNote = 'Stok Opname (Database)'
+      if (firstMovement.note) {
+        if (firstMovement.note.includes('Pawoon Migrasi')) {
+          generalNote = 'Stok Opname (Pawoon Migrasi)'
+        } else if (firstMovement.note.includes('Excel Import')) {
+          generalNote = 'Excel Import Stok Opname'
+        } else {
+          // Look for custom note after '|'
+          const parts = firstMovement.note.split('|')
+          if (parts.length > 1) {
+            generalNote = parts[1].trim()
+          } else {
+            // Clean up the movement prefix
+            const cleaned = firstMovement.note.replace(/^Stock\s+Opname:\s+/i, '').trim()
+            if (cleaned && !cleaned.startsWith('Fisik=')) {
+              generalNote = cleaned
+            }
+          }
+        }
+      }
+
+      const items = groupMovements.map(m => {
+        let systemStock = m.product?.stock ?? 0
+        let actualStock = String(m.product?.stock ?? 0)
+        let itemNote = ''
+
+        if (m.note) {
+          const fisikMatch = m.note.match(/Fisik=(-?\d+)/i)
+          const sistemMatch = m.note.match(/Sistem=(-?\d+)/i)
+          const excelMatch = m.note.match(/Excel Import:\s*(-?\d+)/i)
+          
+          if (fisikMatch) {
+            actualStock = fisikMatch[1]
+          } else if (excelMatch) {
+            actualStock = excelMatch[1]
+          }
+
+          if (sistemMatch) {
+            systemStock = Number(sistemMatch[1])
+          } else if (excelMatch) {
+            const actNum = Number(excelMatch[1])
+            const diff = m.type === 'IN' ? m.qty : -m.qty
+            systemStock = actNum - diff
+          }
+
+          const parts = m.note.split('|')
+          if (parts.length > 1) {
+            itemNote = parts[1].trim()
+          }
+        }
+
+        return {
+          productId: m.productId,
+          productName: m.product?.name || 'Produk Terhapus',
+          productSku: m.product?.sku || '-',
+          productCategory: m.product?.category?.name || 'Umum',
+          systemStock,
+          actualStock,
+          note: itemNote
+        }
+      })
+
+      return {
+        id,
+        storeId: firstMovement.storeId,
+        storeName,
+        createdAt,
+        note: generalNote,
+        status: 'SUBMITTED' as const,
+        items
+      }
+    })
+
+    // Sort by date descending
+    return records.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  }, [movements, stores])
+
+  const combinedOpnameHistory = useMemo(() => {
+    const drafts = opnameHistory.filter(r => r.status === 'DRAFT')
+    const legacySubmitted = opnameHistory.filter(r => r.status === 'SUBMITTED')
+
+    const allSubmitted = [...parsedDbOpnames]
+    legacySubmitted.forEach(legacy => {
+      // Check if we already have a record with similar timestamp and store
+      const isDuplicated = allSubmitted.some(db => 
+        db.storeId === legacy.storeId && 
+        Math.abs(new Date(db.createdAt).getTime() - new Date(legacy.createdAt).getTime()) < 60000 // 1 minute
+      )
+      if (!isDuplicated) {
+        allSubmitted.push(legacy)
+      }
+    })
+
+    return [...drafts, ...allSubmitted].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
+  }, [opnameHistory, parsedDbOpnames])
+
   const filteredOpnameHistory = useMemo(() => {
-    return opnameHistory.filter(record => {
+    return combinedOpnameHistory.filter(record => {
       if (appliedFilters.storeId !== 'ALL' && record.storeId !== appliedFilters.storeId) {
         return false
       }
@@ -474,7 +615,7 @@ function StockMovementPageContent() {
       }
       return true
     })
-  }, [opnameHistory, appliedFilters])
+  }, [combinedOpnameHistory, appliedFilters])
 
   const [importStatus, setImportStatus] = useState<{
     isOpen: boolean;
@@ -2087,7 +2228,7 @@ function StockMovementPageContent() {
 
       
       {viewingOpnameId && (() => {
-        const record = opnameHistory.find(r => r.id === viewingOpnameId)
+        const record = combinedOpnameHistory.find(r => r.id === viewingOpnameId)
         if (!record) return null
         
         return (
