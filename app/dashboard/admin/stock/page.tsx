@@ -277,12 +277,23 @@ function StockMovementPageContent() {
 
   useEffect(() => {
     const history = localStorage.getItem('opname_history')
-    if (history) {
+    if (history && history !== '[]') {
       try {
         setOpnameHistory(JSON.parse(history))
       } catch (e) {
         console.error('Failed to parse opname history', e)
       }
+    } else {
+      api.get('/admins/opname-migration')
+        .then(res => {
+          if (res.data && res.data.length > 0) {
+            setOpnameHistory(res.data)
+            localStorage.setItem('opname_history', JSON.stringify(res.data))
+          }
+        })
+        .catch(err => {
+          console.error('Failed to fetch opname migration history', err)
+        })
     }
   }, [])
 
