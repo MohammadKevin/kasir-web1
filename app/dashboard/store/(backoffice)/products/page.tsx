@@ -493,7 +493,7 @@ export default function ProductsPage() {
 
                       <td className="p-4">
                         <span className="inline-flex items-center gap-1 bg-slate-50 border border-slate-200/60 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-lg">
-                          <span>{categories.find(c => c.id === product.categoryId)?.name || 'Umum'}</span>
+                          <span>{categories.find(c => c.id === product.categoryId)?.name || 'Tanpa Kategori'}</span>
                         </span>
                       </td>
 
@@ -591,26 +591,29 @@ export default function ProductsPage() {
         >
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200/80 animate-in slide-in-from-bottom-3 duration-250 flex flex-col max-h-[90vh]">
             
-            <div className="p-6 pb-0 flex items-start justify-between shrink-0">
-              <div>
-                <h3 className="text-base font-black text-slate-950">{editingId ? 'Edit Detail Barang' : 'Daftarkan Barang Baru'}</h3>
-                <p className="text-[10.5px] font-semibold text-slate-400 mt-0.5">
-                  {editingId ? 'Ubah informasi data persediaan barang toko' : 'Isi formulir berikut untuk menambahkan item baru ke katalog'}
-                </p>
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5 flex items-center justify-between shrink-0 shadow-sm relative">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 bg-white/10 rounded-xl flex items-center justify-center text-white shrink-0 border border-white/10">
+                  <Package size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-extrabold text-white">{editingId ? 'Edit Detail Barang' : 'Daftarkan Barang Baru'}</h3>
+                  <p className="text-[10px] font-medium text-blue-100/90 mt-0.5">
+                    {editingId ? 'Ubah informasi data persediaan barang toko' : 'Isi formulir berikut untuk menambahkan item baru ke katalog'}
+                  </p>
+                </div>
               </div>
               <button 
                 type="button" 
                 onClick={() => setIsOpenModal(false)}
-                className="h-8 w-8 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                className="h-8 w-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer"
               >
                 <X size={15} />
               </button>
             </div>
 
-            <div className="h-px bg-slate-100 my-4 mx-6 shrink-0" />
-
             <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
-              <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-4">
+              <div className="flex-1 overflow-y-auto px-6 pb-6 pt-5 space-y-4">
                 
                 <div className="space-y-2">
                   <label className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 block">Foto Produk</label>
@@ -749,28 +752,34 @@ export default function ProductsPage() {
                 <div className="space-y-2">
                   <label className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 block">Inventori Stok</label>
                   <div className="grid gap-3 grid-cols-2">
-                    <div className="relative">
-                      <Boxes size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                      <input
-                        type="number"
-                        min={0}
-                        value={formData.stock ?? ''}
-                        onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
-                        placeholder="Stok Awal Barang"
-                        className="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-3 text-xs text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold"
-                      />
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-slate-500 block">Stok Awal</span>
+                      <div className="relative">
+                        <Boxes size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        <input
+                          type="number"
+                          min={0}
+                          value={formData.stock ?? ''}
+                          onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
+                          placeholder="Stok Awal Barang"
+                          className="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold"
+                        />
+                      </div>
                     </div>
 
-                    <div className="relative">
-                      <AlertTriangle size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                      <input
-                        type="number"
-                        min={0}
-                        value={formData.minimumStock ?? ''}
-                        onChange={(e) => setFormData({ ...formData, minimumStock: Number(e.target.value) })}
-                        placeholder="Limit Minimum Stok"
-                        className="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-3 text-xs text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold"
-                      />
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-slate-500 block">Stok Minimum</span>
+                      <div className="relative">
+                        <AlertTriangle size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        <input
+                          type="number"
+                          min={0}
+                          value={formData.minimumStock ?? ''}
+                          onChange={(e) => setFormData({ ...formData, minimumStock: Number(e.target.value) })}
+                          placeholder="Limit Minimum Stok"
+                          className="w-full rounded-xl border border-slate-200 pl-10 pr-3 py-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -33,7 +33,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
-  Shield
+  Shield,
+  KeyRound,
+  Settings
 } from 'lucide-react'
 
 function AdminLayoutContent({
@@ -169,12 +171,18 @@ function AdminLayoutContent({
     } else if (pathname.includes('/cashier')) {
       parts.push('Bisnis')
       parts.push('Karyawan')
+    } else if (pathname.includes('/shifts')) {
+      parts.push('Bisnis')
+      parts.push('Shift Kasir')
     } else if (pathname.includes('/customers')) {
       parts.push('Bisnis')
       parts.push('Pelanggan')
     } else if (pathname.includes('/receipt-design')) {
       parts.push('Bisnis')
       parts.push('Perangkat')
+    } else if (pathname.includes('/settings')) {
+      parts.push('Bisnis')
+      parts.push('Konfigurasi Fitur')
     } else if (pathname.includes('/admins')) {
       parts.push('Bisnis')
       parts.push('Kelola Admin')
@@ -580,6 +588,19 @@ function AdminLayoutContent({
                   {!isSidebarCollapsed && <span>Karyawan</span>}
                 </Link>
 
+                <Link
+                  href="/dashboard/admin/shifts"
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200 ${
+                    pathname === '/dashboard/admin/shifts'
+                      ? 'bg-[#2b3546] text-sky-400 shadow-inner'
+                      : 'text-slate-400 hover:bg-[#202836] hover:text-white'
+                  } ${isSidebarCollapsed ? 'justify-center' : ''}`}
+                  title="Shift Kasir"
+                >
+                  <KeyRound size={16} className={pathname === '/dashboard/admin/shifts' ? 'text-sky-400' : 'text-slate-400'} />
+                  {!isSidebarCollapsed && <span>Shift Kasir</span>}
+                </Link>
+
                 {/* Kelola Admin */}
                 <Link
                   href="/dashboard/admin/admins"
@@ -634,6 +655,19 @@ function AdminLayoutContent({
                 >
                   <Printer size={16} className={pathname === '/dashboard/admin/receipt-design' ? 'text-sky-400' : 'text-slate-400'} />
                   {!isSidebarCollapsed && <span>Perangkat</span>}
+                </Link>
+
+                <Link
+                  href="/dashboard/admin/settings"
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-bold transition-all duration-200 ${
+                    pathname === '/dashboard/admin/settings'
+                      ? 'bg-[#2b3546] text-sky-400 shadow-inner'
+                      : 'text-slate-400 hover:bg-[#202836] hover:text-white'
+                  } ${isSidebarCollapsed ? 'justify-center' : ''}`}
+                  title="Konfigurasi Fitur"
+                >
+                  <Settings size={16} className={pathname === '/dashboard/admin/settings' ? 'text-sky-400' : 'text-slate-400'} />
+                  {!isSidebarCollapsed && <span>Konfigurasi Fitur</span>}
                 </Link>
               </div>
             </div>

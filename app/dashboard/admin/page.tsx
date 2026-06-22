@@ -12,7 +12,8 @@ import {
   AlertCircle, 
   TrendingUp,
   X,
-  Loader2
+  Loader2,
+  Boxes
 } from 'lucide-react'
 
 type StoreType = {
@@ -55,6 +56,11 @@ type DashboardData = {
   allTransactions: Transaction[]
   recentTransactions: Transaction[]
   storeStats: StoreStat[]
+  totalInventoryAsset: number
+  totalStockQty: number
+  totalLowStockCount: number
+  stockHealthRate: number
+  topSellingProducts: { name: string; sold: number }[]
 }
 
 type FilterPeriod = '1d' | '1w' | '1m' | '1y'
@@ -145,6 +151,11 @@ export default function AdminDashboard() {
     allTransactions: [],
     recentTransactions: [],
     storeStats: [],
+    totalInventoryAsset: 0,
+    totalStockQty: 0,
+    totalLowStockCount: 0,
+    stockHealthRate: 100,
+    topSellingProducts: [],
   })
 
   useEffect(() => {
@@ -167,21 +178,46 @@ export default function AdminDashboard() {
       let allTransactions: Transaction[] = []
       const storeStats: StoreStat[] = []
 
+      let aggregatedTopProducts: Record<string, number> = {}
+      let totalInventoryAsset = 0
+      let totalStockQty = 0
+      let totalLowStockCount = 0
+      let totalProductsCount = 0
+
       await Promise.all(
         stores.map(async (store: StoreType) => {
           try {
-            const [cashier, transaction, profit, topProductsRes] = await Promise.all([
+            const [cashier, transaction, profit, topProductsRes, productsRes] = await Promise.all([
               api.get(`/cashier/store/${store.id}`, { headers }),
               api.get(`/transactions/store/${store.id}`, { headers }),
               api.get(`/reports/profit/${store.id}`, { headers }),
               api.get(`/dashboard/${store.id}/top-products`, { headers }).catch(() => ({ data: [] })),
+              api.get(`/products/store/${store.id}`, { headers }).catch(() => ({ data: [] })),
             ])
 
             const cashiersCount = cashier.data?.length ?? 0
             const transactionsCount = transaction.data?.length ?? 0
             const revenue = Number(profit.data?.totalSales ?? 0)
             
+            const products = productsRes.data || []
+            products.forEach((p: any) => {
+              if (p.isActive) {
+                totalProductsCount++
+                totalStockQty += p.stock || 0
+                totalInventoryAsset += (p.stock || 0) * (p.costPrice || 0)
+                if ((p.stock || 0) <= (p.minimumStock || 0)) {
+                  totalLowStockCount++
+                }
+              }
+            })
+
             const topProducts = topProductsRes.data || []
+            topProducts.forEach((tp: any) => {
+              if (tp.name) {
+                aggregatedTopProducts[tp.name] = (aggregatedTopProducts[tp.name] || 0) + (tp.sold || 0)
+              }
+            })
+
             const bestSeller = topProducts.length > 0 && topProducts[0].name
               ? { name: topProducts[0].name, sold: topProducts[0].sold }
               : null
@@ -218,6 +254,15 @@ export default function AdminDashboard() {
       const sortedStoreStats = [...storeStats]
         .sort((a, b) => b.revenue - a.revenue)
 
+      const topSellingProducts = Object.entries(aggregatedTopProducts)
+        .map(([name, sold]) => ({ name, sold }))
+        .sort((a, b) => b.sold - a.sold)
+        .slice(0, 5)
+
+      const stockHealthRate = totalProductsCount > 0 
+        ? Math.round(((totalProductsCount - totalLowStockCount) / totalProductsCount) * 100) 
+        : 100
+
       setData({
         totalStores: stores.length,
         totalCashiers,
@@ -226,6 +271,11 @@ export default function AdminDashboard() {
         allTransactions: sortedTransactions,
         recentTransactions: sortedTransactions.slice(0, 5),
         storeStats: sortedStoreStats,
+        totalInventoryAsset,
+        totalStockQty,
+        totalLowStockCount,
+        stockHealthRate,
+        topSellingProducts,
       })
     } catch (err) {
       console.error(err)
@@ -874,6 +924,97 @@ export default function AdminDashboard() {
             </table>
           )}
         </div>
+      </div>
+
+      {/* Analisis Inventori & Perputaran Stok */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        
+        {/* Kiri: KPI Inventori */}
+        <div className="rounded-2xl border border-slate-200/70 bg-white shadow-3xs flex flex-col justify-between overflow-hidden">
+          <div className="border-b border-slate-100 p-5 bg-slate-50/50 flex items-center justify-between">
+            <div>
+              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Ringkasan Status Stok & Aset</h3>
+              <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Monitoring kondisi kesehatan stok barang dan nilai modal inventori</p>
+            </div>
+            <Boxes className="h-4 w-4 text-slate-400" />
+          </div>
+
+          <div className="p-6 grid grid-cols-2 gap-4 flex-1">
+            <div className="border border-slate-100 rounded-xl p-4 bg-slate-50/30 flex flex-col justify-between">
+              <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400">Total Nilai Aset</span>
+              <h4 className="text-base font-black text-slate-900 mt-2 font-mono">Rp {data.totalInventoryAsset.toLocaleString('id-ID')}</h4>
+              <p className="text-[9px] text-slate-400 font-semibold mt-1">Estimasi nilai modal terikat</p>
+            </div>
+            <div className="border border-slate-100 rounded-xl p-4 bg-slate-50/30 flex flex-col justify-between">
+              <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400">Total Kuantitas Stok</span>
+              <h4 className="text-base font-black text-slate-900 mt-2 font-mono">{data.totalStockQty.toLocaleString('id-ID')} Pcs</h4>
+              <p className="text-[9px] text-slate-400 font-semibold mt-1">Jumlah unit fisik baju</p>
+            </div>
+            <div className="border border-slate-100 rounded-xl p-4 bg-slate-50/30 flex flex-col justify-between">
+              <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400">Tingkat Kesehatan Stok</span>
+              <div className="flex items-baseline gap-1.5 mt-2">
+                <h4 className="text-base font-black text-emerald-600 font-mono">{data.stockHealthRate}%</h4>
+              </div>
+              <p className="text-[9px] text-slate-400 font-semibold mt-1">Stok aman / di atas batas minimum</p>
+            </div>
+            <div className="border border-slate-100 rounded-xl p-4 bg-slate-50/30 flex flex-col justify-between">
+              <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400">Kritis / Perlu Restock</span>
+              <h4 className={`text-base font-black mt-2 font-mono ${data.totalLowStockCount > 0 ? 'text-amber-600' : 'text-slate-900'}`}>{data.totalLowStockCount} Produk</h4>
+              <p className="text-[9px] text-slate-400 font-semibold mt-1">Stok menipis atau habis</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Kanan: Grafik Top 5 Produk Terlaris */}
+        <div className="rounded-2xl border border-slate-200/70 bg-white shadow-3xs flex flex-col justify-between overflow-hidden">
+          <div className="border-b border-slate-100 p-5 bg-slate-50/50 flex items-center justify-between">
+            <div>
+              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Top 5 Produk Terlaris</h3>
+              <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Produk dengan perputaran dan penjualan tertinggi (akumulasi semua cabang)</p>
+            </div>
+            <TrendingUp className="h-4 w-4 text-slate-400" />
+          </div>
+
+          <div className="p-6 space-y-4 flex-1 flex flex-col justify-center">
+            {data.topSellingProducts.length === 0 ? (
+              <div className="text-center text-slate-400 py-10 font-bold text-xs">
+                Belum ada data penjualan tercatat.
+              </div>
+            ) : (
+              data.topSellingProducts.map((p, idx) => {
+                const maxSold = Math.max(...data.topSellingProducts.map(tp => tp.sold), 1)
+                const percent = Math.min(100, Math.max(8, (p.sold / maxSold) * 100))
+                
+                const gradients = [
+                  'from-blue-500 to-cyan-400',
+                  'from-indigo-500 to-blue-400',
+                  'from-violet-500 to-indigo-400',
+                  'from-purple-500 to-violet-400',
+                  'from-fuchsia-500 to-purple-400'
+                ]
+
+                return (
+                  <div key={idx} className="space-y-1.5">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-bold text-slate-800 truncate max-w-[250px] flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center text-[10px] text-slate-500 font-extrabold">{idx + 1}</span>
+                        {p.name}
+                      </span>
+                      <span className="font-mono font-black text-slate-950 bg-slate-100 px-2 py-0.5 rounded text-[10px]">{p.sold} Terjual</span>
+                    </div>
+                    <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden relative border border-slate-150">
+                      <div 
+                        className={`h-full bg-gradient-to-r ${gradients[idx % gradients.length]} rounded-full transition-all duration-500`}
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </div>
+
       </div>
 
       {detailModalOpen && detailModalType && (

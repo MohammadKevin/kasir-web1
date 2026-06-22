@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { api } from '@/lib/api'
 import * as XLSX from 'xlsx'
 import { 
@@ -252,7 +253,8 @@ function SearchableSupplierSelect({ suppliers, value, onChange, placeholder = 'P
   )
 }
 
-export default function PurchasePage() {
+function PurchasePageContent() {
+  const searchParams = useSearchParams()
   const [purchases, setPurchases] = useState<Purchase[]>([])
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [products, setProducts] = useState<any[]>([])
@@ -335,6 +337,23 @@ export default function PurchasePage() {
       setPurchases(pRes.data)
       setSuppliers(sRes.data)
       setProducts(prodRes.data)
+
+      const paramProdId = searchParams.get('productId')
+      const paramQty = parseInt(searchParams.get('qty') || '0', 10)
+      if (paramProdId && paramQty > 0) {
+        const foundProd = prodRes.data.find((p: any) => p.id === paramProdId)
+        if (foundProd) {
+          setOpen(true)
+          setCart([{
+            productId: foundProd.id,
+            name: foundProd.name,
+            quantity: paramQty,
+            costPrice: foundProd.costPrice || 0
+          }])
+          const newUrl = window.location.pathname
+          window.history.replaceState({}, '', newUrl)
+        }
+      }
     } catch (err) {
       console.error("Error loading data:", err)
     } finally {
@@ -1303,5 +1322,17 @@ export default function PurchasePage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function PurchasePage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen w-full items-center justify-center bg-[#f4f6f9]">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+      </div>
+    }>
+      <PurchasePageContent />
+    </Suspense>
   )
 }

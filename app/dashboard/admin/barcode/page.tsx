@@ -272,6 +272,16 @@ export default function BarcodePage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 shrink-0 sm:ml-auto">
+          <button
+            onClick={handleGenerateAll}
+            disabled={isProcessing || products.filter(p => !p.barcode).length === 0}
+            className="flex items-center justify-center gap-2 rounded-xl bg-indigo-650 hover:bg-indigo-750 px-4 py-2.5 text-xs font-bold text-white transition-all shadow-3xs active:scale-97 cursor-pointer disabled:opacity-40"
+            title="Generate barcode otomatis untuk semua produk yang belum memiliki barcode"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Generate Semua ({products.filter(p => !p.barcode).length})</span>
+          </button>
+
           {selectedIds.length > 0 && (
             <button
               onClick={() => {

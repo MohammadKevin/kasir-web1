@@ -62,6 +62,12 @@ function ReportPageContent() {
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<TabType>('sales')
 
+  // States for Margin Analyzer & Price Tracker
+  const [marginTierFilter, setMarginTierFilter] = useState<'ALL' | 'HIGH' | 'MEDIUM' | 'LOW'>('ALL')
+  const [marginSortBy, setMarginSortBy] = useState<'marginDesc' | 'marginAsc' | 'profitDesc' | 'revenueDesc'>('marginDesc')
+  const [allProducts, setAllProducts] = useState<any[]>([])
+  const [selectedTrackerProductId, setSelectedTrackerProductId] = useState<string>('')
+
   
   const salesReportCards = [
     { id: 'ringkasan', label: 'Ringkasan', icon: FileText, tab: 'sales' as TabType, desc: 'Ringkasan omset dan grafik penjualan harian' },
@@ -87,7 +93,8 @@ function ReportPageContent() {
     { id: 'pajak', label: 'Penerimaan Pajak', icon: Coins, tab: 'sales' as TabType, desc: 'Pajak penjualan terhitung otomatis' },
     { id: 'promo', label: 'Promo', icon: Percent, tab: 'sales' as TabType, desc: 'Log pemakaian kupon diskon dan promo' },
     { id: 'laba-harian', label: 'Laba Harian', icon: TrendingUp, tab: 'sales' as TabType, desc: 'Audit laba bersih dikurangi modal HPP' },
-    { id: 'laba-produk', label: 'Laba Produk', icon: Boxes, tab: 'products' as TabType, desc: 'Margin laba per item barang' }
+    { id: 'laba-produk', label: 'Laba Produk', icon: Boxes, tab: 'products' as TabType, desc: 'Margin laba per item barang' },
+    { id: 'harga-modal', label: 'Riwayat Modal Supplier', icon: TrendingDown, tab: 'purchases' as TabType, desc: 'Track perubahan harga modal / cost price dari supplier' }
   ]
 
   
@@ -245,6 +252,8 @@ function ReportPageContent() {
           endpoint = `/reports/daily-profit/${storeId}`
         } else if (selectedReportId === 'laba-produk' || selectedReportId === 'produk') {
           endpoint = `/reports/product-profit/${storeId}`
+        } else if (selectedReportId === 'harga-modal') {
+          endpoint = `/purchases/store/${storeId}`
         }
       } else {
         if (tab === 'expenses') endpoint = `/reports/expenses/${storeId}`
@@ -301,6 +310,130 @@ function ReportPageContent() {
       setDownloading(null)
     }
   }
+
+  // Load products list for Cost Price Tracker
+  useEffect(() => {
+    if (selectedReportId === 'harga-modal' && selectedStoreId) {
+      const token = localStorage.getItem('token')
+      api.get(`/products/store/${selectedStoreId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(res => {
+        setAllProducts(res.data || [])
+        if (res.data && res.data.length > 0) {
+          setSelectedTrackerProductId(res.data[0].id)
+        }
+      }).catch(err => console.error(err))
+    }
+  }, [selectedReportId, selectedStoreId])
+
+  // Gross Profit Margin Analyzer calculations
+  const analyzedProducts = useMemo(() => {
+    if (selectedReportId !== 'laba-produk' && selectedReportId !== 'produk') return []
+    return tableData.map(row => {
+      const rev = row.revenue ?? 0
+      const cost = row.cost ?? 0
+      const profit = row.profit ?? 0
+      const marginPct = rev > 0 ? (profit / rev) * 100 : 0
+      
+      let tier: 'HIGH' | 'MEDIUM' | 'LOW' = 'MEDIUM'
+      if (marginPct >= 30) tier = 'HIGH'
+      else if (marginPct < 15) tier = 'LOW'
+
+      return {
+        ...row,
+        marginPct,
+        tier
+      }
+    })
+  }, [tableData, selectedReportId])
+
+  const marginStats = useMemo(() => {
+    if (analyzedProducts.length === 0) return { avgMargin: 0, highCount: 0, medCount: 0, lowCount: 0, highest: null, lowest: null }
+    
+    const totalRev = analyzedProducts.reduce((sum, p) => sum + (p.revenue ?? 0), 0)
+    const totalCost = analyzedProducts.reduce((sum, p) => sum + (p.cost ?? 0), 0)
+    const totalProfit = totalRev - totalCost
+    const avgMargin = totalRev > 0 ? (totalProfit / totalRev) * 100 : 0
+
+    let highest = analyzedProducts[0]
+    let lowest = analyzedProducts[0]
+    let highCount = 0
+    let medCount = 0
+    let lowCount = 0
+
+    analyzedProducts.forEach(p => {
+      if (p.marginPct > (highest?.marginPct ?? -999)) highest = p
+      if (p.marginPct < (lowest?.marginPct ?? 999)) lowest = p
+      if (p.tier === 'HIGH') highCount++
+      else if (p.tier === 'MEDIUM') medCount++
+      else if (p.tier === 'LOW') lowCount++
+    })
+
+    return { avgMargin, highCount, medCount, lowCount, highest, lowest }
+  }, [analyzedProducts])
+
+  const processedProducts = useMemo(() => {
+    let result = [...analyzedProducts]
+    if (marginTierFilter !== 'ALL') {
+      result = result.filter(p => p.tier === marginTierFilter)
+    }
+    
+    result.sort((a, b) => {
+      if (marginSortBy === 'marginDesc') return b.marginPct - a.marginPct
+      if (marginSortBy === 'marginAsc') return a.marginPct - b.marginPct
+      if (marginSortBy === 'profitDesc') return (b.profit ?? 0) - (a.profit ?? 0)
+      if (marginSortBy === 'revenueDesc') return (b.revenue ?? 0) - (a.revenue ?? 0)
+      return 0
+    })
+
+    return result
+  }, [analyzedProducts, marginTierFilter, marginSortBy])
+
+  // Cost Tracker calculations
+  const costHistory = useMemo(() => {
+    if (!selectedTrackerProductId || tableData.length === 0) return []
+    
+    const history: Array<{
+      date: string
+      invoiceNumber: string
+      supplierName: string
+      costPrice: number
+      quantity: number
+    }> = []
+
+    tableData.forEach((purchase: any) => {
+      if (purchase.items && Array.isArray(purchase.items)) {
+        purchase.items.forEach((item: any) => {
+          if (String(item.productId) === String(selectedTrackerProductId)) {
+            history.push({
+              date: purchase.createdAt,
+              invoiceNumber: purchase.invoiceNumber,
+              supplierName: purchase.supplier?.name || 'Umum',
+              costPrice: item.costPrice ?? 0,
+              quantity: item.quantity ?? 0
+            })
+          }
+        })
+      }
+    })
+
+    return history.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  }, [selectedTrackerProductId, tableData])
+
+  const costHistoryWithChanges = useMemo(() => {
+    return costHistory.map((item, idx) => {
+      const prev = idx > 0 ? costHistory[idx - 1] : null
+      const diff = prev ? item.costPrice - prev.costPrice : 0
+      return {
+        ...item,
+        diff
+      }
+    })
+  }, [costHistory])
+
+  const sortedHistoryLogs = useMemo(() => {
+    return [...costHistoryWithChanges].reverse()
+  }, [costHistoryWithChanges])
 
   if (!isMounted) {
     return (
@@ -478,6 +611,341 @@ function ReportPageContent() {
       </div>
 
       
+      {/* Gross Profit Margin Analyzer KPI Summary & Filters */}
+      {(selectedReportId === 'laba-produk' || selectedReportId === 'produk') && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* Avg Margin */}
+            <div className="border border-slate-200 rounded-xl p-5 bg-white shadow-3xs flex items-center gap-4 hover:shadow-xs transition-all">
+              <div className="p-3 bg-indigo-500/10 rounded-lg border border-indigo-100/50 text-indigo-600 shrink-0">
+                <Percent className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Rata-Rata Margin</p>
+                <p className="text-base font-black text-slate-900 font-mono mt-0.5">{marginStats.avgMargin.toFixed(1)}%</p>
+                <p className="text-[8.5px] text-slate-450 font-semibold mt-1">
+                  Margin kotor terbobot seluruh produk
+                </p>
+              </div>
+            </div>
+
+            {/* Highest Margin Item */}
+            <div className="border border-slate-200 rounded-xl p-5 bg-white shadow-3xs flex items-center gap-4 hover:shadow-xs transition-all">
+              <div className="p-3 bg-emerald-500/10 rounded-lg border border-emerald-100/50 text-emerald-600 shrink-0">
+                <TrendingUp className="w-5 h-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Margin Tertinggi</p>
+                <p className="text-sm font-black text-slate-900 mt-0.5 truncate" title={marginStats.highest?.productName || '-'}>
+                  {marginStats.highest?.productName || '-'}
+                </p>
+                <p className="text-[9px] font-mono text-emerald-650 font-extrabold mt-0.5">
+                  {marginStats.highest ? `${marginStats.highest.marginPct.toFixed(1)}% Margin` : '—'}
+                </p>
+              </div>
+            </div>
+
+            {/* Lowest Margin Item */}
+            <div className="border border-slate-200 rounded-xl p-5 bg-white shadow-3xs flex items-center gap-4 hover:shadow-xs transition-all">
+              <div className="p-3 bg-rose-500/10 rounded-lg border border-rose-100/50 text-rose-600 shrink-0">
+                <TrendingDown className="w-5 h-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Margin Terendah</p>
+                <p className="text-sm font-black text-slate-900 mt-0.5 truncate" title={marginStats.lowest?.productName || '-'}>
+                  {marginStats.lowest?.productName || '-'}
+                </p>
+                <p className="text-[9px] font-mono text-rose-650 font-extrabold mt-0.5">
+                  {marginStats.lowest ? `${marginStats.lowest.marginPct.toFixed(1)}% Margin` : '—'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Filtering and Sorting control bar */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-500">Filter Margin:</span>
+              <div className="flex bg-white p-0.5 rounded-lg border border-slate-200 shadow-3xs">
+                {[
+                  { label: 'Semua', value: 'ALL' },
+                  { label: 'Tinggi (≥30%)', value: 'HIGH' },
+                  { label: 'Sedang (15-30%)', value: 'MEDIUM' },
+                  { label: 'Rendah (<15%)', value: 'LOW' }
+                ].map((tierOpt) => (
+                  <button
+                    key={tierOpt.value}
+                    onClick={() => setMarginTierFilter(tierOpt.value as any)}
+                    className={`px-3 py-1 text-[10px] font-bold rounded transition-all cursor-pointer ${
+                      marginTierFilter === tierOpt.value
+                        ? 'bg-indigo-650 text-white shadow-3xs'
+                        : 'text-slate-500 hover:text-slate-900'
+                    }`}
+                  >
+                    {tierOpt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-xs font-bold text-slate-500">Urutkan:</span>
+              <select
+                value={marginSortBy}
+                onChange={(e) => setMarginSortBy(e.target.value as any)}
+                className="bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 focus:border-indigo-500 focus:outline-none cursor-pointer shadow-3xs"
+              >
+                <option value="marginDesc">Margin % (Tertinggi)</option>
+                <option value="marginAsc">Margin % (Terendah)</option>
+                <option value="profitDesc">Laba (Terbesar)</option>
+                <option value="revenueDesc">Penjualan (Terbesar)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Supplier Cost Tracker Selector & SVG Chart */}
+      {selectedReportId === 'harga-modal' && (
+        <div className="space-y-6">
+          {/* Selector Card */}
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-3xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="text-xs font-black text-slate-900 tracking-tight">Pilih Produk Supplier</h3>
+              <p className="text-[10px] text-slate-450 font-semibold mt-0.5">Analisis tren harga modal HPP dari waktu ke waktu.</p>
+            </div>
+            <div className="relative shrink-0 w-full sm:w-80">
+              <select
+                value={selectedTrackerProductId}
+                onChange={(e) => setSelectedTrackerProductId(e.target.value)}
+                className="w-full appearance-none bg-slate-50 border border-slate-200 pl-4 pr-10 py-2.5 rounded-lg text-xs font-bold text-slate-700 focus:bg-white focus:border-indigo-500 focus:outline-none cursor-pointer transition-all shadow-3xs"
+              >
+                {allProducts.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name} {p.sku ? `(SKU: ${p.sku})` : ''}</option>
+                ))}
+              </select>
+              <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            </div>
+          </div>
+
+          {costHistory.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 bg-white border border-slate-200 rounded-xl shadow-3xs text-slate-400 gap-2">
+              <TrendingUp className="w-8 h-8 text-slate-350" />
+              <p className="text-xs font-bold text-slate-500">Belum ada riwayat pembelian supplier</p>
+              <p className="text-[10px] text-slate-400">Pastikan produk ini terdaftar di Purchase Order (PO) masuk di menu Bisnis &gt; Pembelian.</p>
+            </div>
+          ) : (
+            <>
+              {/* Cost Tracker KPI Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div className="border border-slate-200 rounded-xl p-5 bg-white shadow-3xs flex items-center gap-4 hover:shadow-xs transition-all">
+                  <div className="p-3 bg-indigo-500/10 rounded-lg border border-indigo-100/50 text-indigo-600 shrink-0">
+                    <DollarSign className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Harga Modal Terakhir</p>
+                    <p className="text-base font-black text-slate-900 font-mono mt-0.5">
+                      Rp {costHistory[costHistory.length - 1].costPrice.toLocaleString('id-ID')}
+                    </p>
+                    <p className="text-[8.5px] text-slate-450 font-semibold mt-1">
+                      Berdasarkan PO masuk terakhir
+                    </p>
+                  </div>
+                </div>
+
+                <div className="border border-slate-200 rounded-xl p-5 bg-white shadow-3xs flex items-center gap-4 hover:shadow-xs transition-all">
+                  <div className={`p-3 rounded-lg border shrink-0 ${
+                    costHistoryWithChanges[costHistoryWithChanges.length - 1].diff === 0
+                      ? 'bg-slate-100 border-slate-200 text-slate-500'
+                      : costHistoryWithChanges[costHistoryWithChanges.length - 1].diff > 0
+                        ? 'bg-rose-500/10 border-rose-100/50 text-rose-600'
+                        : 'bg-emerald-500/10 border-emerald-100/50 text-emerald-600'
+                  }`}>
+                    {costHistoryWithChanges[costHistoryWithChanges.length - 1].diff >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Perubahan Terakhir</p>
+                    <p className={`text-base font-black font-mono mt-0.5 ${
+                      costHistoryWithChanges[costHistoryWithChanges.length - 1].diff === 0
+                        ? 'text-slate-800'
+                        : costHistoryWithChanges[costHistoryWithChanges.length - 1].diff > 0
+                          ? 'text-rose-650'
+                          : 'text-emerald-650'
+                    }`}>
+                      {costHistoryWithChanges[costHistoryWithChanges.length - 1].diff === 0
+                        ? 'Tetap'
+                        : costHistoryWithChanges[costHistoryWithChanges.length - 1].diff > 0
+                          ? `+Rp ${costHistoryWithChanges[costHistoryWithChanges.length - 1].diff.toLocaleString('id-ID')}`
+                          : `-Rp ${Math.abs(costHistoryWithChanges[costHistoryWithChanges.length - 1].diff).toLocaleString('id-ID')}`
+                      }
+                    </p>
+                    <p className="text-[8.5px] text-slate-450 font-semibold mt-1">
+                      Dibandingkan harga modal sebelumnya
+                    </p>
+                  </div>
+                </div>
+
+                <div className="border border-slate-200 rounded-xl p-5 bg-white shadow-3xs flex items-center gap-4 hover:shadow-xs transition-all">
+                  <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-100/50 text-blue-600 shrink-0">
+                    <Boxes className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Terbeli</p>
+                    <p className="text-base font-black text-slate-900 font-mono mt-0.5">
+                      {costHistory.reduce((sum, item) => sum + item.quantity, 0)} Pcs
+                    </p>
+                    <p className="text-[8.5px] text-slate-450 font-semibold mt-1">
+                      Akumulasi kuantitas pasokan
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Custom SVG Line Chart */}
+              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-3xs space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xs font-black text-slate-900">Grafik Pergerakan Harga Modal</h3>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Visualisasi kronologis fluktuasi harga beli supplier.</p>
+                  </div>
+                </div>
+                
+                <div className="w-full overflow-x-auto pt-2 pb-2">
+                  <div className="min-w-[600px] h-60 flex justify-center items-center">
+                    {/* SVG Chart Code */}
+                    {(() => {
+                      const chartWidth = 700
+                      const chartHeight = 220
+                      const paddingLeft = 60
+                      const paddingRight = 40
+                      const paddingTop = 20
+                      const paddingBottom = 40
+
+                      const prices = costHistory.map(h => h.costPrice)
+                      const maxPrice = Math.max(...prices) * 1.1
+                      const minPrice = Math.min(...prices) * 0.9
+
+                      const priceRange = maxPrice - minPrice || 1
+                      const steps = 4
+
+                      const points = costHistory.map((item, index) => {
+                        const x = paddingLeft + (index / Math.max(1, costHistory.length - 1)) * (chartWidth - paddingLeft - paddingRight)
+                        const y = paddingTop + (1 - (item.costPrice - minPrice) / priceRange) * (chartHeight - paddingTop - paddingBottom)
+                        return { x, y, price: item.costPrice, date: item.date, supplier: item.supplierName }
+                      })
+
+                      const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
+                      const areaPath = points.length > 0 
+                        ? `${linePath} L ${points[points.length - 1].x} ${chartHeight - paddingBottom} L ${points[0].x} ${chartHeight - paddingBottom} Z`
+                        : ''
+
+                      return (
+                        <svg width="100%" height="100%" viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="overflow-visible select-none">
+                          <defs>
+                            <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#4f46e5" stopOpacity="0.15" />
+                              <stop offset="100%" stopColor="#4f46e5" stopOpacity="0.0" />
+                            </linearGradient>
+                          </defs>
+
+                          {/* Grid Lines */}
+                          {Array.from({ length: steps + 1 }).map((_, i) => {
+                            const gridY = paddingTop + (i / steps) * (chartHeight - paddingTop - paddingBottom)
+                            const gridPrice = maxPrice - (i / steps) * priceRange
+                            return (
+                              <g key={i} className="opacity-40">
+                                <line 
+                                  x1={paddingLeft} 
+                                  y1={gridY} 
+                                  x2={chartWidth - paddingRight} 
+                                  y2={gridY} 
+                                  stroke="#e2e8f0" 
+                                  strokeWidth="1" 
+                                  strokeDasharray="4 4" 
+                                />
+                                <text 
+                                  x={paddingLeft - 8} 
+                                  y={gridY + 4} 
+                                  textAnchor="end" 
+                                  className="fill-slate-400 font-mono text-[9px] font-bold"
+                                >
+                                  Rp {Math.round(gridPrice).toLocaleString('id-ID')}
+                                </text>
+                              </g>
+                            )
+                          })}
+
+                          {/* Area Under Curve */}
+                          {areaPath && (
+                            <path d={areaPath} fill="url(#chartGrad)" />
+                          )}
+
+                          {/* Main Line */}
+                          {linePath && (
+                            <path 
+                              d={linePath} 
+                              fill="none" 
+                              stroke="#4f46e5" 
+                              strokeWidth="2.5" 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round" 
+                            />
+                          )}
+
+                          {/* Dots & Labels */}
+                          {points.map((p, i) => (
+                            <g key={i} className="group cursor-pointer">
+                              <circle 
+                                cx={p.x} 
+                                cy={p.y} 
+                                r="4.5" 
+                                fill="#ffffff" 
+                                stroke="#4f46e5" 
+                                strokeWidth="2.5" 
+                              />
+                              
+                              {/* Hover tooltip structure */}
+                              <g className="opacity-0 hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                                <rect 
+                                  x={p.x - 65} 
+                                  y={p.y - 45} 
+                                  width="130" 
+                                  height="35" 
+                                  rx="6" 
+                                  fill="#1e293b" 
+                                />
+                                <text x={p.x} y={p.y - 32} textAnchor="middle" className="fill-white font-mono text-[8px] font-black">
+                                  Rp {p.price.toLocaleString('id-ID')}
+                                </text>
+                                <text x={p.x} y={p.y - 20} textAnchor="middle" className="fill-slate-300 text-[7px] font-bold">
+                                  {p.supplier} ({new Date(p.date).toLocaleDateString('id-ID', {day: 'numeric', month: 'short'})})
+                                </text>
+                              </g>
+
+                              {/* X Axis Labels */}
+                              {(i === 0 || i === points.length - 1 || points.length <= 6 || i % Math.ceil(points.length / 5) === 0) && (
+                                <text 
+                                  x={p.x} 
+                                  y={chartHeight - paddingBottom + 16} 
+                                  textAnchor="middle" 
+                                  className="fill-slate-400 font-bold text-[8px]"
+                                >
+                                  {new Date(p.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                                </text>
+                              )}
+                            </g>
+                          ))}
+                        </svg>
+                      )
+                    })()}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       {(selectedReportId === 'ringkasan' || selectedReportId === 'laba-harian' || selectedReportId === 'transaksi') && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <div className="border border-slate-200 rounded-xl p-5 bg-white shadow-3xs flex items-center gap-4 hover:shadow-xs transition-all">
@@ -835,18 +1303,72 @@ function ReportPageContent() {
                       <th className="p-4">Kuantitas Terjual</th>
                       <th className="p-4">Total Penjualan Kotor</th>
                       <th className="p-4">Total Modal HPP</th>
-                      <th className="p-4 pr-6">Margin Keuntungan</th>
+                      <th className="p-4 pr-6">Laba & Margin</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {tableData.map((row: any, idx: number) => (
+                    {processedProducts.map((row: any, idx: number) => (
                       <tr key={idx} className="hover:bg-slate-50/45 transition-colors">
                         <td className="p-4 pl-6 font-bold text-slate-900">{row.productName}</td>
                         <td className="p-4 text-slate-400 font-mono">{row.sku}</td>
                         <td className="p-4 text-slate-700 font-mono">{row.quantity} Pcs</td>
                         <td className="p-4 font-mono text-slate-800">Rp {(row.revenue ?? 0).toLocaleString('id-ID')}</td>
                         <td className="p-4 font-mono text-rose-600">Rp {(row.cost ?? 0).toLocaleString('id-ID')}</td>
-                        <td className="p-4 pr-6 font-bold text-emerald-600 font-mono">Rp {(row.profit ?? 0).toLocaleString('id-ID')}</td>
+                        <td className="p-4 pr-6">
+                          <div className="font-mono font-bold text-slate-950">
+                            Rp {(row.profit ?? 0).toLocaleString('id-ID')}
+                          </div>
+                          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[8.5px] font-black uppercase tracking-wider border mt-1 ${
+                            row.tier === 'HIGH'
+                              ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                              : row.tier === 'LOW'
+                                ? 'bg-rose-50 border-rose-200 text-rose-700'
+                                : 'bg-amber-50 border-amber-200 text-amber-700'
+                          }`}>
+                            {row.marginPct.toFixed(1)}% ({row.tier === 'HIGH' ? 'Tinggi' : row.tier === 'LOW' ? 'Rendah' : 'Sedang'})
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </>
+              )}
+
+              {selectedReportId === 'harga-modal' && (
+                <>
+                  <thead className="bg-slate-50 text-[9px] font-bold uppercase text-slate-400 border-b border-slate-200/70 tracking-wider">
+                    <tr>
+                      <th className="p-4 pl-6">Invoice PO</th>
+                      <th className="p-4">Tanggal Pembelian</th>
+                      <th className="p-4">Supplier</th>
+                      <th className="p-4">Kuantitas</th>
+                      <th className="p-4">Harga Modal (Pcs)</th>
+                      <th className="p-4 pr-6">Perubahan Modal</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {sortedHistoryLogs.map((row: any, idx: number) => (
+                      <tr key={idx} className="hover:bg-slate-50/45 transition-colors">
+                        <td className="p-4 pl-6 font-mono font-bold text-slate-900">{row.invoiceNumber}</td>
+                        <td className="p-4 text-slate-500 font-medium">{new Date(row.date).toLocaleString('id-ID')}</td>
+                        <td className="p-4 text-slate-800 font-bold">{row.supplierName}</td>
+                        <td className="p-4 text-slate-500 font-mono font-medium">{row.quantity} Pcs</td>
+                        <td className="p-4 font-mono font-bold text-slate-950">Rp {row.costPrice.toLocaleString('id-ID')}</td>
+                        <td className="p-4 pr-6">
+                          {row.diff === 0 ? (
+                            <span className="bg-slate-50 text-slate-500 border border-slate-250 text-[9px] px-2 py-0.5 rounded-full font-bold">
+                              Tetap (Rp 0)
+                            </span>
+                          ) : row.diff > 0 ? (
+                            <span className="bg-rose-50 text-rose-700 border border-rose-250 text-[9px] px-2 py-0.5 rounded-full font-bold">
+                              Naik Rp {row.diff.toLocaleString('id-ID')}
+                            </span>
+                          ) : (
+                            <span className="bg-emerald-50 text-emerald-700 border border-emerald-250 text-[9px] px-2 py-0.5 rounded-full font-bold">
+                              Turun Rp {Math.abs(row.diff).toLocaleString('id-ID')}
+                            </span>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

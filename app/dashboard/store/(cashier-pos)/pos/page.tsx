@@ -296,12 +296,32 @@ export default function PosPage() {
     return () => window.removeEventListener('keydown', handleGlobalKeyDown)
   }, [products])
 
+  const [bundlingEnabled, setBundlingEnabled] = useState(false)
+
+  function getBundleCalculatedStock(bundle: any, productsList: any[]) {
+    let minStock = 9999
+    bundle.products.forEach((part: any) => {
+      const prod = productsList.find(p => p.id === part.productId)
+      if (prod) {
+        const stockAvailable = Math.floor(prod.stock / part.qty)
+        if (stockAvailable < minStock) minStock = stockAvailable
+      } else {
+        minStock = 0
+      }
+    })
+    return minStock === 9999 ? 0 : minStock
+  }
+
   async function loadData() {
     try {
       setLoading(true)
       const storeId = localStorage.getItem('storeId')
       const token = localStorage.getItem('token')
       const headers = { Authorization: `Bearer ${token}` }
+      
+      const isBundling = localStorage.getItem('feature_bundling_enabled') !== 'false'
+      setBundlingEnabled(isBundling)
+
       const [productsRes, categoriesRes, storeRes, tablesRes] = await Promise.all([
         api.get(`/products/store/${storeId}`, { headers }),
         api.get(`/categories/store/${storeId}`, { headers }),
@@ -314,8 +334,40 @@ export default function PosPage() {
       const storeData = storeRes.data || null
       const tablesData = tablesRes.data || []
 
-      setProducts(productsData)
-      setCategories(categoriesData)
+      let finalProducts = [...productsData]
+      let finalCategories = [...categoriesData]
+
+      if (isBundling) {
+        const storedBundlesStr = localStorage.getItem(`store_product_bundles_${storeId}`)
+        if (storedBundlesStr) {
+          try {
+            const storedBundles = JSON.parse(storedBundlesStr)
+            const formattedBundles = storedBundles.filter((b: any) => b.isActive).map((b: any) => ({
+              id: b.id,
+              categoryId: 'bundle_cat',
+              name: b.name,
+              barcode: b.barcode,
+              sku: b.sku,
+              sellingPrice: b.sellingPrice,
+              stock: getBundleCalculatedStock(b, productsData),
+              isBundle: true,
+              products: b.products,
+              description: b.description || 'Paket Hemat Combo'
+            }))
+            finalProducts = [...finalProducts, ...formattedBundles]
+            
+            finalCategories.push({
+              id: 'bundle_cat',
+              name: '🎁 Paket Bundling'
+            })
+          } catch (e) {
+            console.error('Error parsing bundles for POS catalog', e)
+          }
+        }
+      }
+
+      setProducts(finalProducts)
+      setCategories(finalCategories)
       setCurrentStore(storeData)
       setTables(tablesData)
 
@@ -332,10 +384,48 @@ export default function PosPage() {
       const cachedTables = localStorage.getItem('cached_tables')
 
       if (cachedProducts || cachedCategories || cachedStore || cachedTables) {
-        if (cachedProducts) setProducts(JSON.parse(cachedProducts))
-        if (cachedCategories) setCategories(JSON.parse(cachedCategories))
-        if (cachedStore) setCurrentStore(JSON.parse(cachedStore))
-        if (cachedTables) setTables(JSON.parse(cachedTables))
+        const productsData = cachedProducts ? JSON.parse(cachedProducts) : []
+        const categoriesData = cachedCategories ? JSON.parse(cachedCategories) : []
+        const storeData = cachedStore ? JSON.parse(cachedStore) : null
+        const tablesData = cachedTables ? JSON.parse(cachedTables) : []
+
+        let finalProducts = [...productsData]
+        let finalCategories = [...categoriesData]
+
+        const storeId = localStorage.getItem('storeId')
+        const isBundling = localStorage.getItem('feature_bundling_enabled') !== 'false'
+        if (isBundling && storeId) {
+          const storedBundlesStr = localStorage.getItem(`store_product_bundles_${storeId}`)
+          if (storedBundlesStr) {
+            try {
+              const storedBundles = JSON.parse(storedBundlesStr)
+              const formattedBundles = storedBundles.filter((b: any) => b.isActive).map((b: any) => ({
+                id: b.id,
+                categoryId: 'bundle_cat',
+                name: b.name,
+                barcode: b.barcode,
+                sku: b.sku,
+                sellingPrice: b.sellingPrice,
+                stock: getBundleCalculatedStock(b, productsData),
+                isBundle: true,
+                products: b.products,
+                description: b.description || 'Paket Hemat Combo'
+              }))
+              finalProducts = [...finalProducts, ...formattedBundles]
+              finalCategories.push({
+                id: 'bundle_cat',
+                name: '🎁 Paket Bundling'
+              })
+            } catch (e) {
+              console.error('Error parsing bundles for offline POS catalog', e)
+            }
+          }
+        }
+
+        setProducts(finalProducts)
+        setCategories(finalCategories)
+        if (storeData) setCurrentStore(storeData)
+        setTables(tablesData)
         
         toast.warning('Gagal terhubung ke server. Menggunakan data cache lokal.', {
           description: 'Anda sedang berada dalam Mode Offline.',
@@ -756,8 +846,81 @@ export default function PosPage() {
     if (!finalStoreId || !finalCashierId)
       return alert('Autentikasi gagal. Silakan login kembali.')
 
-    const originalSubtotal = cart.reduce((sum, item) => sum + (item.sellingPrice * item.qty), 0)
-    const itemDiscountsSum = cart.reduce((sum, item) => sum + ((getProductMasterDiscount(item) + item.cashierDiscount) * item.qty), 0)
+    // Explode bundles inside checkout cart items payload
+    const finalItemsPayload: any[] = []
+    cart.forEach(item => {
+      if ((item as any).isBundle) {
+        const bundle = item as any
+        const storedBundlesStr = localStorage.getItem(`store_product_bundles_${finalStoreId}`)
+        let storedBundle = null
+        if (storedBundlesStr) {
+          try {
+            const storedBundles = JSON.parse(storedBundlesStr)
+            storedBundle = storedBundles.find((b: any) => b.id === bundle.id)
+          } catch (e) {}
+        }
+        
+        const productsListStr = localStorage.getItem('cached_products') || '[]'
+        let productsList: any[] = []
+        try { productsList = JSON.parse(productsListStr) } catch(e) {}
+
+        const innerProducts = storedBundle?.products || bundle.products || []
+        
+        let retailSum = 0
+        innerProducts.forEach((part: any) => {
+          const prod = productsList.find(p => p.id === part.productId)
+          retailSum += ((prod?.sellingPrice || 0) * part.qty)
+        })
+        
+        const discountRatio = retailSum > 0 ? (bundle.sellingPrice / retailSum) : 1
+        
+        innerProducts.forEach((part: any) => {
+          const originalProd = productsList.find(p => p.id === part.productId)
+          if (originalProd) {
+            const partQty = part.qty * bundle.qty
+            const unitPrice = originalProd.sellingPrice
+            const discountedUnitPrice = Math.round(unitPrice * discountRatio)
+            const cashierDiscountPerUnit = Math.max(0, unitPrice - discountedUnitPrice)
+            
+            finalItemsPayload.push({
+              productId: originalProd.id,
+              quantity: partQty,
+              cashierDiscount: cashierDiscountPerUnit,
+              originalPrice: unitPrice
+            })
+          }
+        })
+      } else {
+        finalItemsPayload.push({
+          productId: item.id,
+          quantity: Math.round(Number(item.qty)),
+          cashierDiscount: Math.round(Number(item.cashierDiscount)),
+          originalPrice: item.sellingPrice
+        })
+      }
+    })
+
+    // Group items by productId to merge duplicates
+    const groupedItems: Record<string, { quantity: number; totalDiscount: number; originalPrice: number }> = {}
+    finalItemsPayload.forEach(item => {
+      if (!groupedItems[item.productId]) {
+        groupedItems[item.productId] = { quantity: 0, totalDiscount: 0, originalPrice: item.originalPrice }
+      }
+      groupedItems[item.productId].quantity += item.quantity
+      groupedItems[item.productId].totalDiscount += item.cashierDiscount * item.quantity
+    })
+    
+    const itemsPayload = Object.entries(groupedItems).map(([productId, data]) => {
+      const unitDiscount = Math.round(data.totalDiscount / data.quantity)
+      return {
+        productId,
+        quantity: data.quantity,
+        cashierDiscount: unitDiscount
+      }
+    })
+
+    const originalSubtotal = Object.values(groupedItems).reduce((sum, item) => sum + (item.originalPrice * item.quantity), 0)
+    const itemDiscountsSum = Object.values(groupedItems).reduce((sum, item) => sum + (item.totalDiscount), 0)
     const computedTotalDiscount = itemDiscountsSum + globalCalculatedDiscount
 
     const payload = {
@@ -777,13 +940,7 @@ export default function PosPage() {
       serviceAmount: Math.round(serviceAmount),
       splitPayments: payment === 'SPLIT' ? splitAmounts : undefined,
       pointsRedeemed: isRedeemingPoints ? pointsToRedeem : undefined,
-      items: cart.map(x => {
-        return {
-          productId: x.id,
-          quantity: Math.round(Number(x.qty)),
-          cashierDiscount: Math.round(Number(x.cashierDiscount))
-        }
-      })
+      items: itemsPayload
     }
 
     const isOffline = typeof navigator !== 'undefined' ? !navigator.onLine : false
@@ -808,12 +965,15 @@ export default function PosPage() {
         pointsEarned: 0,
         pointsRedeemed: isRedeemingPoints ? pointsToRedeem : 0,
         splitPayments: payment === 'SPLIT' ? splitAmounts : undefined,
-        items: cart.map(x => ({
-          product: x.name,
-          quantity: Math.round(Number(x.qty)),
-          originalPrice: x.sellingPrice,
-          discount: getProductMasterDiscount(x) + x.cashierDiscount
-        }))
+        items: Object.entries(groupedItems).map(([productId, data]) => {
+          const prodObj = products.find(p => p.id === productId)
+          return {
+            product: prodObj ? prodObj.name : 'Produk Tidak Dikenal',
+            quantity: data.quantity,
+            originalPrice: data.originalPrice,
+            discount: Math.round(data.totalDiscount / data.quantity)
+          }
+        })
       }
 
       const existingTxStr = localStorage.getItem('offlineTransactions') || '[]'

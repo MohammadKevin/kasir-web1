@@ -19,6 +19,7 @@ import {
   Loader2,
   ChevronDown,
   Upload,
+  Printer,
   CheckCircle,
   AlertCircle,
   Info,
@@ -369,7 +370,7 @@ function StockMovementPageContent() {
       productId: p.id,
       productName: p.name,
       productSku: p.sku,
-      productCategory: p.category?.name || 'Umum',
+      productCategory: p.category?.name || 'Tanpa Kategori',
       systemStock: p.stock,
       actualStock: newOpnameActuals[p.id] ?? '',
       note: newOpnameNotes[p.id] ?? ''
@@ -549,7 +550,7 @@ function StockMovementPageContent() {
           productId: m.productId,
           productName: m.product?.name || 'Produk Terhapus',
           productSku: m.product?.sku || '-',
-          productCategory: m.product?.category?.name || 'Umum',
+          productCategory: m.product?.category?.name || 'Tanpa Kategori',
           systemStock,
           actualStock,
           note: itemNote
@@ -948,6 +949,134 @@ function StockMovementPageContent() {
     loadProducts(selectedStoreId)
   }
 
+  function handleExportExcel() {
+    if (stockCardData.length === 0) {
+      alert('Tidak ada data kartu stok untuk diekspor.')
+      return
+    }
+    
+    const excelData = stockCardData.map(row => ({
+      'Nama Produk': row.product.name,
+      'SKU': row.product.sku,
+      'Kategori': row.product.category?.name || 'Tanpa Kategori',
+      'Stok Awal': row.stokAwal,
+      'Stok Masuk': row.stokMasuk,
+      'Stok Keluar': row.stokKeluar,
+      'Penjualan': row.penjualan,
+      'Transfer': row.transfer,
+      'Penyesuaian': row.penyesuaian,
+      'Stok Akhir': row.stokAkhir,
+      'Satuan': row.satuan,
+    }))
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Kartu Stok')
+    XLSX.writeFile(workbook, `laporan_kartu_stok_${new Date().toISOString().slice(0, 10)}.xlsx`)
+  }
+
+  function handleExportPDF() {
+    if (stockCardData.length === 0) {
+      alert('Tidak ada data kartu stok untuk dicetak.')
+      return
+    }
+
+    const win = window.open('', '_blank', 'width=1100,height=800')
+    if (!win) return
+
+    const storeName = stores.find(s => s.id === selectedStoreId)?.name || 'Seluruh Toko'
+    const dateRangeStr = startDate || endDate 
+      ? `Periode: ${startDate || 'Awal'} s.d. ${endDate || 'Hari Ini'}`
+      : 'Periode: Seluruh Waktu'
+
+    win.document.write(`
+      <html>
+        <head>
+          <title>Laporan Kartu Stok - \${storeName}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 25px; color: #1e293b; background-color: #ffffff; }
+            .header { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #0284c7; padding-bottom: 15px; }
+            .header h1 { margin: 0; font-size: 18pt; color: #0f172a; text-transform: uppercase; font-weight: 800; }
+            .header p { margin: 6px 0 0 0; font-size: 9.5pt; color: #64748b; font-weight: bold; }
+            .meta-info { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 8.5pt; font-weight: 600; color: #475569; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 8.5pt; }
+            th { background-color: #f1f5f9; border: 1px solid #e2e8f0; padding: 10px 8px; font-weight: bold; text-align: left; text-transform: uppercase; color: #475569; }
+            td { border: 1px solid #e2e8f0; padding: 9px 8px; color: #334155; }
+            tr:nth-child(even) { background-color: #f8fafc; }
+            .text-center { text-align: center; }
+            .text-right { text-align: right; }
+            .footer-sig { margin-top: 60px; display: flex; justify-content: flex-end; }
+            .sig-box { text-align: center; width: 220px; font-size: 9pt; color: #334155; }
+            .sig-line { margin-top: 70px; border-top: 1px solid #475569; padding-top: 6px; font-weight: bold; }
+            @media print {
+              body { padding: 0; }
+              @page { margin: 1.5cm; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Laporan Kartu Stok Persediaan Barang</h1>
+            <p>Laila Collections &bull; Outlet/Cabang: \${storeName}</p>
+          </div>
+          <div class="meta-info">
+            <span>\${dateRangeStr}</span>
+            <span>Dicetak pada: \${new Date().toLocaleString('id-ID')}</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Produk / Item</th>
+                <th>Kategori</th>
+                <th class="text-center">Stok Awal</th>
+                <th class="text-center">Stok Masuk</th>
+                <th class="text-center">Stok Keluar</th>
+                <th class="text-center">Penjualan</th>
+                <th class="text-center">Transfer</th>
+                <th class="text-center">Penyesuaian</th>
+                <th class="text-center">Stok Akhir</th>
+                <th class="text-center">Satuan</th>
+              </tr>
+            </thead>
+            <tbody>
+              \${stockCardData.map(row => \`
+                <tr>
+                  <td><strong>\${row.product.name}</strong><br/><span style="color:#64748b; font-size:7.5pt; font-family:monospace;">SKU: \${row.product.sku}</span></td>
+                  <td>\${row.product.category?.name || 'Tanpa Kategori'}</td>
+                  <td class="text-center" style="font-weight: 500;">\${row.stokAwal}</td>
+                  <td class="text-center" style="color:#10b981; font-weight:bold;">+\${row.stokMasuk}</td>
+                  <td class="text-center" style="color:#ef4444; font-weight:bold;">-\${row.stokKeluar}</td>
+                  <td class="text-center" style="color:#ef4444;">-\${row.penjualan}</td>
+                  <td class="text-center" style="font-weight:bold; color: \${row.transfer > 0 ? '#10b981' : row.transfer < 0 ? '#ef4444' : '#475569'}">\${row.transfer > 0 ? '+' : ''}\${row.transfer}</td>
+                  <td class="text-center" style="font-weight:bold; color: \${row.penyesuaian > 0 ? '#10b981' : row.penyesuaian < 0 ? '#ef4444' : '#475569'}">\${row.penyesuaian > 0 ? '+' : ''}\${row.penyesuaian}</td>
+                  <td class="text-center" style="font-weight: 800; color: #0f172a;">\${row.stokAkhir}</td>
+                  <td class="text-center">\${row.satuan}</td>
+                </tr>
+              \`).join('')}
+            </tbody>
+          </table>
+          
+          <div class="footer-sig">
+            <div class="sig-box">
+              <p>Petugas Logistik Gudang,</p>
+              <div class="sig-line">Tanda Tangan & Nama Terang</div>
+            </div>
+          </div>
+
+          <script>
+            window.onload = function() {
+              setTimeout(function() {
+                window.print();
+                window.close();
+              }, 400);
+            }
+          </script>
+        </body>
+      </html>
+    `)
+    win.document.close()
+  }
+
   
   async function handleImportStockExcel(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -1094,7 +1223,9 @@ function StockMovementPageContent() {
         for (let i = 0; i < rows.length; i++) {
           const row = rows[i]
           const productName = String(row[nameIdx] || '').trim()
-          if (!productName) continue
+          if (!productName || productName.toLowerCase() === 'total' || productName.toLowerCase().startsWith('total') || productName.toLowerCase() === 'jumlah' || productName.toLowerCase().startsWith('jumlah')) {
+            continue
+          }
 
           setImportStatus(prev => prev ? { ...prev, current: i + 1, currentName: productName } : null)
 
@@ -1184,7 +1315,7 @@ function StockMovementPageContent() {
     const matchesCategory = 
       selectedCategoryId === 'ALL' || 
       m.product?.category?.name === selectedCategoryId ||
-      (selectedCategoryId === 'Umum' && !m.product?.category)
+      (selectedCategoryId === 'Tanpa Kategori' && !m.product?.category)
 
     
     let matchesDate = true
@@ -1212,13 +1343,111 @@ function StockMovementPageContent() {
     const matchesCategory = 
       selectedCategoryId === 'ALL' || 
       p.category?.name === selectedCategoryId ||
-      (selectedCategoryId === 'Umum' && !p.category)
+      (selectedCategoryId === 'Tanpa Kategori' && !p.category)
 
     let matchesToggles = true
     if (showEmptyStock && p.stock > 0) matchesToggles = false
 
     return matchesSearch && matchesCategory && matchesToggles
   })
+
+  const stockCardData = useMemo(() => {
+    return filteredProducts.map(p => {
+      const prodMovements = movements.filter(m => m.productId === p.id)
+      const start = startDate ? new Date(startDate + 'T00:00:00') : null
+      const end = endDate ? new Date(endDate + 'T23:59:59') : null
+      
+      let stokAkhir = p.stock
+      
+      if (end) {
+        prodMovements.forEach(m => {
+          const mDate = new Date(m.createdAt)
+          if (mDate > end) {
+            if (m.type === 'IN') {
+              stokAkhir -= m.qty
+            } else {
+              stokAkhir += m.qty
+            }
+          }
+        })
+      }
+      
+      let stokMasuk = 0
+      let stokKeluar = 0
+      let penjualan = 0
+      let transfer = 0
+      let penyesuaian = 0
+      
+      prodMovements.forEach(m => {
+        const mDate = new Date(m.createdAt)
+        const isAfterStart = start ? mDate >= start : true
+        const isBeforeEnd = end ? mDate <= end : true
+        
+        if (isAfterStart && isBeforeEnd) {
+          const noteLower = (m.note || '').toLowerCase()
+          const isTransfer = noteLower.includes('transfer')
+          const isOpname = noteLower.includes('opname') || noteLower.includes('penyesuaian') || noteLower.includes('koreksi') || noteLower.includes('excel import')
+          const isStokAwal = noteLower.includes('stok awal')
+          
+          if (isTransfer) {
+            if (m.type === 'IN') {
+              transfer += m.qty
+            } else {
+              transfer -= m.qty
+            }
+          } else if (isOpname) {
+            if (m.type === 'IN') {
+              penyesuaian += m.qty
+            } else {
+              penyesuaian -= m.qty
+            }
+          } else if (isStokAwal) {
+            stokMasuk += m.qty
+          } else {
+            if (m.type === 'IN') {
+              stokMasuk += m.qty
+            } else if (m.type === 'DAMAGED') {
+              stokKeluar += m.qty
+            } else {
+              const isSale = noteLower.includes('penjualan') || noteLower.includes('transaksi') || noteLower.includes('pos') || noteLower.includes('invoice') || noteLower.includes('inv-') || noteLower.includes('inv/')
+              const isManualOut = noteLower.includes('alasan:') || noteLower.includes('rusak') || noteLower.includes('sampel') || noteLower.includes('hadiah') || noteLower.includes('koreksi') || noteLower.includes('buang')
+              
+              if (isSale) {
+                penjualan += m.qty
+              } else if (isManualOut) {
+                stokKeluar += m.qty
+              } else {
+                penjualan += m.qty
+              }
+            }
+          }
+        }
+      })
+      
+      let inflowTotal = stokMasuk
+      let outflowTotal = stokKeluar + penjualan
+      
+      if (transfer > 0) inflowTotal += transfer
+      else outflowTotal += Math.abs(transfer)
+      
+      if (penyesuaian > 0) inflowTotal += penyesuaian
+      else outflowTotal += Math.abs(penyesuaian)
+      
+      const stokAwal = Math.max(0, stokAkhir - inflowTotal + outflowTotal)
+      
+      return {
+        product: p,
+        stokAwal,
+        stokMasuk,
+        stokKeluar,
+        penjualan,
+        transfer,
+        penyesuaian,
+        stokAkhir,
+        satuan: 'PCS'
+      }
+    })
+  }, [filteredProducts, movements, startDate, endDate])
 
   const activeTitle = useMemo(() => {
     if (typeParam === 'IN') return 'Stok Masuk'
@@ -1237,7 +1466,7 @@ function StockMovementPageContent() {
       const matchesCategory = 
         selectedCategoryId === 'ALL' || 
         p.category?.name === selectedCategoryId ||
-        (selectedCategoryId === 'Umum' && !p.category)
+        (selectedCategoryId === 'Tanpa Kategori' && !p.category)
 
       let matchesToggles = true
       if (showEmptyStock && p.stock > 0) matchesToggles = false
@@ -1313,7 +1542,7 @@ function StockMovementPageContent() {
                     >
                       <option value="ALL">Semua Kategori</option>
                       {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                      <option value="Umum">Umum</option>
+                      <option value="Tanpa Kategori">Tanpa Kategori</option>
                     </select>
                     <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   </div>
@@ -1364,7 +1593,7 @@ function StockMovementPageContent() {
                               <td className="p-3.5 font-mono text-slate-400">{p.sku}</td>
                               <td className="p-3.5">
                                 <span className="bg-slate-100 border border-slate-200 text-[10px] px-2 py-0.5 rounded-full font-bold text-slate-600">
-                                  {p.category?.name || 'Umum'}
+                                  {p.category?.name || 'Tanpa Kategori'}
                                 </span>
                               </td>
                               <td className="p-3.5 text-right font-mono font-bold text-slate-700">{p.stock} Pcs</td>
@@ -1481,23 +1710,43 @@ function StockMovementPageContent() {
 
         <div className="flex items-center gap-3 shrink-0">
           {typeParam === '' && (
-            <label className={`inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-700 hover:text-slate-800 transition-all shadow-3xs active:scale-97 cursor-pointer select-none shrink-0 ${
-              importStatus && !importStatus.isFinished ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''
-            }`}>
-              {importStatus && !importStatus.isFinished ? (
-                <Loader2 size={14} className="text-sky-500 animate-spin" />
-              ) : (
-                <Upload size={14} className="text-slate-500" />
-              )}
-              <span>Import Excel</span>
-              <input 
-                type="file" 
-                accept=".xlsx, .xls" 
-                onChange={handleImportStockExcel} 
-                className="hidden" 
-                disabled={!!(importStatus && !importStatus.isFinished)}
-              />
-            </label>
+            <>
+              <label className={`inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-700 hover:text-slate-800 transition-all shadow-3xs active:scale-97 cursor-pointer select-none shrink-0 ${
+                importStatus && !importStatus.isFinished ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''
+              }`}>
+                {importStatus && !importStatus.isFinished ? (
+                  <Loader2 size={14} className="text-sky-500 animate-spin" />
+                ) : (
+                  <Upload size={14} className="text-slate-500" />
+                )}
+                <span>Import Excel</span>
+                <input 
+                  type="file" 
+                  accept=".xlsx, .xls" 
+                  onChange={handleImportStockExcel} 
+                  className="hidden" 
+                  disabled={!!(importStatus && !importStatus.isFinished)}
+                />
+              </label>
+
+              <button
+                onClick={handleExportExcel}
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-250 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-3.5 py-2 text-xs font-bold transition-all shadow-3xs active:scale-97 cursor-pointer select-none shrink-0"
+                title="Ekspor laporan kartu stok ke file Excel (.xlsx)"
+              >
+                <FileText size={14} className="text-emerald-600" />
+                <span>Ekspor Excel</span>
+              </button>
+
+              <button
+                onClick={handleExportPDF}
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-slate-800 text-white hover:bg-slate-900 px-3.5 py-2 text-xs font-bold transition-all shadow-3xs active:scale-97 cursor-pointer select-none shrink-0"
+                title="Cetak laporan kartu stok (PDF)"
+              >
+                <Printer size={14} className="text-slate-350" />
+                <span>Cetak Laporan</span>
+              </button>
+            </>
           )}
 
           {typeParam === 'IN' && (
@@ -1759,7 +2008,7 @@ function StockMovementPageContent() {
                 >
                   <option value="ALL">Semua Kategori</option>
                   {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                  <option value="Umum">Umum</option>
+                  <option value="Tanpa Kategori">Tanpa Kategori</option>
                 </select>
                 <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               </div>
@@ -1809,7 +2058,66 @@ function StockMovementPageContent() {
       
       <div className="rounded-xl border border-slate-200 bg-white shadow-3xs overflow-hidden">
         <div className="overflow-x-auto">
-          {typeParam !== 'OPNAME' ? (
+          {typeParam === '' ? (
+            <table className="w-full min-w-[950px] text-left border-collapse text-xs">
+              <thead className="bg-[#1a202c] text-white text-[9.5px] font-bold uppercase tracking-wider">
+                <tr>
+                  <th className="p-3.5 pl-5">Produk</th>
+                  <th className="p-3.5">Kategori</th>
+                  <th className="p-3.5 text-center">Stok Awal</th>
+                  <th className="p-3.5 text-center">Stok Masuk</th>
+                  <th className="p-3.5 text-center">Stok Keluar</th>
+                  <th className="p-3.5 text-center">Penjualan</th>
+                  <th className="p-3.5 text-center">Transfer</th>
+                  <th className="p-3.5 text-center">Penyesuaian</th>
+                  <th className="p-3.5 text-center">Stok Akhir</th>
+                  <th className="p-3.5 pr-5 text-center">Satuan</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-600 font-semibold">
+                {loading ? (
+                  <tr>
+                    <td colSpan={10} className="p-10 text-center">
+                      <Loader2 className="w-5 h-5 animate-spin text-slate-400 mx-auto" />
+                    </td>
+                  </tr>
+                ) : filteredProducts.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="p-16 text-center text-slate-400">
+                      <Boxes className="w-7 h-7 mx-auto text-slate-300 mb-2" />
+                      <p className="text-xs font-bold text-slate-650">Tidak ada produk ditemukan</p>
+                    </td>
+                  </tr>
+                ) : (
+                  stockCardData.map((row) => (
+                    <tr key={row.product.id} className="hover:bg-slate-50/45 transition-colors">
+                      <td className="p-3.5 pl-5 font-bold text-slate-900">
+                        {row.product.name}
+                        <span className="block text-[10px] text-slate-400 font-normal font-mono mt-0.5">SKU: {row.product.sku}</span>
+                      </td>
+                      <td className="p-3.5 whitespace-nowrap">
+                        <span className="bg-slate-100 border border-slate-200 text-[10px] px-2 py-0.5 rounded-full font-bold text-slate-600">
+                          {row.product.category?.name || 'Tanpa Kategori'}
+                        </span>
+                      </td>
+                      <td className="p-3.5 text-center font-mono font-bold text-slate-800">{row.stokAwal}</td>
+                      <td className="p-3.5 text-center font-mono font-bold text-emerald-600">{row.stokMasuk}</td>
+                      <td className="p-3.5 text-center font-mono font-bold text-rose-600">{row.stokKeluar}</td>
+                      <td className="p-3.5 text-center font-mono font-bold text-rose-650">{row.penjualan}</td>
+                      <td className={`p-3.5 text-center font-mono font-bold ${row.transfer > 0 ? 'text-emerald-600' : row.transfer < 0 ? 'text-rose-600' : 'text-slate-400'}`}>
+                        {row.transfer > 0 ? `+${row.transfer}` : row.transfer}
+                      </td>
+                      <td className={`p-3.5 text-center font-mono font-bold ${row.penyesuaian > 0 ? 'text-emerald-600' : row.penyesuaian < 0 ? 'text-rose-600' : 'text-slate-400'}`}>
+                        {row.penyesuaian > 0 ? `+${row.penyesuaian}` : row.penyesuaian}
+                      </td>
+                      <td className="p-3.5 text-center font-mono font-black text-slate-900">{row.stokAkhir}</td>
+                      <td className="p-3.5 pr-5 text-center text-slate-500 font-bold">{row.satuan}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          ) : typeParam !== 'OPNAME' ? (
             
             <table className="w-full min-w-[950px] text-left border-collapse text-xs">
               <thead className="bg-[#1a202c] text-white text-[9.5px] font-bold uppercase tracking-wider">
@@ -1852,7 +2160,7 @@ function StockMovementPageContent() {
                         <td className="p-3.5 font-mono text-slate-400">{m.product?.sku || '-'}</td>
                         <td className="p-3.5">
                           <span className="bg-slate-100 border border-slate-200 text-[10px] px-2 py-0.5 rounded-full font-bold text-slate-600">
-                            {m.product?.category?.name || 'Umum'}
+                            {m.product?.category?.name || 'Tanpa Kategori'}
                           </span>
                         </td>
                         <td className="p-3.5">
