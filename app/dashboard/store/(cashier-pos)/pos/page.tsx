@@ -335,14 +335,28 @@ export default function PosPage() {
       const tablesData = tablesRes.data || []
 
       let finalProducts = [...productsData]
-      let finalCategories = [...categoriesData]
+      const finalCategories = [...categoriesData]
 
       if (isBundling) {
         const storedBundlesStr = localStorage.getItem(`store_product_bundles_${storeId}`)
         if (storedBundlesStr) {
           try {
             const storedBundles = JSON.parse(storedBundlesStr)
-            const formattedBundles = storedBundles.filter((b: any) => b.isActive).map((b: any) => ({
+            const formattedBundles = storedBundles.filter((b: any) => {
+              if (!b.isActive) return false;
+              if (b.startDate || b.endDate) {
+                const now = new Date();
+                if (b.startDate && new Date(b.startDate) > now) return false;
+                if (b.endDate) {
+                  const end = new Date(b.endDate);
+                  if (b.endDate.length === 10) {
+                    end.setHours(23, 59, 59, 999);
+                  }
+                  if (end < now) return false;
+                }
+              }
+              return true;
+            }).map((b: any) => ({
               id: b.id,
               categoryId: 'bundle_cat',
               name: b.name,
@@ -352,7 +366,9 @@ export default function PosPage() {
               stock: getBundleCalculatedStock(b, productsData),
               isBundle: true,
               products: b.products,
-              description: b.description || 'Paket Hemat Combo'
+              description: b.description || 'Paket Hemat Combo',
+              startDate: b.startDate,
+              endDate: b.endDate
             }))
             finalProducts = [...finalProducts, ...formattedBundles]
             
@@ -390,7 +406,7 @@ export default function PosPage() {
         const tablesData = cachedTables ? JSON.parse(cachedTables) : []
 
         let finalProducts = [...productsData]
-        let finalCategories = [...categoriesData]
+        const finalCategories = [...categoriesData]
 
         const storeId = localStorage.getItem('storeId')
         const isBundling = localStorage.getItem('feature_bundling_enabled') !== 'false'
@@ -399,7 +415,21 @@ export default function PosPage() {
           if (storedBundlesStr) {
             try {
               const storedBundles = JSON.parse(storedBundlesStr)
-              const formattedBundles = storedBundles.filter((b: any) => b.isActive).map((b: any) => ({
+              const formattedBundles = storedBundles.filter((b: any) => {
+                if (!b.isActive) return false;
+                if (b.startDate || b.endDate) {
+                  const now = new Date();
+                  if (b.startDate && new Date(b.startDate) > now) return false;
+                  if (b.endDate) {
+                    const end = new Date(b.endDate);
+                    if (b.endDate.length === 10) {
+                      end.setHours(23, 59, 59, 999);
+                    }
+                    if (end < now) return false;
+                  }
+                }
+                return true;
+              }).map((b: any) => ({
                 id: b.id,
                 categoryId: 'bundle_cat',
                 name: b.name,
@@ -409,7 +439,9 @@ export default function PosPage() {
                 stock: getBundleCalculatedStock(b, productsData),
                 isBundle: true,
                 products: b.products,
-                description: b.description || 'Paket Hemat Combo'
+                description: b.description || 'Paket Hemat Combo',
+                startDate: b.startDate,
+                endDate: b.endDate
               }))
               finalProducts = [...finalProducts, ...formattedBundles]
               finalCategories.push({

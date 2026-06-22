@@ -178,7 +178,7 @@ export default function AdminDashboard() {
       let allTransactions: Transaction[] = []
       const storeStats: StoreStat[] = []
 
-      let aggregatedTopProducts: Record<string, number> = {}
+      const aggregatedTopProducts: Record<string, number> = {}
       let totalInventoryAsset = 0
       let totalStockQty = 0
       let totalLowStockCount = 0

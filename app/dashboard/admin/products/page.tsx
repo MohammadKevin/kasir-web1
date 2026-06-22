@@ -30,7 +30,8 @@ import {
   CheckCircle,
   AlertCircle,
   ShoppingCart,
-  Sparkles
+  Sparkles,
+  Calendar
 } from 'lucide-react'
 
 type Product = {
@@ -98,6 +99,7 @@ export default function ProductPage() {
   const [editingBundleId, setEditingBundleId] = useState<string | null>(null)
   const [bundleForm, setBundleForm] = useState({
     name: '', sku: '', barcode: '', sellingPrice: 0, description: '', isActive: true,
+    startDate: '', endDate: '',
     products: [] as { productId: string; qty: number }[]
   })
 
@@ -153,6 +155,10 @@ export default function ProductPage() {
       return alert('Pastikan semua produk terpilih dan jumlah kuantitas valid!')
     }
 
+    if (bundleForm.startDate && bundleForm.endDate && new Date(bundleForm.startDate) > new Date(bundleForm.endDate)) {
+      return alert('Tanggal mulai tidak boleh melebihi tanggal berakhir!')
+    }
+
     const newBundle = {
       id: editingBundleId || `bundle_${Date.now()}`,
       storeId: selectedStoreId,
@@ -162,6 +168,8 @@ export default function ProductPage() {
       sellingPrice: Number(bundleForm.sellingPrice) || 0,
       description: bundleForm.description.trim(),
       isActive: bundleForm.isActive,
+      startDate: bundleForm.startDate ? bundleForm.startDate : null,
+      endDate: bundleForm.endDate ? bundleForm.endDate : null,
       products: bundleForm.products
     }
 
@@ -208,6 +216,8 @@ export default function ProductPage() {
       sellingPrice: b.sellingPrice,
       description: b.description || '',
       isActive: b.isActive,
+      startDate: b.startDate ? b.startDate.substring(0, 10) : '',
+      endDate: b.endDate ? b.endDate.substring(0, 10) : '',
       products: b.products.map((p: any) => ({ ...p }))
     })
     setIsOpenBundleModal(true)
@@ -742,6 +752,8 @@ export default function ProductPage() {
                   sellingPrice: 0,
                   description: '',
                   isActive: true,
+                  startDate: '',
+                  endDate: '',
                   products: [{ productId: '', qty: 1 }]
                 })
                 setIsOpenBundleModal(true)
@@ -1085,7 +1097,7 @@ export default function ProductPage() {
                         Belum ada Paket Bundling
                       </p>
                       <p className="text-[10px] text-slate-400 mt-1">
-                        Klik "Tambah Paket Bundling" untuk membuat paket promo combo baru dari produk Anda.
+                        Klik &quot;Tambah Paket Bundling&quot; untuk membuat paket promo combo baru dari produk Anda.
                       </p>
                     </td>
                   </tr>
@@ -1112,6 +1124,16 @@ export default function ProductPage() {
                                 <p className="font-extrabold text-slate-900 text-xs truncate">{b.name}</p>
                                 {b.description && (
                                   <p className="text-[10px] text-slate-400 font-semibold truncate mt-0.5 max-w-[200px]">{b.description}</p>
+                                )}
+                                {(b.startDate || b.endDate) && (
+                                  <div className="flex items-center gap-1.5 text-[10.5px] font-semibold text-slate-400 mt-1">
+                                    <Calendar size={13} className="text-slate-400" />
+                                    <span>
+                                      {b.startDate ? new Date(b.startDate).toLocaleDateString('id-ID', { dateStyle: 'short' }) : '∞'} 
+                                      {' - '} 
+                                      {b.endDate ? new Date(b.endDate).toLocaleDateString('id-ID', { dateStyle: 'short' }) : '∞'}
+                                    </span>
+                                  </div>
                                 )}
                               </div>
                             </div>
@@ -1156,12 +1178,45 @@ export default function ProductPage() {
                           </td>
 
                           <td className="p-4">
-                            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-bold border text-[9px] uppercase tracking-wider ${
-                              b.isActive ? 'bg-purple-50 border-purple-200 text-purple-700' : 'bg-slate-50 border-slate-200 text-slate-400'
-                            }`}>
-                              <span className={`h-1 w-1 rounded-full ${b.isActive ? 'bg-purple-500' : 'bg-slate-400'}`} />
-                              {b.isActive ? 'Aktif' : 'Nonaktif'}
-                            </span>
+                            {(() => {
+                              if (!b.isActive) {
+                                return (
+                                  <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-bold border text-[9px] uppercase tracking-wider bg-slate-50 border-slate-200 text-slate-400">
+                                    <span className="h-1 w-1 rounded-full bg-slate-400" />
+                                    Nonaktif
+                                  </span>
+                                )
+                              }
+                              const now = new Date()
+                              if (b.startDate && new Date(b.startDate) > now) {
+                                return (
+                                  <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-bold border text-[9px] uppercase tracking-wider bg-amber-50 border-amber-200 text-amber-700" title="Belum dimulai">
+                                    <span className="h-1 w-1 rounded-full bg-amber-550" />
+                                    Belum Mulai
+                                  </span>
+                                )
+                              }
+                              if (b.endDate) {
+                                const end = new Date(b.endDate)
+                                if (b.endDate.length === 10) {
+                                  end.setHours(23, 59, 59, 999)
+                                }
+                                if (end < now) {
+                                  return (
+                                    <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-bold border text-[9px] uppercase tracking-wider bg-rose-50 border-rose-200 text-rose-700" title="Masa promo berakhir">
+                                      <span className="h-1 w-1 rounded-full bg-rose-500" />
+                                      Kadaluarsa
+                                    </span>
+                                  )
+                                }
+                              }
+                              return (
+                                <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-bold border text-[9px] uppercase tracking-wider bg-purple-50 border-purple-200 text-purple-700">
+                                  <span className="h-1 w-1 rounded-full bg-purple-500" />
+                                  Aktif
+                                </span>
+                              )
+                            })()}
                           </td>
 
                           <td className="p-4 pr-6">
@@ -1870,6 +1925,29 @@ export default function ProductPage() {
                     rows={2}
                     className="w-full rounded-xl border border-slate-200 px-4 py-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:outline-none focus:ring-4 focus:ring-purple-500/10 transition-all font-semibold resize-none"
                   />
+                </div>
+
+                {/* Jangka Waktu Bundling (Date Range) */}
+                <div className="grid gap-3 grid-cols-2">
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 block">Mulai Berlaku (Opsional)</label>
+                    <input
+                      type="date"
+                      value={bundleForm.startDate}
+                      onChange={(e) => setBundleForm({ ...bundleForm, startDate: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 px-3 py-3 text-xs text-slate-900 focus:border-purple-500 focus:outline-none focus:ring-4 focus:ring-purple-500/10 transition-all font-semibold"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 block">Berakhir Pada (Opsional)</label>
+                    <input
+                      type="date"
+                      value={bundleForm.endDate}
+                      onChange={(e) => setBundleForm({ ...bundleForm, endDate: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 px-3 py-3 text-xs text-slate-900 focus:border-purple-500 focus:outline-none focus:ring-4 focus:ring-purple-500/10 transition-all font-semibold"
+                    />
+                  </div>
                 </div>
 
                 {/* Bundle composition list */}
