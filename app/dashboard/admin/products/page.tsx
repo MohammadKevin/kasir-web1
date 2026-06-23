@@ -61,6 +61,122 @@ function fmt(n: number) {
   return n.toLocaleString('id-ID') 
 }
 
+type SearchableProductSelectProps = {
+  products: Product[]
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
+}
+
+function SearchableProductSelectForBundle({ 
+  products, 
+  value, 
+  onChange, 
+  placeholder = '-- Pilih Produk Varian --' 
+}: SearchableProductSelectProps) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  
+  const selectedProduct = products.find(p => p.id === value)
+
+  const filtered = products.filter(p => {
+    const s = search.toLowerCase()
+    return p.name.toLowerCase().includes(s) || 
+      (p.sku && p.sku.toLowerCase().includes(s)) || 
+      (p.barcode && p.barcode.toLowerCase().includes(s))
+  })
+
+  useEffect(() => {
+    if (!isOpen) return
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (!target.closest('.searchable-product-select-container')) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [isOpen])
+
+  return (
+    <div className="relative searchable-product-select-container flex-1">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full rounded-xl border border-slate-200/80 bg-white px-3 py-2.5 text-xs font-bold text-slate-800 text-left outline-none cursor-pointer flex items-center justify-between focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all"
+      >
+        <div className="flex items-center gap-2 truncate min-w-0">
+          <Package className="h-3.5 w-3.5 text-slate-450 shrink-0" />
+          <span className="truncate">
+            {selectedProduct 
+              ? `${selectedProduct.name} (Eceran: Rp ${selectedProduct.sellingPrice.toLocaleString('id-ID')})`
+              : placeholder
+            }
+          </span>
+        </div>
+        <ChevronDown className="text-slate-450 shrink-0" size={14} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 right-0 mt-1 z-50 rounded-xl border border-slate-200 bg-white p-2 shadow-lg animate-in fade-in duration-100 flex flex-col max-h-64">
+          <div className="relative mb-2 shrink-0">
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Cari nama, SKU, atau barcode..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 pl-9 pr-3 py-2 rounded-lg text-xs font-semibold text-slate-700 focus:bg-white focus:border-purple-500 outline-none transition-all placeholder:text-slate-400"
+              autoFocus
+            />
+          </div>
+          <div className="overflow-y-auto flex-1 space-y-0.5 max-h-48 scrollbar-thin">
+            {filtered.length === 0 ? (
+              <div className="p-3 text-center text-xs font-medium text-slate-400">
+                Produk tidak ditemukan
+              </div>
+            ) : (
+              filtered.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => {
+                    onChange(p.id)
+                    setIsOpen(false)
+                    setSearch('')
+                  }}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex flex-col gap-0.5 ${
+                    value === p.id 
+                      ? 'bg-purple-600 text-white' 
+                      : 'text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex justify-between items-center w-full gap-2 font-semibold">
+                    <span className="truncate block">{p.name}</span>
+                    <span className={`text-[10px] font-mono shrink-0 whitespace-nowrap ${
+                      value === p.id ? 'text-purple-100' : 'text-slate-500'
+                    }`}>
+                      Rp {p.sellingPrice.toLocaleString('id-ID')}
+                    </span>
+                  </div>
+                  {(p.sku || p.barcode) && (
+                    <div className={`text-[9px] font-mono flex gap-2 ${
+                      value === p.id ? 'text-purple-200' : 'text-slate-400'
+                    }`}>
+                      {p.sku && <span>SKU: {p.sku}</span>}
+                      {p.barcode && <span>BC: {p.barcode}</span>}
+                    </div>
+                  )}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function ProductPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [stores, setStores] = useState<StoreType[]>([])
@@ -1967,29 +2083,18 @@ export default function ProductPage() {
                     </button>
                   </div>
 
-                  <div className="space-y-2.5 max-h-[200px] overflow-y-auto pr-1">
+                  <div className="space-y-2.5 pr-1">
                     {bundleForm.products.map((item, idx) => (
                       <div key={idx} className="flex gap-2 items-center">
-                        <select
-                          required
+                        <SearchableProductSelectForBundle
+                          products={products.filter(p => p.isActive)}
                           value={item.productId}
-                          onChange={(e) => {
+                          onChange={(val) => {
                             const newProds = [...bundleForm.products]
-                            newProds[idx].productId = e.target.value
+                            newProds[idx].productId = val
                             setBundleForm({ ...bundleForm, products: newProds })
                           }}
-                          className="flex-1 appearance-none bg-white border border-slate-200/80 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-800 focus:border-purple-500 focus:outline-none focus:ring-4 focus:ring-purple-500/10 cursor-pointer transition-all"
-                        >
-                          <option value="" disabled>-- Pilih Produk Varian --</option>
-                          {products
-                            .filter(p => p.isActive)
-                            .map(p => (
-                              <option key={p.id} value={p.id}>
-                                {p.name} (Eceran: Rp {p.sellingPrice.toLocaleString('id-ID')})
-                              </option>
-                            ))
-                          }
-                        </select>
+                        />
 
                         <input
                           type="number"
