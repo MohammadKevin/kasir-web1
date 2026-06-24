@@ -11,7 +11,6 @@ import {
   Edit3, 
   Trash2, 
   X, 
-  Store, 
   Barcode, 
   Tag,
   Boxes, 
@@ -255,7 +254,7 @@ export default function ProductPage() {
     if (stored) {
       try {
         setBundles(JSON.parse(stored))
-      } catch (e) {
+      } catch {
         setBundles([])
       }
     } else {
@@ -741,7 +740,8 @@ export default function ProductPage() {
     
     try {
       if (editingId) { 
-        const { storeId, ...u } = payload
+        const u = { ...payload }
+        delete u.storeId
         await api.patch(`/products/${editingId}`, u, { headers }) 
       } else {
         const targetStock = Number(formData.stock) || 0

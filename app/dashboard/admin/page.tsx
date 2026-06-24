@@ -784,12 +784,12 @@ export default function AdminDashboard() {
                       
                       return (
                         <div 
-                          className="absolute z-20 pointer-events-none transition-all duration-150 ease-out -translate-x-1/2 -translate-y-[calc(100%+12px)] bg-white border border-slate-200/80 rounded-xl px-3 py-2 shadow-lg text-center min-w-[90px]"
+                          className="absolute z-20 pointer-events-none transition-all duration-150 ease-out -translate-x-1/2 -translate-y-[calc(100%+12px)] bg-slate-900 border border-slate-800 rounded-2xl px-3.5 py-2.5 shadow-xl text-center min-w-[100px] text-white backdrop-blur-md bg-opacity-95"
                           style={{ left: leftPercent, top: topPercent }}
                         >
-                          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-white border-r border-b border-slate-200/80" />
-                          <p className="text-[9px] font-extrabold text-slate-450 uppercase tracking-wider">{lbl}</p>
-                          <p className="text-[11px] font-black text-slate-900 mt-0.5 font-mono">Rp {val.toLocaleString('id-ID')}</p>
+                          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-slate-900 border-r border-b border-slate-800" />
+                          <p className="text-[9px] font-extrabold text-sky-400 uppercase tracking-widest">{lbl}</p>
+                          <p className="text-[11px] font-black text-white mt-0.5 font-mono">Rp {val.toLocaleString('id-ID')}</p>
                         </div>
                       )
                     })()
@@ -804,22 +804,34 @@ export default function AdminDashboard() {
                   >
                     <defs>
                       <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#3bc0f0" stopOpacity="0.25" />
-                        <stop offset="100%" stopColor="#3bc0f0" stopOpacity="0" />
+                        <stop offset="0%" stopColor="#3bc0f0" stopOpacity="0.4" />
+                        <stop offset="50%" stopColor="#8b5cf6" stopOpacity="0.1" />
+                        <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0" />
                       </linearGradient>
+                      <linearGradient id="strokeGrad" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#3bc0f0" />
+                        <stop offset="100%" stopColor="#8b5cf6" />
+                      </linearGradient>
+                      <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="3" result="blur" />
+                        <feMerge>
+                          <feMergeNode in="blur" />
+                          <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                      </filter>
                     </defs>
 
                     
-                    <line x1="0" y1="10" x2="400" y2="10" stroke="#f1f5f9" strokeWidth="1" />
-                    <line x1="0" y1="32.5" x2="400" y2="32.5" stroke="#f1f5f9" strokeWidth="1" />
-                    <line x1="0" y1="55" x2="400" y2="55" stroke="#f1f5f9" strokeWidth="1" />
-                    <line x1="0" y1="77.5" x2="400" y2="77.5" stroke="#f1f5f9" strokeWidth="1" />
+                    <line x1="0" y1="10" x2="400" y2="10" stroke="#f1f5f9" strokeDasharray="3 3" strokeWidth="1" />
+                    <line x1="0" y1="32.5" x2="400" y2="32.5" stroke="#f1f5f9" strokeDasharray="3 3" strokeWidth="1" />
+                    <line x1="0" y1="55" x2="400" y2="55" stroke="#f1f5f9" strokeDasharray="3 3" strokeWidth="1" />
+                    <line x1="0" y1="77.5" x2="400" y2="77.5" stroke="#f1f5f9" strokeDasharray="3 3" strokeWidth="1" />
                     
                     {chartData.points.length > 0 && (
                       <path d={chartData.fillPath} fill="url(#chartGrad)" className="transition-all duration-300" />
                     )}
                     {chartData.points.length > 0 && (
-                      <path fill="none" stroke="#3bc0f0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" d={chartData.strokePath} className="transition-all duration-300" />
+                      <path fill="none" stroke="url(#strokeGrad)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" d={chartData.strokePath} filter="url(#neonGlow)" className="transition-all duration-300" />
                     )}
 
                     

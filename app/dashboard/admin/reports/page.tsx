@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState, useMemo, Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useEffect, useState, useMemo, Suspense, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { api } from '@/lib/api'
 import { 
   BarChart3, 
@@ -9,7 +9,6 @@ import {
   TrendingUp, 
   TrendingDown, 
   DollarSign, 
-  Download, 
   FileSpreadsheet, 
   FileText,
   Loader2,
@@ -41,14 +40,40 @@ type ProfitData = {
 
 type TabType = 'sales' | 'expenses' | 'products' | 'shifts' | 'purchases' | 'stock'
 
+const salesReportCards = [
+  { id: 'ringkasan', label: 'Ringkasan', icon: FileText, tab: 'sales' as TabType, desc: 'Ringkasan omset dan grafik penjualan harian' },
+  { id: 'transaksi', label: 'Data Transaksi Penjualan', icon: FileText, tab: 'sales' as TabType, desc: 'Log lengkap seluruh transaksi penjualan' },
+  { id: 'produk', label: 'Penjualan Produk', icon: Boxes, tab: 'products' as TabType, desc: 'Kuantitas dan total terjual per produk' },
+  { id: 'outlet', label: 'Penjualan Per Outlet', icon: Store, tab: 'sales' as TabType, desc: 'Grafik kontribusi omset per cabang toko' },
+  { id: 'harian', label: 'Penjualan Harian', icon: Calendar, tab: 'sales' as TabType, desc: 'Laporan volume transaksi per tanggal' },
+  { id: 'jam', label: 'Penjualan Per Jam', icon: Clock, tab: 'sales' as TabType, desc: 'Peta waktu ramai transaksi harian' },
+  { id: 'kategori', label: 'Penjualan Per Kategori', icon: Tag, tab: 'products' as TabType, desc: 'Penjualan produk berdasarkan kategori' },
+  { id: 'pelanggan', label: 'Penjualan Per Pelanggan', icon: UserCheck, tab: 'sales' as TabType, desc: 'Laporan riwayat belanja member terdaftar' },
+  { id: 'metode', label: 'Metode Pembayaran', icon: Coins, tab: 'sales' as TabType, desc: 'Metode transaksi (Cash, Card, dll)' }
+]
+
+const operationalReportCards = [
+  { id: 'rekap-kas', label: 'Rekap Kas', icon: Coins, tab: 'shifts' as TabType, desc: 'Detail logs buka/tutup kasir per shift' },
+  { id: 'stok', label: 'Stok', icon: Boxes, tab: 'stock' as TabType, desc: 'Laporan mutasi stock opname barang masuk/keluar' },
+  { id: 'absensi', label: 'Absensi', icon: Users, tab: 'shifts' as TabType, desc: 'Laporan absensi kehadiran karyawan kasir' },
+  { id: 'pengeluaran', label: 'Pengeluaran', icon: CreditCard, tab: 'expenses' as TabType, desc: 'Biaya operasional kas dan dana keluar toko' },
+  { id: 'komisi', label: 'Komisi', icon: Percent, tab: 'shifts' as TabType, desc: 'Laporan bonus/komisi penjualan staf' },
+]
+
+const profitReportCards = [
+  { id: 'pajak', label: 'Penerimaan Pajak', icon: Coins, tab: 'sales' as TabType, desc: 'Pajak penjualan terhitung otomatis' },
+  { id: 'promo', label: 'Promo', icon: Percent, tab: 'sales' as TabType, desc: 'Log pemakaian kupon diskon dan promo' },
+  { id: 'laba-harian', label: 'Laba Harian', icon: TrendingUp, tab: 'sales' as TabType, desc: 'Audit laba bersih dikurangi modal HPP' },
+  { id: 'laba-produk', label: 'Laba Produk', icon: Boxes, tab: 'products' as TabType, desc: 'Margin laba per item barang' },
+  { id: 'harga-modal', label: 'Riwayat Modal Supplier', icon: TrendingDown, tab: 'purchases' as TabType, desc: 'Track perubahan harga modal / cost price dari supplier' }
+]
+
 function ReportPageContent() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const menuParam = searchParams.get('menu') || 'sales-menu'
 
   const [stores, setStores] = useState<StoreType[]>([])
   const [selectedStoreId, setSelectedStoreId] = useState('')
-  const [loadingSummary, setLoadingSummary] = useState(true)
   const [loadingTable, setLoadingTable] = useState(true)
   const [downloading, setDownloading] = useState<string | null>(null)
 
@@ -69,35 +94,6 @@ function ReportPageContent() {
   const [selectedTrackerProductId, setSelectedTrackerProductId] = useState<string>('')
 
   
-  const salesReportCards = [
-    { id: 'ringkasan', label: 'Ringkasan', icon: FileText, tab: 'sales' as TabType, desc: 'Ringkasan omset dan grafik penjualan harian' },
-    { id: 'transaksi', label: 'Data Transaksi Penjualan', icon: FileText, tab: 'sales' as TabType, desc: 'Log lengkap seluruh transaksi penjualan' },
-    { id: 'produk', label: 'Penjualan Produk', icon: Boxes, tab: 'products' as TabType, desc: 'Kuantitas dan total terjual per produk' },
-    { id: 'outlet', label: 'Penjualan Per Outlet', icon: Store, tab: 'sales' as TabType, desc: 'Grafik kontribusi omset per cabang toko' },
-    { id: 'harian', label: 'Penjualan Harian', icon: Calendar, tab: 'sales' as TabType, desc: 'Laporan volume transaksi per tanggal' },
-    { id: 'jam', label: 'Penjualan Per Jam', icon: Clock, tab: 'sales' as TabType, desc: 'Peta waktu ramai transaksi harian' },
-    { id: 'kategori', label: 'Penjualan Per Kategori', icon: Tag, tab: 'products' as TabType, desc: 'Penjualan produk berdasarkan kategori' },
-    { id: 'pelanggan', label: 'Penjualan Per Pelanggan', icon: UserCheck, tab: 'sales' as TabType, desc: 'Laporan riwayat belanja member terdaftar' },
-    { id: 'metode', label: 'Metode Pembayaran', icon: Coins, tab: 'sales' as TabType, desc: 'Metode transaksi (Cash, Card, dll)' }
-  ]
-
-  const operationalReportCards = [
-    { id: 'rekap-kas', label: 'Rekap Kas', icon: Coins, tab: 'shifts' as TabType, desc: 'Detail logs buka/tutup kasir per shift' },
-    { id: 'stok', label: 'Stok', icon: Boxes, tab: 'stock' as TabType, desc: 'Laporan mutasi stock opname barang masuk/keluar' },
-    { id: 'absensi', label: 'Absensi', icon: Users, tab: 'shifts' as TabType, desc: 'Laporan absensi kehadiran karyawan kasir' },
-    { id: 'pengeluaran', label: 'Pengeluaran', icon: CreditCard, tab: 'expenses' as TabType, desc: 'Biaya operasional kas dan dana keluar toko' },
-    { id: 'komisi', label: 'Komisi', icon: Percent, tab: 'shifts' as TabType, desc: 'Laporan bonus/komisi penjualan staf' },
-  ]
-
-  const profitReportCards = [
-    { id: 'pajak', label: 'Penerimaan Pajak', icon: Coins, tab: 'sales' as TabType, desc: 'Pajak penjualan terhitung otomatis' },
-    { id: 'promo', label: 'Promo', icon: Percent, tab: 'sales' as TabType, desc: 'Log pemakaian kupon diskon dan promo' },
-    { id: 'laba-harian', label: 'Laba Harian', icon: TrendingUp, tab: 'sales' as TabType, desc: 'Audit laba bersih dikurangi modal HPP' },
-    { id: 'laba-produk', label: 'Laba Produk', icon: Boxes, tab: 'products' as TabType, desc: 'Margin laba per item barang' },
-    { id: 'harga-modal', label: 'Riwayat Modal Supplier', icon: TrendingDown, tab: 'purchases' as TabType, desc: 'Track perubahan harga modal / cost price dari supplier' }
-  ]
-
-  
   const currentReports = useMemo(() => {
     if (menuParam === 'operational-menu') return operationalReportCards
     if (menuParam === 'profit-menu') return profitReportCards
@@ -110,72 +106,7 @@ function ReportPageContent() {
     return 'Laporan Penjualan'
   }, [menuParam])
 
-  useEffect(() => {
-    initPage()
-    setIsMounted(true)
-  }, [])
-
-  useEffect(() => {
-    
-    setSelectedReportId(null)
-  }, [menuParam])
-
-  useEffect(() => {
-    if (selectedStoreId) {
-      loadSummaryData(selectedStoreId, startDate, endDate)
-      loadTabTableData(selectedStoreId, activeTab, startDate, endDate)
-    }
-  }, [selectedStoreId, activeTab, startDate, endDate, selectedReportId])
-
-  function handleCardClick(report: typeof salesReportCards[0]) {
-    setSelectedReportId(report.id)
-    setActiveTab(report.tab)
-  }
-
-  function getActiveQuickFilter() {
-    const today = new Date()
-    const todayStr = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().split('T')[0]
-    
-    if (!startDate && !endDate) return 'all'
-    if (startDate === todayStr && endDate === todayStr) return 'today'
-    
-    const sevenDaysAgo = new Date()
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-    const sevenDaysAgoStr = new Date(sevenDaysAgo.getTime() - sevenDaysAgo.getTimezoneOffset() * 60000).toISOString().split('T')[0]
-    if (startDate === sevenDaysAgoStr && endDate === todayStr) return '7days'
-    
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-    const startOfMonthStr = new Date(startOfMonth.getTime() - startOfMonth.getTimezoneOffset() * 60000).toISOString().split('T')[0]
-    if (startDate === startOfMonthStr && endDate === todayStr) return 'month'
-    
-    return 'custom'
-  }
-
-  function handleQuickFilter(val: string) {
-    const today = new Date()
-    const todayStr = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().split('T')[0]
-    
-    if (val === 'all') {
-      setStartDate('')
-      setEndDate('')
-    } else if (val === 'today') {
-      setStartDate(todayStr)
-      setEndDate(todayStr)
-    } else if (val === '7days') {
-      const sevenDaysAgo = new Date()
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-      const sevenDaysAgoStr = new Date(sevenDaysAgo.getTime() - sevenDaysAgo.getTimezoneOffset() * 60000).toISOString().split('T')[0]
-      setStartDate(sevenDaysAgoStr)
-      setEndDate(todayStr)
-    } else if (val === 'month') {
-      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-      const startOfMonthStr = new Date(startOfMonth.getTime() - startOfMonth.getTimezoneOffset() * 60000).toISOString().split('T')[0]
-      setStartDate(startOfMonthStr)
-      setEndDate(todayStr)
-    }
-  }
-
-  async function initPage() {
+  const initPage = useCallback(async () => {
     try {
       const token = localStorage.getItem('token')
       const headers = { Authorization: `Bearer ${token}` }
@@ -188,18 +119,15 @@ function ReportPageContent() {
       if (initialStoreId) {
         setSelectedStoreId(initialStoreId)
       } else {
-        setLoadingSummary(false)
         setLoadingTable(false)
       }
     } catch (error) {
       console.error(error)
-      setLoadingSummary(false)
       setLoadingTable(false)
     }
-  }
+  }, [])
 
-  async function loadSummaryData(storeId: string, start?: string, end?: string) {
-    setLoadingSummary(true)
+  const loadSummaryData = useCallback(async (storeId: string, start?: string, end?: string) => {
     try {
       const res = await api.get(`/reports/profit/${storeId}`, {
         params: { startDate: start || undefined, endDate: end || undefined },
@@ -208,12 +136,10 @@ function ReportPageContent() {
       setProfit(res.data)
     } catch (error) {
       console.error(error)
-    } finally {
-      setLoadingSummary(false)
     }
-  }
+  }, [])
 
-  async function loadTabTableData(storeId: string, tab: TabType, start?: string, end?: string) {
+  const loadTabTableData = useCallback(async (storeId: string, tab: TabType, start?: string, end?: string) => {
     setLoadingTable(true)
     setTableData([])
     try {
@@ -278,6 +204,71 @@ function ReportPageContent() {
     } finally {
       setLoadingTable(false)
     }
+  }, [selectedReportId])
+
+  useEffect(() => {
+    initPage()
+    setIsMounted(true)
+  }, [initPage])
+
+  useEffect(() => {
+    
+    setSelectedReportId(null)
+  }, [menuParam])
+
+  useEffect(() => {
+    if (selectedStoreId) {
+      loadSummaryData(selectedStoreId, startDate, endDate)
+      loadTabTableData(selectedStoreId, activeTab, startDate, endDate)
+    }
+  }, [selectedStoreId, activeTab, startDate, endDate, selectedReportId, loadSummaryData, loadTabTableData])
+
+  function handleCardClick(report: typeof salesReportCards[0]) {
+    setSelectedReportId(report.id)
+    setActiveTab(report.tab)
+  }
+
+  function getActiveQuickFilter() {
+    const today = new Date()
+    const todayStr = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().split('T')[0]
+    
+    if (!startDate && !endDate) return 'all'
+    if (startDate === todayStr && endDate === todayStr) return 'today'
+    
+    const sevenDaysAgo = new Date()
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+    const sevenDaysAgoStr = new Date(sevenDaysAgo.getTime() - sevenDaysAgo.getTimezoneOffset() * 60000).toISOString().split('T')[0]
+    if (startDate === sevenDaysAgoStr && endDate === todayStr) return '7days'
+    
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+    const startOfMonthStr = new Date(startOfMonth.getTime() - startOfMonth.getTimezoneOffset() * 60000).toISOString().split('T')[0]
+    if (startDate === startOfMonthStr && endDate === todayStr) return 'month'
+    
+    return 'custom'
+  }
+
+  function handleQuickFilter(val: string) {
+    const today = new Date()
+    const todayStr = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().split('T')[0]
+    
+    if (val === 'all') {
+      setStartDate('')
+      setEndDate('')
+    } else if (val === 'today') {
+      setStartDate(todayStr)
+      setEndDate(todayStr)
+    } else if (val === '7days') {
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+      const sevenDaysAgoStr = new Date(sevenDaysAgo.getTime() - sevenDaysAgo.getTimezoneOffset() * 60000).toISOString().split('T')[0]
+      setStartDate(sevenDaysAgoStr)
+      setEndDate(todayStr)
+    } else if (val === 'month') {
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+      const startOfMonthStr = new Date(startOfMonth.getTime() - startOfMonth.getTimezoneOffset() * 60000).toISOString().split('T')[0]
+      setStartDate(startOfMonthStr)
+      setEndDate(todayStr)
+    }
   }
 
   async function handleExport(type: 'excel' | 'pdf') {
@@ -331,7 +322,6 @@ function ReportPageContent() {
     if (selectedReportId !== 'laba-produk' && selectedReportId !== 'produk') return []
     return tableData.map(row => {
       const rev = row.revenue ?? 0
-      const cost = row.cost ?? 0
       const profit = row.profit ?? 0
       const marginPct = rev > 0 ? (profit / rev) * 100 : 0
       
