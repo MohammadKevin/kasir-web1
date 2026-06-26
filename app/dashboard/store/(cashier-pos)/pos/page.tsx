@@ -282,7 +282,7 @@ export default function PosPage() {
       if (e.key === 'Enter') {
         if (barcodeBuffer.current.trim().length > 2) {
           const target = products.find(
-            p => p.barcode === barcodeBuffer.current.trim() || p.sku === barcodeBuffer.current.trim()
+            p => (p.barcode === barcodeBuffer.current.trim() || p.sku === barcodeBuffer.current.trim()) && p.isActive !== false
           )
           if (target) addToCart(target)
           barcodeBuffer.current = ''
@@ -1101,6 +1101,7 @@ export default function PosPage() {
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     products.forEach(p => {
+      if (p.isActive === false) return
       if (p.categoryId) {
         counts[p.categoryId] = (counts[p.categoryId] || 0) + 1
       }
@@ -1109,8 +1110,10 @@ export default function PosPage() {
   }, [products])
 
   const filtered = products.filter(x => {
+    if (x.isActive === false) return false
     const matchSearch = x.name.toLowerCase().includes(search.toLowerCase()) ||
-      x.barcode.includes(search) || x.sku.toLowerCase().includes(search.toLowerCase())
+      (x.barcode && x.barcode.includes(search)) || 
+      (x.sku && x.sku.toLowerCase().includes(search.toLowerCase()))
     const matchCat = categoryFilter
       ? (categoryFilter === 'all' || x.categoryId === categoryFilter)
       : true
@@ -1234,7 +1237,7 @@ export default function PosPage() {
                 </div>
                 <div className="relative z-10">
                   <h3 className="font-extrabold text-slate-800 text-xs sm:text-sm group-hover:text-indigo-600 transition-colors">Semua Produk</h3>
-                  <p className="text-[10px] sm:text-xs text-slate-400 font-bold mt-1">{products.length} Produk</p>
+                  <p className="text-[10px] sm:text-xs text-slate-400 font-bold mt-1">{products.filter(p => p.isActive !== false).length} Produk</p>
                 </div>
               </button>
 

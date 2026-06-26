@@ -38,6 +38,16 @@ api.interceptors.response.use(
   (res) => res,
 
   (error) => {
+    console.error('Axios Request Failed:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      responseData: error.response?.data,
+      requestPayload: error.config?.data
+    })
+    if (error.response?.data) {
+      console.warn('SERVER RESPONSE DETAIL:', JSON.stringify(error.response.data, null, 2))
+    }
 
     if (
       error.response?.status === 401 &&
