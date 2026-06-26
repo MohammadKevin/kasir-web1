@@ -65,6 +65,7 @@ export default function MajooSyncPage() {
     category: '',
     
     // Transactions mapping fields
+    txDate: '',
     txPaymentMethod: '',
     txTotal: '',
     txSubtotal: '',
@@ -87,6 +88,7 @@ export default function MajooSyncPage() {
     errors: string[]
     isFinished: boolean
   } | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -107,6 +109,32 @@ export default function MajooSyncPage() {
       })
       .catch(err => console.error('Failed to load stores', err))
   }, [router])
+
+  // Helper to normalize keys and find matches (e.g. handling newlines and extra spaces)
+  function findKey(keys: string[], targets: string[], containsTargets: string[] = []): string {
+    const cleanKey = (k: string) => k.replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase()
+    const normalizedKeys = keys.map(k => ({ original: k, clean: cleanKey(k) }))
+    
+    // 1. Try exact clean match
+    for (const target of targets) {
+      const found = normalizedKeys.find(nk => nk.clean === target.toLowerCase())
+      if (found) return found.original
+    }
+    
+    // 2. Try partial/includes match from containsTargets
+    for (const ct of containsTargets) {
+      const found = normalizedKeys.find(nk => nk.clean.includes(ct.toLowerCase()))
+      if (found) return found.original
+    }
+    
+    // 3. Fallback includes of targets
+    for (const target of targets) {
+      const found = normalizedKeys.find(nk => nk.clean.includes(target.toLowerCase()))
+      if (found) return found.original
+    }
+    
+    return ''
+  }
 
   // Helper to load categories for a store
   async function loadCategories(storeId: string) {
@@ -157,37 +185,40 @@ export default function MajooSyncPage() {
 
     if (syncMode === 'transactions') {
       const hasArrayKey = keys.some(k => Array.isArray(firstItem[k]))
+      const productColumnKey = keys.find(k => ['produk', 'product', 'items', 'barang'].includes(k.toLowerCase()))
       const isFlatDetect = !hasArrayKey || keys.some(k => ['product_name', 'product_sku', 'product_qty'].includes(k.toLowerCase()))
 
-      const txItemsKey = isFlatDetect ? '_flat' : (keys.find(k => Array.isArray(firstItem[k])) || '')
-      const firstTxItem = txItemsKey && txItemsKey !== '_flat' && firstItem[txItemsKey]?.length > 0 ? firstItem[txItemsKey][0] : null
+      const txItemsKey = productColumnKey || (isFlatDetect ? '_flat' : (keys.find(k => Array.isArray(firstItem[k])) || ''))
+      const rawTxItemsVal = txItemsKey && txItemsKey !== '_flat' ? firstItem[txItemsKey] : null
+      const firstTxItem = rawTxItemsVal && Array.isArray(rawTxItemsVal) && rawTxItemsVal.length > 0 ? rawTxItemsVal[0] : null
       const itemKeys = txItemsKey === '_flat' ? keys : (firstTxItem && typeof firstTxItem === 'object' ? Object.keys(firstTxItem) : [])
       setAvailableItemKeys(itemKeys)
 
       setMappings(prev => ({
         ...prev,
-        txPaymentMethod: keys.find(k => ['payment_method', 'payment', 'metode_pembayaran', 'payment_type', 'metode pembayaran', 'tipe pembayaran', 'cara bayar', 'metode bayar'].includes(k.toLowerCase())) || '',
-        txTotal: keys.find(k => ['total', 'grand_total', 'total_price', 'amount', 'total_amount', 'total penjualan (rp)', 'total penjualan', 'total (rp)', 'nominal', 'total bayar'].includes(k.toLowerCase())) || '',
-        txSubtotal: keys.find(k => ['subtotal', 'amount', 'sub_total', 'subtotal (rp)', 'sub total'].includes(k.toLowerCase())) || '',
-        txDiscount: keys.find(k => ['discount', 'total_discount', 'discount_amount', 'diskon', 'potongan', 'diskon transaksi'].includes(k.toLowerCase())) || '',
+        txDate: findKey(keys, ['waktu order', 'waktu bayar', 'waktu_order', 'waktu order', 'tanggal \u0026 waktu', 'tanggal', 'date', 'waktu', 'time', 'created_at', 'created at', 'tgl', 'tanggal transaksi', 'waktu transaksi'], ['waktu', 'tanggal', 'date']),
+        txPaymentMethod: findKey(keys, ['payment_method', 'payment', 'metode_pembayaran', 'payment_type', 'metode pembayaran', 'tipe pembayaran', 'cara bayar', 'metode bayar'], ['payment', 'bayar']),
+        txTotal: findKey(keys, ['total', 'grand_total', 'total_price', 'amount', 'total_amount', 'total penjualan (rp)', 'total penjualan', 'total (rp)', 'nominal', 'total bayar'], ['total']),
+        txSubtotal: findKey(keys, ['subtotal', 'amount', 'sub_total', 'subtotal (rp)', 'sub total'], ['subtotal', 'sub_total']),
+        txDiscount: findKey(keys, ['discount', 'total_discount', 'discount_amount', 'diskon', 'potongan', 'diskon transaksi'], ['discount', 'diskon']),
         txItems: txItemsKey,
         
-        itemSku: itemKeys.find(k => ['sku', 'product_sku', 'code', 'product_code', 'sku produk', 'kode produk', 'kode barang', 'kode variant', 'sku variant'].includes(k.toLowerCase())) || '',
-        itemName: itemKeys.find(k => ['name', 'product_name', 'nama', 'nama_produk', 'title', 'nama produk', 'nama barang', 'item', 'produk'].includes(k.toLowerCase())) || '',
-        itemQty: itemKeys.find(k => ['qty', 'quantity', 'jumlah', 'count', 'product_qty', 'jumlah produk', 'jumlah barang', 'qty produk', 'kuantitas'].includes(k.toLowerCase())) || '',
-        itemPrice: itemKeys.find(k => ['price', 'selling_price', 'harga', 'rate', 'product_price', 'harga produk', 'harga barang', 'harga satuan', 'harga jual'].includes(k.toLowerCase())) || '',
-        itemDiscount: itemKeys.find(k => ['discount', 'discount_amount', 'disc', 'product_discount', 'diskon produk', 'diskon barang', 'potongan harga'].includes(k.toLowerCase())) || ''
+        itemSku: findKey(itemKeys, ['sku', 'product_sku', 'code', 'product_code', 'sku produk', 'kode produk', 'kode barang', 'kode variant', 'sku variant'], ['sku', 'code', 'kode']),
+        itemName: findKey(itemKeys, ['name', 'product_name', 'nama', 'nama_produk', 'title', 'nama produk', 'nama barang', 'item', 'produk'], ['name', 'nama', 'item', 'produk']),
+        itemQty: findKey(itemKeys, ['qty', 'quantity', 'jumlah', 'count', 'product_qty', 'jumlah produk', 'jumlah barang', 'qty produk', 'kuantitas'], ['qty', 'quantity', 'jumlah', 'count']),
+        itemPrice: findKey(itemKeys, ['price', 'selling_price', 'harga', 'rate', 'product_price', 'harga produk', 'harga barang', 'harga satuan', 'harga jual'], ['price', 'harga']),
+        itemDiscount: findKey(itemKeys, ['discount', 'discount_amount', 'disc', 'product_discount', 'diskon produk', 'diskon barang', 'potongan harga'], ['discount', 'disc', 'diskon'])
       }))
     } else {
       setMappings(prev => ({
         ...prev,
-        name: keys.find(k => ['name', 'product_name', 'nama', 'nama_produk', 'title', 'nama produk', 'nama barang'].includes(k.toLowerCase())) || '',
-        sku: keys.find(k => ['sku', 'product_code', 'kode', 'kode_produk', 'sku_code', 'sku produk', 'kode produk', 'kode barang'].includes(k.toLowerCase())) || '',
-        barcode: keys.find(k => ['barcode', 'upc', 'ean', 'kode_barcode', 'kode barcode'].includes(k.toLowerCase())) || '',
-        sellingPrice: keys.find(k => ['price', 'selling_price', 'harga', 'harga_jual', 'retail_price', 'harga jual', 'harga jual (rp)'].includes(k.toLowerCase())) || '',
-        costPrice: keys.find(k => ['cost', 'cost_price', 'harga_beli', 'modal', 'purchase_price', 'harga beli', 'harga beli (rp)', 'harga modal'].includes(k.toLowerCase())) || '',
-        stock: keys.find(k => ['stok akhir', 'stok_akhir', 'stock', 'qty', 'quantity', 'stok', 'jumlah stok', 'stok awal'].includes(k.toLowerCase())) || '',
-        category: keys.find(k => ['category', 'category_name', 'kategori', 'group', 'kelompok', 'kategori produk'].includes(k.toLowerCase())) || ''
+        name: findKey(keys, ['name', 'product_name', 'nama', 'nama_produk', 'title', 'nama produk', 'nama barang'], ['nama produk', 'nama barang', 'nama']),
+        sku: findKey(keys, ['sku satuan #1', 'sku satuan 1', 'sku\nsatuan #1', 'sku\nsatuan 1', 'sku', 'product_code', 'kode', 'kode_produk', 'sku_code', 'sku produk', 'kode produk', 'kode barang'], ['sku', 'code', 'kode']),
+        barcode: findKey(keys, ['barcode', 'upc', 'ean', 'kode_barcode', 'kode barcode'], ['barcode']),
+        sellingPrice: findKey(keys, ['harga jual satuan #1', 'harga jual satuan 1', 'harga jual\nsatuan #1', 'harga jual\nsatuan 1', 'harga jual', 'price', 'selling_price', 'harga', 'harga_jual', 'retail_price', 'harga jual (rp)'], ['harga jual', 'selling']),
+        costPrice: findKey(keys, ['harga beli satuan #1', 'harga beli satuan 1', 'harga beli\nsatuan #1', 'harga beli\nsatuan 1', 'harga modal #1', 'harga modal 1', 'harga modal\n#1', 'harga modal\n1', 'harga beli', 'harga modal', 'cost', 'cost_price', 'harga_beli', 'modal', 'purchase_price', 'harga beli (rp)', 'harga modal'], ['harga beli', 'harga modal', 'cost', 'modal']),
+        stock: findKey(keys, ['stok akhir', 'stok_akhir', 'akhir', 'stock', 'qty', 'quantity', 'stok', 'jumlah stok', 'stok awal'], ['stok', 'stock', 'qty', 'quantity', 'akhir']),
+        category: findKey(keys, ['category', 'category_name', 'kategori', 'group', 'kelompok', 'kategori produk'], ['kategori', 'category'])
       }))
     }
   }, [syncMode, productsArray])
@@ -374,38 +405,41 @@ export default function MajooSyncPage() {
       // Auto map columns
       if (syncMode === 'transactions') {
         const hasArrayKey = keys.some(k => Array.isArray(firstItem[k]))
+        const productColumnKey = keys.find(k => ['produk', 'product', 'items', 'barang'].includes(k.toLowerCase()))
         const isFlatDetect = !hasArrayKey || keys.some(k => ['product_name', 'product_sku', 'product_qty'].includes(k.toLowerCase()))
 
-        const txItemsKey = isFlatDetect ? '_flat' : (keys.find(k => Array.isArray(firstItem[k])) || '')
-        const firstTxItem = txItemsKey && txItemsKey !== '_flat' && firstItem[txItemsKey]?.length > 0 ? firstItem[txItemsKey][0] : null
+        const txItemsKey = productColumnKey || (isFlatDetect ? '_flat' : (keys.find(k => Array.isArray(firstItem[k])) || ''))
+        const rawTxItemsVal = txItemsKey && txItemsKey !== '_flat' ? firstItem[txItemsKey] : null
+        const firstTxItem = rawTxItemsVal && Array.isArray(rawTxItemsVal) && rawTxItemsVal.length > 0 ? rawTxItemsVal[0] : null
         const itemKeys = txItemsKey === '_flat' ? keys : (firstTxItem && typeof firstTxItem === 'object' ? Object.keys(firstTxItem) : [])
         setAvailableItemKeys(itemKeys)
 
         const autoMappings = {
           ...mappings,
-          txPaymentMethod: keys.find(k => ['payment_method', 'payment', 'metode_pembayaran', 'payment_type', 'metode pembayaran', 'tipe pembayaran', 'cara bayar', 'metode bayar'].includes(k.toLowerCase())) || '',
-          txTotal: keys.find(k => ['total', 'grand_total', 'total_price', 'amount', 'total_amount', 'total penjualan (rp)', 'total penjualan', 'total (rp)', 'nominal', 'total bayar'].includes(k.toLowerCase())) || '',
-          txSubtotal: keys.find(k => ['subtotal', 'amount', 'sub_total', 'subtotal (rp)', 'sub total'].includes(k.toLowerCase())) || '',
-          txDiscount: keys.find(k => ['discount', 'total_discount', 'discount_amount', 'diskon', 'potongan', 'diskon transaksi'].includes(k.toLowerCase())) || '',
+          txDate: findKey(keys, ['waktu order', 'waktu bayar', 'waktu_order', 'waktu order', 'tanggal \u0026 waktu', 'tanggal', 'date', 'waktu', 'time', 'created_at', 'created at', 'tgl', 'tanggal transaksi', 'waktu transaksi'], ['waktu', 'tanggal', 'date']),
+          txPaymentMethod: findKey(keys, ['payment_method', 'payment', 'metode_pembayaran', 'payment_type', 'metode pembayaran', 'tipe pembayaran', 'cara bayar', 'metode bayar'], ['payment', 'bayar']),
+          txTotal: findKey(keys, ['total', 'grand_total', 'total_price', 'amount', 'total_amount', 'total penjualan (rp)', 'total penjualan', 'total (rp)', 'nominal', 'total bayar'], ['total']),
+          txSubtotal: findKey(keys, ['subtotal', 'amount', 'sub_total', 'subtotal (rp)', 'sub total'], ['subtotal', 'sub_total']),
+          txDiscount: findKey(keys, ['discount', 'total_discount', 'discount_amount', 'diskon', 'potongan', 'diskon transaksi'], ['discount', 'diskon']),
           txItems: txItemsKey,
           
-          itemSku: itemKeys.find(k => ['sku', 'product_sku', 'code', 'product_code', 'sku produk', 'kode produk', 'kode barang', 'kode variant', 'sku variant'].includes(k.toLowerCase())) || '',
-          itemName: itemKeys.find(k => ['name', 'product_name', 'nama', 'nama_produk', 'title', 'nama produk', 'nama barang', 'item', 'produk'].includes(k.toLowerCase())) || '',
-          itemQty: itemKeys.find(k => ['qty', 'quantity', 'jumlah', 'count', 'product_qty', 'jumlah produk', 'jumlah barang', 'qty produk', 'kuantitas'].includes(k.toLowerCase())) || '',
-          itemPrice: itemKeys.find(k => ['price', 'selling_price', 'harga', 'rate', 'product_price', 'harga produk', 'harga barang', 'harga satuan', 'harga jual'].includes(k.toLowerCase())) || '',
-          itemDiscount: itemKeys.find(k => ['discount', 'discount_amount', 'disc', 'product_discount', 'diskon produk', 'diskon barang', 'potongan harga'].includes(k.toLowerCase())) || ''
+          itemSku: findKey(itemKeys, ['sku', 'product_sku', 'code', 'product_code', 'sku produk', 'kode produk', 'kode barang', 'kode variant', 'sku variant'], ['sku', 'code', 'kode']),
+          itemName: findKey(itemKeys, ['name', 'product_name', 'nama', 'nama_produk', 'title', 'nama produk', 'nama barang', 'item', 'produk'], ['name', 'nama', 'item', 'produk']),
+          itemQty: findKey(itemKeys, ['qty', 'quantity', 'jumlah', 'count', 'product_qty', 'jumlah produk', 'jumlah barang', 'qty produk', 'kuantitas'], ['qty', 'quantity', 'jumlah', 'count']),
+          itemPrice: findKey(itemKeys, ['price', 'selling_price', 'harga', 'rate', 'product_price', 'harga produk', 'harga barang', 'harga satuan', 'harga jual'], ['price', 'harga']),
+          itemDiscount: findKey(itemKeys, ['discount', 'discount_amount', 'disc', 'product_discount', 'diskon produk', 'diskon barang', 'potongan harga'], ['discount', 'disc', 'diskon'])
         }
         setMappings(autoMappings)
       } else {
         const autoMappings = {
           ...mappings,
-          name: keys.find(k => ['name', 'product_name', 'nama', 'nama_produk', 'title', 'nama produk', 'nama barang'].includes(k.toLowerCase())) || '',
-          sku: keys.find(k => ['sku', 'product_code', 'kode', 'kode_produk', 'sku_code', 'sku produk', 'kode produk', 'kode barang'].includes(k.toLowerCase())) || '',
-          barcode: keys.find(k => ['barcode', 'upc', 'ean', 'kode_barcode', 'kode barcode'].includes(k.toLowerCase())) || '',
-          sellingPrice: keys.find(k => ['price', 'selling_price', 'harga', 'harga_jual', 'retail_price', 'harga jual', 'harga jual (rp)'].includes(k.toLowerCase())) || '',
-          costPrice: keys.find(k => ['cost', 'cost_price', 'harga_beli', 'modal', 'purchase_price', 'harga beli', 'harga beli (rp)', 'harga modal'].includes(k.toLowerCase())) || '',
-          stock: keys.find(k => ['stock', 'qty', 'quantity', 'stok', 'stok_akhir', 'jumlah stok', 'stok awal'].includes(k.toLowerCase())) || '',
-          category: keys.find(k => ['category', 'category_name', 'kategori', 'group', 'kelompok', 'kategori produk'].includes(k.toLowerCase())) || ''
+          name: findKey(keys, ['name', 'product_name', 'nama', 'nama_produk', 'title', 'nama produk', 'nama barang'], ['nama produk', 'nama barang', 'nama']),
+          sku: findKey(keys, ['sku satuan #1', 'sku satuan 1', 'sku\nsatuan #1', 'sku\nsatuan 1', 'sku', 'product_code', 'kode', 'kode_produk', 'sku_code', 'sku produk', 'kode produk', 'kode barang'], ['sku', 'code', 'kode']),
+          barcode: findKey(keys, ['barcode', 'upc', 'ean', 'kode_barcode', 'kode barcode'], ['barcode']),
+          sellingPrice: findKey(keys, ['harga jual satuan #1', 'harga jual satuan 1', 'harga jual\nsatuan #1', 'harga jual\nsatuan 1', 'harga jual', 'price', 'selling_price', 'harga', 'harga_jual', 'retail_price', 'harga jual (rp)'], ['harga jual', 'selling']),
+          costPrice: findKey(keys, ['harga beli satuan #1', 'harga beli satuan 1', 'harga beli\nsatuan #1', 'harga beli\nsatuan 1', 'harga modal #1', 'harga modal 1', 'harga modal\n#1', 'harga modal\n1', 'harga beli', 'harga modal', 'cost', 'cost_price', 'harga_beli', 'modal', 'purchase_price', 'harga beli (rp)', 'harga modal'], ['harga beli', 'harga modal', 'cost', 'modal']),
+          stock: findKey(keys, ['stok akhir', 'stok_akhir', 'akhir', 'stock', 'qty', 'quantity', 'stok', 'jumlah stok', 'stok awal'], ['stok', 'stock', 'qty', 'quantity', 'akhir']),
+          category: findKey(keys, ['category', 'category_name', 'kategori', 'group', 'kelompok', 'kategori produk'], ['kategori', 'category'])
         }
         setMappings(autoMappings)
       }
@@ -425,17 +459,21 @@ export default function MajooSyncPage() {
     const headerKeywords = [
       'no transaksi', 'no. transaksi', 'nomor transaksi', 'no_transaksi',
       'id struk', 'struk', 'invoice', 'no invoice', 'no. invoice',
-      'nama produk', 'nama barang', 'nama_produk', 'product name', 'item',
+      'nama produk', 'nama barang', 'nama_produk', 'product name',
       'sku', 'product_sku', 'kode produk', 'kode_produk', 'kode barang',
-      'total', 'grand total', 'grand_total', 'total penjualan',
-      'metode pembayaran', 'metode_pembayaran', 'cara bayar', 'payment'
+      'produk', 'waktu order', 'waktu bayar',
+      'stok akhir', 'stok awal', 'awal', 'akhir', 'satuan'
     ]
 
     let headerRowIdx = -1
-    for (let r = 0; r < Math.min(rows.length, 20); r++) {
+    for (let r = 0; r < Math.min(rows.length, 25); r++) {
       const row = rows[r]
       if (!row || !Array.isArray(row)) continue
       
+      // A header row must have at least 3 filled cells to avoid matching metadata rows (like "Kategori: Semua")
+      const filledCells = row.filter(cell => cell !== null && cell !== undefined && String(cell).trim() !== '').length
+      if (filledCells < 3) continue
+
       const isHeader = row.some(cell => {
         if (cell === null || cell === undefined) return false
         const cellStr = String(cell).toLowerCase().trim()
@@ -465,6 +503,10 @@ export default function MajooSyncPage() {
 
       const isEmpty = row.every(cell => cell === null || cell === undefined || String(cell).trim() === '')
       if (isEmpty) continue
+
+      // Skip footer rows (e.g. "Powered by Majoo")
+      const isFooter = row.some(cell => cell && String(cell).toLowerCase().includes('powered by'))
+      if (isFooter) continue
 
       const obj: Record<string, any> = {}
       let hasData = false
@@ -504,6 +546,21 @@ export default function MajooSyncPage() {
         const wb = XLSX.read(bstr, { type: 'binary' })
         const wsname = wb.SheetNames[0]
         const ws = wb.Sheets[wsname]
+
+        // Recalculate sheet range if cells exist (handles buggy excel exports with truncated !ref)
+        const range = { s: { c: 10000000, r: 10000000 }, e: { c: -1, r: -1 } }
+        for (const z in ws) {
+          if (z[0] === '!') continue
+          const c = XLSX.utils.decode_cell(z)
+          if (c.r < range.s.r) range.s.r = c.r
+          if (c.r > range.e.r) range.e.r = c.r
+          if (c.c < range.s.c) range.s.c = c.c
+          if (c.c > range.e.c) range.e.c = c.c
+        }
+        if (range.s.r <= range.e.r) {
+          ws['!ref'] = XLSX.utils.encode_range(range)
+        }
+
         const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][]
 
         const parsedData = parseExcelToObjects(data)
@@ -596,7 +653,84 @@ export default function MajooSyncPage() {
     return isNaN(num) ? 0 : num
   }
 
+  const parseExcelDate = (val: any): Date | null => {
+    if (!val) return null
+    if (val instanceof Date) return val
+    
+    // Check if it is a number or numeric string (Excel serial date representation)
+    const numVal = Number(val)
+    if (!isNaN(numVal) && numVal > 30000 && numVal < 60000) {
+      const date = new Date(Math.round((numVal - 25569) * 86400 * 1000))
+      // Adjust timezone offset to preserve the local naive representation in Date
+      const userTimezoneOffset = date.getTimezoneOffset() * 60000
+      return new Date(date.getTime() + userTimezoneOffset)
+    }
+
+    const str = String(val).trim()
+    if (!str) return null
+
+    // Try parsing standard date strings e.g. "26-06-2026 17:40:55" or "26/06/2026 17:40:55" or "2026-06-26 17:40:55"
+    const parts = str.split(/\s+/)
+    if (parts.length >= 1) {
+      const dateStr = parts[0]
+      const timeStr = parts.length >= 2 ? parts[1] : ''
+
+      const dateParts = dateStr.split(/[-/.]/)
+      if (dateParts.length === 3) {
+        let day = 1, month = 0, year = 2026
+        
+        if (dateParts[0].length === 4) {
+          // YYYY-MM-DD
+          year = parseInt(dateParts[0], 10)
+          month = parseInt(dateParts[1], 10) - 1
+          day = parseInt(dateParts[2], 10)
+        } else if (dateParts[2].length === 4) {
+          // DD-MM-YYYY
+          day = parseInt(dateParts[0], 10)
+          month = parseInt(dateParts[1], 10) - 1
+          year = parseInt(dateParts[2], 10)
+        } else {
+          day = parseInt(dateParts[0], 10)
+          month = parseInt(dateParts[1], 10) - 1
+          year = parseInt(dateParts[2], 10)
+          if (year < 100) year += 2000
+        }
+
+        let hour = 0, minute = 0, second = 0
+        if (timeStr) {
+          const timeParts = timeStr.split(':')
+          if (timeParts.length >= 2) {
+            hour = parseInt(timeParts[0], 10)
+            minute = parseInt(timeParts[1], 10)
+            if (timeParts.length >= 3) {
+              second = parseInt(timeParts[2], 10)
+            }
+          }
+        }
+        
+        const newD = new Date(year, month, day, hour, minute, second)
+        if (!isNaN(newD.getTime())) {
+          return newD
+        }
+      }
+    }
+
+    // Default JS Date parsing fallback
+    const d = new Date(str)
+    return isNaN(d.getTime()) ? null : d
+  }
+
   function extractItemDetails(mItem: any) {
+    if (mItem && mItem._isStringItem) {
+      return {
+        name: mItem.name,
+        sku: mItem.sku || '',
+        qty: mItem.qty || 1,
+        price: mItem.price || 0,
+        discount: mItem.discount || 0
+      }
+    }
+
     let name = mappings.itemName ? String(getValueByPath(mItem, mappings.itemName) || '').trim() : ''
     let sku = mappings.itemSku ? String(getValueByPath(mItem, mappings.itemSku) || '').trim() : ''
     let qty = mappings.itemQty ? parseExcelNumber(getValueByPath(mItem, mappings.itemQty)) : 0
@@ -632,6 +766,28 @@ export default function MajooSyncPage() {
     }
   }
 
+  function getMajooItems(item: any): any[] {
+    const rawItems = mappings.txItems ? getValueByPath(item, mappings.txItems) : null
+    if (mappings.txItems === '_flat') {
+      return item._items || []
+    }
+    if (Array.isArray(rawItems)) {
+      return rawItems
+    }
+    if (typeof rawItems === 'string' && rawItems.trim() !== '') {
+      const productNames = rawItems.split(',').map(name => name.trim()).filter(Boolean)
+      return productNames.map(name => ({
+        _isStringItem: true,
+        name: name,
+        sku: '',
+        qty: 1,
+        price: 0,
+        discount: 0
+      }))
+    }
+    return []
+  }
+
   // Execute synchronization (importer)
   async function handleStartSync() {
     if (!selectedStoreId) {
@@ -665,7 +821,13 @@ export default function MajooSyncPage() {
       return
     }
 
-    if (syncMode === 'transactions' && !mappings.itemSku && !mappings.itemName) {
+    const isStringItems = syncMode === 'transactions' && 
+                         mappings.txItems && 
+                         mappings.txItems !== '_flat' && 
+                         productsArray.length > 0 && 
+                         typeof getValueByPath(productsArray[0], mappings.txItems) === 'string'
+
+    if (syncMode === 'transactions' && !isStringItems && !mappings.itemSku && !mappings.itemName) {
       alert('Mapping kolom SKU atau Nama Produk untuk item transaksi wajib diisi!')
       return
     }
@@ -698,6 +860,15 @@ export default function MajooSyncPage() {
       // Fetch latest categories to avoid duplicates
       let currentCategories = await loadCategories(selectedStoreId)
 
+      // Fetch latest products to avoid duplicates
+      let localProducts: any[] = []
+      try {
+        const localProdsRes = await api.get(`/products/store/${selectedStoreId}`, { headers: headersApi })
+        localProducts = localProdsRes.data || []
+      } catch (errProd) {
+        console.error('Failed to load local products for duplicate checking:', errProd)
+      }
+
       for (let i = 0; i < productsArray.length; i++) {
         const item = productsArray[i]
         let productName = String(getValueByPath(item, mappings.name) || '').trim()
@@ -728,8 +899,41 @@ export default function MajooSyncPage() {
           barcode = mappings.barcode ? String(getValueByPath(item, mappings.barcode) || '').trim() : ''
         }
 
-        if (!productName || productName === 'null') {
+        // Apply variant options if they are explicitly present in the item row (Majoo Excel format)
+        const itemKeys = Object.keys(item)
+        const var1Key = findKey(itemKeys, ['pilihan varian 1', 'pilihan varian\n1', 'pilihan_varian_1'])
+        const var2Key = findKey(itemKeys, ['pilihan varian 2', 'pilihan varian\n2', 'pilihan_varian_2'])
+        const variant1Opt = var1Key ? String(getValueByPath(item, var1Key) || '').trim() : ''
+        const variant2Opt = var2Key ? String(getValueByPath(item, var2Key) || '').trim() : ''
+        const variantParts = [variant1Opt, variant2Opt].filter(v => v && v !== '-')
+        if (variantParts.length > 0 && productName && productName !== 'null') {
+          productName = `${productName} (${variantParts.join(', ')})`
+        }
+
+        if (!productName || productName === 'null' || productName === '-') {
+          if (!sku) {
+            // Skip quietly if both name and SKU are empty
+            continue
+          }
           errors.push(`Baris ${i + 1}: Nama produk tidak ditemukan`)
+          continue
+        }
+
+        // Product Duplication Check
+        const cleanSku = sku ? sku.trim().toLowerCase() : ''
+        const cleanName = productName ? productName.trim().toLowerCase() : ''
+        
+        let existingProd = null
+        if (cleanSku) {
+          existingProd = localProducts.find((p: any) => p.sku && p.sku.trim().toLowerCase() === cleanSku)
+        }
+        if (!existingProd && cleanName) {
+          existingProd = localProducts.find((p: any) => p.name && p.name.trim().toLowerCase() === cleanName)
+        }
+
+        if (existingProd) {
+          // Product already exists, skip to avoid duplicates
+          successCount++
           continue
         }
 
@@ -912,6 +1116,17 @@ export default function MajooSyncPage() {
         const localProdsRes = await api.get(`/products/store/${selectedStoreId}`, { headers: headersApi })
         const localProducts = localProdsRes.data || []
 
+        // Load existing transactions in the system to prevent duplication
+        let localTransactions: any[] = []
+        try {
+          const localTxRes = await api.get(`/transactions/store/${selectedStoreId}`, { headers: headersApi })
+          localTransactions = localTxRes.data || []
+        } catch (errTx) {
+          console.error('Failed to load existing transactions for duplicate detection:', errTx)
+        }
+
+        const matchedLocalTxIds = new Set<string>()
+
         if (localProducts.length === 0) {
           alert("Gagal: Cabang/toko tujuan terpilih tidak memiliki produk terdaftar di database Kasir Web. Silakan sinkronisasikan/impor produk terlebih dahulu dengan mode 'Impor Produk Baru & Stok' ke cabang ini!");
           setSyncStatus(null);
@@ -922,8 +1137,14 @@ export default function MajooSyncPage() {
         let targetTransactions = productsArray
         if (mappings.txItems === '_flat' && productsArray.length > 0) {
           const firstRow = productsArray[0]
-          const possibleIdKeys = ['transaction_no', 'invoice_no', 'invoice_number', 'id', 'code', 'invoice']
-          const groupingKey = Object.keys(firstRow).find(k => possibleIdKeys.includes(k.toLowerCase())) || 'transaction_no'
+          const keys = Object.keys(firstRow)
+          const groupingKey = findKey(keys, [
+            'no transaksi', 'no. transaksi', 'nomor transaksi', 'no_transaksi',
+            'no invoice', 'no. invoice', 'nomor invoice', 'invoice no', 'invoice number',
+            'invoice_no', 'invoice_number', 'transaction no', 'transaction number',
+            'transaction_no', 'transaction_number', 'id struk', 'struk', 'invoice',
+            'code', 'id', 'kode transaksi', 'no referensi', 'no. referensi', 'no ref', 'no. ref'
+          ]) || keys.find(k => ['transaction_no', 'invoice_no', 'invoice_number', 'id', 'code', 'invoice'].includes(k.toLowerCase())) || 'transaction_no'
 
           const groupedMap: Record<string, any> = {}
           for (const row of productsArray) {
@@ -953,12 +1174,17 @@ export default function MajooSyncPage() {
           const rawMethod = String(getValueByPath(item, mappings.txPaymentMethod) || 'CASH')
           const paymentMethod = mapPaymentMethod(rawMethod)
           
-          const rawItems = mappings.txItems ? getValueByPath(item, mappings.txItems) : null
-          const majooItems = mappings.txItems === '_flat' ? item._items : (Array.isArray(rawItems) ? rawItems : [])
+          const majooItems = getMajooItems(item)
 
           const firstRow = productsArray[0]
-          const possibleIdKeys = firstRow ? ['transaction_no', 'invoice_no', 'invoice_number', 'id', 'code', 'invoice'] : []
-          const groupingKey = firstRow ? (Object.keys(firstRow).find(k => possibleIdKeys.includes(k.toLowerCase())) || 'transaction_no') : 'transaction_no'
+          const keys = firstRow ? Object.keys(firstRow) : []
+          const groupingKey = firstRow ? (findKey(keys, [
+            'no transaksi', 'no. transaksi', 'nomor transaksi', 'no_transaksi',
+            'no invoice', 'no. invoice', 'nomor invoice', 'invoice no', 'invoice number',
+            'invoice_no', 'invoice_number', 'transaction no', 'transaction number',
+            'transaction_no', 'transaction_number', 'id struk', 'struk', 'invoice',
+            'code', 'id', 'kode transaksi', 'no referensi', 'no. referensi', 'no ref', 'no. ref'
+          ]) || keys.find(k => ['transaction_no', 'invoice_no', 'invoice_number', 'id', 'code', 'invoice'].includes(k.toLowerCase())) || 'transaction_no') : 'transaction_no'
 
           const txId = String(getValueByPath(item, groupingKey) || item.id || `Baris ${i + 1}`)
           setSyncStatus(prev => prev ? { ...prev, current: i + 1, currentName: `Transaksi ${txId}` } : null)
@@ -968,7 +1194,10 @@ export default function MajooSyncPage() {
             continue
           }
 
+          const stripParentheses = (s: string) => s.replace(/\s*\(.*?\)\s*/g, '').trim().toLowerCase()
+
           const itemsPayload: any[] = []
+          let txHasError = false
           for (const mItem of majooItems) {
             const details = extractItemDetails(mItem)
             
@@ -980,6 +1209,7 @@ export default function MajooSyncPage() {
             
             const cleanSku = details.sku.toLowerCase()
             const cleanName = details.name.toLowerCase()
+            const cleanNameNoVar = stripParentheses(details.name)
 
             let localProduct = null
             if (details.sku) {
@@ -988,6 +1218,25 @@ export default function MajooSyncPage() {
             if (!localProduct && details.name) {
               localProduct = localProducts.find((p: any) => p.name && p.name.trim().toLowerCase() === cleanName)
             }
+            if (!localProduct && details.name) {
+              localProduct = localProducts.find((p: any) => {
+                if (!p.name) return false
+                const pClean = p.name.trim().toLowerCase()
+                
+                // 1. Starts with check (local product starts with tx product name, e.g. "MIDI NAJWA BORDIR" starts with "MIDI NAJWA")
+                if (pClean.startsWith(cleanName)) return true
+                
+                // 2. Starts with check reverse
+                if (cleanName.startsWith(pClean)) return true
+                
+                // 3. Parentheses stripped check
+                const pCleanNoVar = stripParentheses(p.name)
+                if (pCleanNoVar === cleanNameNoVar) return true
+                if (pCleanNoVar.startsWith(cleanNameNoVar) || cleanNameNoVar.startsWith(pCleanNoVar)) return true
+                
+                return false
+              })
+            }
 
             if (!localProduct) {
               // Try to find a fallback product containing "majoo" in the name
@@ -995,30 +1244,61 @@ export default function MajooSyncPage() {
             }
 
             if (!localProduct) {
+              // Auto-create "Transaksi Majoo" fallback product
+              try {
+                const cats = await loadCategories(selectedStoreId)
+                let catId = ''
+                const targetCatName = 'Umum'
+                const matchedCat = cats.find((c: any) => c.name.toLowerCase() === targetCatName.toLowerCase())
+                if (matchedCat) {
+                  catId = matchedCat.id
+                } else {
+                  const catPayload = {
+                    storeId: selectedStoreId,
+                    name: targetCatName,
+                    description: 'Kategori default untuk produk penampung'
+                  }
+                  const newCatRes = await api.post('/categories', catPayload, { headers: headersApi })
+                  const newCat = newCatRes.data
+                  if (newCat && newCat.id) {
+                    catId = newCat.id
+                  }
+                }
+
+                if (!catId && cats.length > 0) {
+                  catId = cats[0].id
+                }
+
+                if (catId) {
+                  const productPayload = {
+                    storeId: selectedStoreId,
+                    categoryId: catId,
+                    name: 'Transaksi Majoo',
+                    costPrice: 0,
+                    sellingPrice: 0,
+                    stock: 0,
+                    minimumStock: 0,
+                    isActive: true,
+                    sku: 'MAJOO-FALLBACK'
+                  }
+                  const prodRes = await api.post('/products', productPayload, { headers: headersApi })
+                  const newProd = prodRes.data
+                  if (newProd && newProd.id) {
+                    localProduct = newProd
+                    localProducts.push(newProd)
+                  }
+                }
+              } catch (createErr) {
+                console.error('Failed to auto-create "Transaksi Majoo" product:', createErr)
+              }
+            }
+
+            if (!localProduct) {
               const missingName = details.name || '(tanpa nama)'
               const missingSku = details.sku || '(tanpa SKU)'
               errors.push(`Transaksi "${txId}": Produk "${missingName}" [SKU: ${missingSku}] tidak ditemukan di database Kasir Web. Silakan buat satu produk penampung bernama "Transaksi Majoo" di menu Daftar Produk agar transaksi tanpa produk ini bisa diimpor.`)
-              continue
-            }
-
-            // AUTO-ADJUST STOCK: If current stock is less than sold quantity, adjust stock up via stock-movements IN
-            const currentStock = localProduct.stock || 0
-            if (currentStock < details.qty) {
-              try {
-                const diff = details.qty - currentStock
-                const movementPayload = {
-                  storeId: selectedStoreId,
-                  productId: localProduct.id,
-                  type: 'IN',
-                  qty: diff,
-                  note: 'Penyesuaian stok otomatis untuk impor transaksi'
-                }
-                await api.post('/stock-movements', movementPayload, { headers: headersApi })
-                // Update in memory stock
-                localProduct.stock = details.qty
-              } catch (stockErr) {
-                console.error('Failed to auto-adjust stock before transaction:', stockErr)
-              }
+              txHasError = true
+              break
             }
 
             itemsPayload.push({
@@ -1028,26 +1308,108 @@ export default function MajooSyncPage() {
             })
           }
 
+          if (txHasError) {
+            continue
+          }
+
           if (itemsPayload.length === 0) {
             errors.push(`Transaksi "${txId}": Gagal mencocokkan produk item transaksi ke database Kasir Web`)
             continue
           }
 
-          // Automatic Cashier Identification
+          // Group duplicate products to prevent multiple items of the same product ID (which triggers backend duplicate validation error)
+          const groupedItemsMap: Record<string, { quantity: number; totalDiscount: number }> = {}
+          itemsPayload.forEach(itemPayload => {
+            const pId = itemPayload.productId
+            if (!groupedItemsMap[pId]) {
+              groupedItemsMap[pId] = { quantity: 0, totalDiscount: 0 }
+            }
+            groupedItemsMap[pId].quantity += itemPayload.quantity
+            groupedItemsMap[pId].totalDiscount += (itemPayload.cashierDiscount || 0) * itemPayload.quantity
+          })
+
+          const mergedItemsPayload = Object.entries(groupedItemsMap).map(([productId, data]) => {
+            const unitDiscount = data.quantity > 0 ? Math.round(data.totalDiscount / data.quantity) : 0
+            return {
+              productId,
+              quantity: data.quantity,
+              cashierDiscount: unitDiscount
+            }
+          })
+
+          // AUTO-ADJUST STOCK FOR GROUPED ITEMS
+          for (const mergedItem of mergedItemsPayload) {
+            const localProd = localProducts.find((p: any) => p.id === mergedItem.productId)
+            if (localProd) {
+              const currentStock = localProd.stock || 0
+              if (currentStock < mergedItem.quantity) {
+                try {
+                  const diff = mergedItem.quantity - currentStock
+                  const movementPayload = {
+                    storeId: selectedStoreId,
+                    productId: localProd.id,
+                    type: 'IN',
+                    qty: diff,
+                    note: 'Penyesuaian stok otomatis untuk impor transaksi Majoo'
+                  }
+                  await api.post('/stock-movements', movementPayload, { headers: headersApi })
+                  localProd.stock = mergedItem.quantity
+                } catch (stockErr: any) {
+                  console.error('Failed to auto-adjust stock before transaction:', stockErr)
+                  const apiErrorMsg = stockErr.response?.data?.message || stockErr.message || '';
+                  const formattedError = Array.isArray(apiErrorMsg) ? apiErrorMsg.join(', ') : apiErrorMsg;
+                  errors.push(`Transaksi "${txId}": Gagal menyesuaikan stok untuk "${localProd.name}" (${formattedError})`)
+                  txHasError = true
+                  break
+                }
+              }
+            }
+          }
+
+          if (txHasError) {
+            continue
+          }
+
+          // Automatic Cashier Identification & Auto-creation
           let finalCashierId = ''
-          const majooCashierName = String(
+          const rawCashierVal = 
             getValueByPath(item, 'cashier_name') || 
             getValueByPath(item, 'created_by') || 
             getValueByPath(item, 'employee') || 
             getValueByPath(item, 'operator') || 
             getValueByPath(item, 'user_name') ||
+            getValueByPath(item, 'Bayar') ||
+            getValueByPath(item, 'bayar') ||
+            getValueByPath(item, 'Order') ||
+            getValueByPath(item, 'order') ||
             ''
-          ).trim().toLowerCase()
+          const majooCashierName = String(rawCashierVal).trim()
 
-          if (majooCashierName && cashiers.length > 0) {
-            const matched = cashiers.find(c => c.name.toLowerCase() === majooCashierName)
+          if (majooCashierName) {
+            const matched = cashiers.find(c => c.name.toLowerCase() === majooCashierName.toLowerCase())
             if (matched) {
               finalCashierId = matched.id
+            } else {
+              try {
+                // Auto create cashier on the fly if not exists
+                const randomDigits = Math.floor(10000000 + Math.random() * 90000000)
+                const newCashierPayload = {
+                  name: majooCashierName,
+                  phone: `0812${randomDigits}`,
+                  pin: '123456',
+                  isStoreAdmin: false,
+                  storeId: selectedStoreId
+                }
+                const newCashierRes = await api.post('/cashier', newCashierPayload, { headers: headersApi })
+                const newCashier = newCashierRes.data
+                if (newCashier && newCashier.id) {
+                  finalCashierId = newCashier.id
+                  cashiers.push(newCashier)
+                  setCashiers([...cashiers])
+                }
+              } catch (createErr) {
+                console.error(`Failed to auto-create cashier "${majooCashierName}":`, createErr)
+              }
             }
           }
 
@@ -1065,23 +1427,85 @@ export default function MajooSyncPage() {
             }
           }
 
+          // Parse Waktu Order for createdAt timestamp
+          const rawWaktuOrder = (mappings.txDate ? getValueByPath(item, mappings.txDate) : null) || 
+                                getValueByPath(item, 'Waktu Order') || 
+                                getValueByPath(item, 'waktu_order') || 
+                                getValueByPath(item, 'waktu order') || 
+                                getValueByPath(item, 'Waktu Bayar') || 
+                                getValueByPath(item, 'waktu_bayar') || 
+                                getValueByPath(item, 'waktu bayar') ||
+                                getValueByPath(item, 'Tanggal') ||
+                                getValueByPath(item, 'tanggal')
+          const txCreatedAt: Date | null = parseExcelDate(rawWaktuOrder)
+
+          // Check if this transaction already exists in the backend
+          const isAlreadyImported = localTransactions.some((t: any) => {
+            // Strict ID match: check if Majoo ID matches invoiceNumber
+            if (t.invoiceNumber === txId) {
+              matchedLocalTxIds.add(t.id)
+              return true
+            }
+
+            // Heuristic match for previously imported transactions (run today / last 24 hours):
+            const txCreatedAtTime = txCreatedAt ? txCreatedAt.getTime() : 0
+            if (txCreatedAtTime) {
+              const localTxTime = new Date(t.createdAt).getTime()
+              if (Math.abs(localTxTime - txCreatedAtTime) < 5000 && // Within 5 seconds difference
+                  Math.round(t.total) === Math.round(total) &&
+                  t.paymentMethod === paymentMethod) {
+                matchedLocalTxIds.add(t.id)
+                return true
+              }
+            }
+            return false
+          })
+
+          if (isAlreadyImported) {
+            successCount++
+            continue
+          }
+
           try {
-            const payload = {
+            const payload: any = {
               storeId: selectedStoreId,
               cashierId: finalCashierId || undefined,
+              invoiceNumber: txId,
               paymentMethod,
               paidAmount: total,
               subtotal,
               totalDiscount: discount,
               total,
               orderType: 'TAKEAWAY',
-              items: itemsPayload
+              items: mergedItemsPayload
             }
 
-            await api.post('/transactions', payload, { headers: headersApi })
+            if (txCreatedAt) {
+              payload.createdAt = txCreatedAt
+            }
+
+            try {
+              await api.post('/transactions', payload, { headers: headersApi })
+            } catch (postErr: any) {
+              const apiErrorMsg = postErr.response?.data?.message || postErr.message || '';
+              const formattedError = Array.isArray(apiErrorMsg) ? apiErrorMsg.join(', ') : apiErrorMsg;
+              
+              // Fallback to retry without custom createdAt and invoiceNumber if it failed with 400 Bad Request
+              if (postErr.response?.status === 400 && (payload.createdAt || payload.invoiceNumber)) {
+                console.warn('API post failed with 400, retrying without createdAt/invoiceNumber:', formattedError)
+                errors.push(`Transaksi "${txId}": Gagal dengan tanggal/invoice asli (${formattedError}). Mengimpor dengan tanggal hari ini...`)
+                
+                const fallbackPayload = { ...payload }
+                delete fallbackPayload.createdAt
+                delete fallbackPayload.invoiceNumber
+                await api.post('/transactions', fallbackPayload, { headers: headersApi })
+              } else {
+                throw postErr
+              }
+            }
 
             // Successfully posted transaction, so decrement the stock in memory
-            for (const itemPayload of itemsPayload) {
+            for (const itemPayload of mergedItemsPayload) {
               const localProd = localProducts.find((p: any) => p.id === itemPayload.productId)
               if (localProd) {
                 localProd.stock = Math.max(0, (localProd.stock || 0) - itemPayload.quantity)
@@ -1111,6 +1535,93 @@ export default function MajooSyncPage() {
       errors,
       isFinished: true
     } : null)
+  }
+
+  async function deleteTodayTransactions() {
+    const confirmDelete = confirm('Apakah Anda yakin ingin menghapus/membatalkan semua transaksi impor baru hari ini? Ini berguna untuk membersihkan data impor yang salah tanggal agar dashboard kembali normal.')
+    if (!confirmDelete) return
+
+    setIsDeleting(true)
+    try {
+      const token = localStorage.getItem('token')
+      const headers = { Authorization: `Bearer ${token}` }
+
+      // 1. Fetch transactions for selected store
+      const res = await api.get(`/transactions/store/${selectedStoreId}`, { headers })
+      const txs = res.data || []
+
+      // 2. We want to delete transactions created today (since midnight 00:00 AM)
+      const importStartTime = new Date().setHours(0, 0, 0, 0)
+      const toDelete = txs.filter((t: any) => {
+        const tTime = new Date(t.createdAt).getTime()
+        return tTime >= importStartTime
+      })
+
+      if (toDelete.length === 0) {
+        alert('Tidak ditemukan transaksi impor baru hari ini untuk dibersihkan.')
+        setIsDeleting(false)
+        return
+      }
+
+      const confirmProcess = confirm(`Ditemukan ${toDelete.length} transaksi impor hari ini yang akan dihapus/dibatalkan. Mulai proses pembersihan?`)
+      if (!confirmProcess) {
+        setIsDeleting(false)
+        return
+      }
+
+      let successCount = 0
+      let failCount = 0
+      let methodUsed = 'DELETE'
+      const errorMsgs: string[] = []
+
+      for (const tx of toDelete) {
+        try {
+          if (methodUsed === 'DELETE') {
+            try {
+              await api.delete(`/transactions/${tx.id}`, { headers })
+              successCount++
+              continue
+            } catch (delErr: any) {
+              const errMsg = delErr.response?.data?.message || delErr.message || ''
+              console.warn(`DELETE failed for transaction ${tx.id}, falling back to VOID...`, errMsg)
+              if (errorMsgs.length < 5 && !errorMsgs.includes(errMsg)) {
+                errorMsgs.push(`DELETE: ${errMsg}`)
+              }
+            }
+          }
+          
+          // Fallback/direct attempt to VOID the transaction
+          try {
+            await api.patch(`/transactions/${tx.id}/void`, { reason: 'Reset impor salah tanggal' }, { headers })
+            successCount++
+          } catch (voidErr: any) {
+            const errMsg = voidErr.response?.data?.message || voidErr.message || ''
+            console.error(`Failed to VOID transaction ${tx.id}:`, errMsg)
+            if (errorMsgs.length < 5 && !errorMsgs.includes(errMsg)) {
+              errorMsgs.push(`VOID: ${errMsg}`)
+            }
+            failCount++
+          }
+        } catch (err) {
+          console.error(`Unexpected loop error for transaction ${tx.id}:`, err)
+          failCount++
+        }
+      }
+
+      let resultMsg = `Proses selesai!\n- Sukses dibersihkan: ${successCount}\n- Gagal: ${failCount}`
+      if (errorMsgs.length > 0) {
+        resultMsg += `\n\nDetail Eror Server:\n` + errorMsgs.map(m => `- ${m}`).join('\n')
+      }
+      alert(resultMsg)
+      window.location.reload()
+    } catch (err: any) {
+      console.error('deleteTodayTransactions failed:', err)
+      const serverMsg = err.response?.data?.message || err.message || '';
+      const formattedServerMsg = Array.isArray(serverMsg) ? serverMsg.join(', ') : serverMsg;
+      alert(`Gagal memuat atau memproses daftar transaksi: ${formattedServerMsg}`)
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   return (
@@ -1529,6 +2040,19 @@ export default function MajooSyncPage() {
                     <div>
                       <h4 className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider mb-2">Data Utama Transaksi</h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {/* Waktu/Tanggal Transaksi Mapping */}
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-500">Tanggal & Waktu Transaksi</label>
+                          <select
+                            value={mappings.txDate}
+                            onChange={(e) => setMappings({ ...mappings, txDate: e.target.value })}
+                            className="w-full text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-2 py-1.5 focus:bg-white"
+                          >
+                            <option value="">-- Auto-deteksi --</option>
+                            {availableKeys.map(k => <option key={k} value={k}>{k}</option>)}
+                          </select>
+                        </div>
+
                         {/* Payment Method Mapping */}
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold text-slate-500">Metode Pembayaran</label>
@@ -1844,7 +2368,7 @@ export default function MajooSyncPage() {
                             const total = Math.max(0, parseExcelNumber(getValueByPath(item, mappings.txTotal)))
                             const discount = Math.max(0, parseExcelNumber(getValueByPath(item, mappings.txDiscount)))
                             
-                            const majooItems = mappings.txItems === '_flat' ? item._items : (Array.isArray(getValueByPath(item, mappings.txItems)) ? getValueByPath(item, mappings.txItems) : [])
+                            const majooItems = getMajooItems(item)
                             const itemsSummary = majooItems.map((mItem: any) => {
                                const details = extractItemDetails(mItem)
                                const nameToShow = details.name || 'Penjualan Manual Majoo'
@@ -1883,6 +2407,17 @@ export default function MajooSyncPage() {
                           stock = Math.max(0, parseExcelNumber(v.qty || v.quantity || v.product_qty) || 0)
                         }
 
+                        // Apply variant options if they are explicitly present in the item row (Majoo Excel format)
+                        const itemKeys = Object.keys(item)
+                        const var1Key = findKey(itemKeys, ['pilihan varian 1', 'pilihan varian\n1', 'pilihan_varian_1'])
+                        const var2Key = findKey(itemKeys, ['pilihan varian 2', 'pilihan varian\n2', 'pilihan_varian_2'])
+                        const variant1Opt = var1Key ? String(getValueByPath(item, var1Key) || '').trim() : ''
+                        const variant2Opt = var2Key ? String(getValueByPath(item, var2Key) || '').trim() : ''
+                        const variantParts = [variant1Opt, variant2Opt].filter(v => v && v !== '-')
+                        if (variantParts.length > 0 && name && name !== 'null' && name !== '-') {
+                          name = `${name} (${variantParts.join(', ')})`
+                        }
+
                         return (
                           <tr key={idx} className="hover:bg-slate-50/50">
                             <td className="p-3 font-bold text-slate-800 max-w-[200px] truncate" title={name}>{name}</td>
@@ -1908,8 +2443,21 @@ export default function MajooSyncPage() {
               </div>
 
               {/* Action Button */}
-              <div className="border-t border-slate-100 pt-5 flex justify-end">
+              <div className="border-t border-slate-100 pt-5 flex justify-between items-center">
+                {syncMode === 'transactions' ? (
+                  <button
+                    type="button"
+                    onClick={deleteTodayTransactions}
+                    disabled={isDeleting}
+                    className="bg-rose-600 hover:bg-rose-700 disabled:bg-slate-200 text-white font-extrabold text-xs py-3 px-5 rounded-xl shadow-xs transition-all active:scale-97 cursor-pointer animate-pulse"
+                  >
+                    {isDeleting ? 'Membatalkan...' : 'Hapus Impor Salah Tanggal (Hari Ini)'}
+                  </button>
+                ) : (
+                  <div></div>
+                )}
                 <button
+                  type="button"
                   onClick={handleStartSync}
                   className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs py-3 px-6 rounded-xl shadow-xs transition-all active:scale-97 cursor-pointer"
                 >

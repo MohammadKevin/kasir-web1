@@ -209,6 +209,10 @@ export default function PawoonSyncPage() {
       const row = rows[r]
       if (!row || !Array.isArray(row)) continue
       
+      // A header row must have at least 3 filled cells to avoid matching metadata rows (like "Kategori: Semua")
+      const filledCells = row.filter(cell => cell !== null && cell !== undefined && String(cell).trim() !== '').length
+      if (filledCells < 3) continue
+
       const isHeader = row.some(cell => {
         if (cell === null || cell === undefined) return false
         const cellStr = String(cell).toLowerCase().trim()
@@ -238,6 +242,10 @@ export default function PawoonSyncPage() {
 
       const isEmpty = row.every(cell => cell === null || cell === undefined || String(cell).trim() === '')
       if (isEmpty) continue
+
+      // Skip footer rows (e.g. "Powered by Pawoon")
+      const isFooter = row.some(cell => cell && String(cell).toLowerCase().includes('powered by'))
+      if (isFooter) continue
 
       const obj: Record<string, any> = {}
       let hasData = false
@@ -334,6 +342,21 @@ export default function PawoonSyncPage() {
               const wb = XLSX.read(bstr, { type: 'binary' })
               const wsname = wb.SheetNames[0]
               const ws = wb.Sheets[wsname]
+
+              // Recalculate sheet range if cells exist (handles buggy excel exports with truncated !ref)
+              const range = { s: { c: 10000000, r: 10000000 }, e: { c: -1, r: -1 } }
+              for (const z in ws) {
+                if (z[0] === '!') continue
+                const c = XLSX.utils.decode_cell(z)
+                if (c.r < range.s.r) range.s.r = c.r
+                if (c.r > range.e.r) range.e.r = c.r
+                if (c.c < range.s.c) range.s.c = c.c
+                if (c.c > range.e.c) range.e.c = c.c
+              }
+              if (range.s.r <= range.e.r) {
+                ws['!ref'] = XLSX.utils.encode_range(range)
+              }
+
               const rawRows = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][]
               const parsed = parseExcelToObjects(rawRows)
               resolve(parsed)

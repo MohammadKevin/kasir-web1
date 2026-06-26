@@ -37,6 +37,7 @@ type Product = {
   sellingPrice: number
   stock: number
   sku: string
+  isActive?: boolean
   discounts?: {
     discount: {
       type: 'PERCENTAGE' | 'FIXED'

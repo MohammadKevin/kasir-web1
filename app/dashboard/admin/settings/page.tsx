@@ -125,36 +125,33 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Toggle 3: Majoo Integration (Metode 2) */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-3xs hover:shadow-2xs transition-all duration-200 flex flex-col justify-between space-y-4">
+        {/* Toggle 3: Majoo Integration (Metode 2) - DISABLED */}
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 shadow-3xs flex flex-col justify-between space-y-4 opacity-85">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="h-10 w-10 bg-sky-50 border border-sky-100 text-sky-600 rounded-xl flex items-center justify-center">
+              <div className="h-10 w-10 bg-slate-100 border border-slate-200 text-slate-400 rounded-xl flex items-center justify-center">
                 <Database size={20} />
               </div>
-              <Link
-                href="/dashboard/admin/settings/majoo-sync"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-700 hover:text-sky-850 rounded-xl text-[10.5px] font-extrabold transition-all active:scale-97 cursor-pointer"
-              >
-                <span>Mulai Sinkron</span>
-                <ArrowRight size={12} />
-              </Link>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-400 rounded-xl text-[10.5px] font-extrabold cursor-not-allowed">
+                <span>Terkunci</span>
+              </span>
             </div>
             <div>
-              <h3 className="text-sm font-black text-slate-900">3. Integrasi Data Majoo (Metode 2)</h3>
-              <p className="text-xs text-slate-500 font-semibold mt-1 leading-relaxed">
+              <h3 className="text-sm font-black text-slate-400">3. Integrasi Data Majoo (Metode 2)</h3>
+              <p className="text-xs text-slate-400 font-semibold mt-1 leading-relaxed">
                 Tarik data produk, kategori, dan stok secara langsung dari dashboard.majoo.id dengan menyalin token otorisasi dari browser Developer Tools Anda.
               </p>
-              <p className="text-[10px] text-slate-400 font-medium mt-1 leading-relaxed">
-                Sangat praktis untuk migrasi data awal atau sinkronisasi berkala tanpa perlu menunggu persetujuan API resmi dari pihak Majoo.
-              </p>
+              <div className="mt-3.5 p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl flex items-start gap-2 text-[10px] font-bold leading-normal">
+                <AlertCircle size={14} className="text-amber-600 shrink-0 mt-0.5" />
+                <span>Hubungi developer jika ingin mengaktifkan fitur sinkronisasi ini.</span>
+              </div>
             </div>
           </div>
-          <div className="border-t border-slate-100 pt-3 flex items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Tipe Integrasi</span>
-            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider border bg-sky-50 border-sky-200 text-sky-700">
-              <span className="h-1 w-1 rounded-full bg-sky-500" />
-              Sesi Browser (Metode 2)
+          <div className="border-t border-slate-150 pt-3 flex items-center justify-between">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Status Modul</span>
+            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider border bg-slate-100 border-slate-200 text-slate-400">
+              <span className="h-1 w-1 rounded-full bg-slate-400" />
+              Nonaktif (Terkunci)
             </span>
           </div>
         </div>
